@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32421.90
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Sender", "..\source\MailKitSimplified.Sender\MailKitSimplified.Sender.csproj", "{374BB83A-06BA-434A-9FB3-6F636506CD62}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Sender.Tests", "..\tests\MailKitSimplified.Sender.Tests.csproj", "{A18AA6A6-D42B-44D9-8375-25C45B8B5C99}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{374BB83A-06BA-434A-9FB3-6F636506CD62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{374BB83A-06BA-434A-9FB3-6F636506CD62}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{374BB83A-06BA-434A-9FB3-6F636506CD62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{374BB83A-06BA-434A-9FB3-6F636506CD62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A18AA6A6-D42B-44D9-8375-25C45B8B5C99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A18AA6A6-D42B-44D9-8375-25C45B8B5C99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A18AA6A6-D42B-44D9-8375-25C45B8B5C99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A18AA6A6-D42B-44D9-8375-25C45B8B5C99}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B5E640E9-B4E6-4555-8E04-FD16C3668769}
+	EndGlobalSection
+EndGlobal
