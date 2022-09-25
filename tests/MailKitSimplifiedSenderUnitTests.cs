@@ -15,7 +15,7 @@ namespace MailKitSimplified.Sender.Tests
         public void CreateEmail_WithIMimeEmailSender_VerifyCreated()
         {
             var emailSenderMock = Mock.Of<IMimeEmailSender>(sender =>
-                sender.Email == Mock.Of<IEmail>());
+                sender.Email == Mock.Of<IFluentEmail>());
             Assert.NotNull(emailSenderMock.Email);
         }
 
@@ -23,7 +23,7 @@ namespace MailKitSimplified.Sender.Tests
         [InlineData("smtp.example.com")]
         public void CreateEmail_WithEmailSender_VerifyCreated(string smtpHost)
         {
-            IMimeEmailSender emailSender = EmailSender.Create(smtpHost);
+            IMimeEmailSender emailSender = MimeSender.Create(smtpHost);
             var email = emailSender.Email
                 .From("test")
                 .To("test")

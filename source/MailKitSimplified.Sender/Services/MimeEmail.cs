@@ -12,7 +12,7 @@ using MailKitSimplified.Sender.Abstractions;
 
 namespace MailKitSimplified.Sender
 {
-    public class MimeEmail : IEmail
+    public class MimeEmail : IFluentEmail
     {
         private MimeMessage _mimeMessage = new MimeMessage();
         private IList<string> _attachmentFilePaths = new List<string>();
@@ -24,25 +24,25 @@ namespace MailKitSimplified.Sender
             _emailClient = emailClient ?? throw new ArgumentNullException(nameof(emailClient));
         }
 
-        public IEmail From(string address, string name = "")
+        public IFluentEmail From(string address, string name = "")
         {
             _mimeMessage.From.Add(new MailboxAddress(name, address));
             return this;
         }
 
-        public IEmail To(string address, string name = "")
+        public IFluentEmail To(string address, string name = "")
         {
             _mimeMessage.To.Add(new MailboxAddress(name, address));
             return this;
         }
 
-        public IEmail Subject(string subject)
+        public IFluentEmail Subject(string subject)
         {
             _mimeMessage.Subject = subject ?? string.Empty;
             return this;
         }
 
-        public IEmail Body(string bodyText, bool isHtml = true)
+        public IFluentEmail Body(string bodyText, bool isHtml = true)
         {
             if (_mimeMessage.Body == null)
             {
@@ -76,7 +76,7 @@ namespace MailKitSimplified.Sender
             return this;
         }
 
-        public IEmail Attach(params string[] filePaths)
+        public IFluentEmail Attach(params string[] filePaths)
         {
             if (filePaths != null)
             {

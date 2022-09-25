@@ -7,7 +7,7 @@ namespace MailKitSimplified.Sender.Abstractions
 {
     public interface IMimeEmailSender : IDisposable
     {
-        IEmail Email { get; }
+        IFluentEmail Email { get; }
         Task SendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default);
     }
 }
