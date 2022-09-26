@@ -7,6 +7,6 @@ namespace MailKitSimplified.Sender.Abstractions
     public interface IEmailSender : IDisposable
     {
         IFluentEmail Email { get; }
-        Task<bool> SendAsync(IEmail email, CancellationToken cancellationToken = default);
+        Task SendAsync(IEmail email, CancellationToken cancellationToken = default);
     }
 }

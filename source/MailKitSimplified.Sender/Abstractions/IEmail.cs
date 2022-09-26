@@ -14,6 +14,6 @@ namespace MailKitSimplified.Sender.Abstractions
         string Body { get; set; }
         bool IsHtml { get; set; }
         IEmail Write(string fromAddress, string toAddress, string subject = "", string body = "", bool isHtml = true, params string[] attachmentFilePaths);
-        Task<bool> SendAsync(CancellationToken token = default);
+        Task SendAsync(CancellationToken token = default);
     }
 }

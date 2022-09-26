@@ -2,12 +2,9 @@
 using System.Threading;
 using MailKitSimplified.Sender.Models;
 using MailKitSimplified.Sender.Abstractions;
-using System.Linq;
-using System;
 
 namespace MailKitSimplified.Sender.Services
 {
-    // inspired by https://github.com/lukencode/FluentEmail/blob/master/src/FluentEmail.Core/Email.cs
     public class FluentEmail : IFluentEmail
     {
         private IEmail _email;
@@ -19,36 +16,35 @@ namespace MailKitSimplified.Sender.Services
 
         public IFluentEmail From(string emailAddress, string name = "")
         {
-            var contact = new EmailContact(emailAddress, name);
-            _email.From = MimeEntityConverter.FormatContactName(contact);
+            _email.From = new EmailContact(emailAddress, name);
             return this;
         }
 
-        IFluentEmail IFluentEmail.To(string emailAddress, string name)
+        public IFluentEmail To(string emailAddress, string name = "")
         {
-            var contact = new EmailContact(emailAddress, name);
-            _email.To.Add(MimeEntityConverter.FormatContactName(contact));
+            _email.To.Add(new EmailContact(emailAddress, name));
             return this;
         }
 
-        IFluentEmail IFluentEmail.Subject(string subject)
+        public IFluentEmail Subject(string subject)
         {
             _email.Subject = subject ?? string.Empty;
             return this;
         }
 
-        IFluentEmail IFluentEmail.Body(string body, bool isHtml)
+        public IFluentEmail Body(string body, bool isHtml)
         {
             _email.Body = body ?? string.Empty;
             _email.IsHtml = isHtml;
             return this;
         }
 
-        IFluentEmail IFluentEmail.Attach(params string[] filePaths)
+        public IFluentEmail Attach(params string[] filePaths)
         {
             if (filePaths != null)
                 foreach (var filePath in filePaths)
-                    _email.AttachmentFilePaths.Add(filePath);
+                    if (!string.IsNullOrWhiteSpace(filePath))
+                        _email.AttachmentFilePaths.Add(filePath);
             return this;
         }
 

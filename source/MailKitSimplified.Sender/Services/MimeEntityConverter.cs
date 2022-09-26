@@ -8,7 +8,6 @@ using System;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging;
 using MimeKit;
-using MailKitSimplified.Sender.Models;
 
 namespace MailKitSimplified.Sender.Services
 {
@@ -19,85 +18,6 @@ namespace MailKitSimplified.Sender.Services
         public MimeEntityConverter(ILogger<MimeEntityConverter> logger = null)
         {
             _logger = logger ?? NullLogger<MimeEntityConverter>.Instance;
-        }
-
-        public static EmailContact FormatContactName(EmailContact contact, char[] replace = null)
-        {
-            if (replace == null)
-                replace = new char[] { '_', '.', '-' };
-
-            bool noName = string.IsNullOrWhiteSpace(contact.Name) ||
-                contact.Name.Equals(contact.Address, StringComparison.OrdinalIgnoreCase) ? true : false;
-            string name = noName ? ToSpaceReplaceTitleCase(contact.Address?.Split('@')?.First(), replace) ?? contact.Name : contact.Name;
-
-            return new EmailContact(name, contact.Address);
-        }
-
-        public IEnumerable<EmailContact> ParseEmailContacts(string value)
-        {
-            IEnumerable<EmailContact> contacts = null;
-            if (!string.IsNullOrEmpty(value))
-            {
-                var emailSeparator = new char[] { ';', ',', ' ', '&', '|' };
-                var emailAddresses = value.Split(emailSeparator, StringSplitOptions.RemoveEmptyEntries);
-                contacts = emailAddresses.Select(email => GetContactFromEmailAddress(email));
-            }
-            return contacts ?? Enumerable.Empty<EmailContact>();
-        }
-
-        public EmailContact GetContactFromEmailAddress(string emailAddress)
-        {
-            var replace = new char[] { '_', '.', '-' };
-            var email = emailAddress?.Split('@')?.FirstOrDefault();
-            string name = ToSpaceReplaceTitleCase(email, replace) ?? string.Empty;
-            return new EmailContact(name, emailAddress);
-        }
-
-        internal static string ToSpaceReplaceTitleCase(string value, char[] replace = null)
-        {
-            string result = Replace(value, replace, ' ');
-
-            if (result.Length > 0)
-            {
-                var builder = new List<char>();
-                char[] array = result.ToCharArray();
-                char prevChar = array[0];
-                builder.Add(char.ToUpper(prevChar));
-
-                for (int i = 1; i < array.Length; i++)
-                {
-                    char thisChar = array[i];
-                    char? nextChar = i + 1 < array.Length ?
-                        array[i + 1] : null as char?;
-                    bool isNextLower = nextChar == null ?
-                        false : char.IsLower(nextChar.Value);
-                    bool isPrevUpper = char.IsUpper(prevChar);
-                    bool isPrevLower = char.IsLower(prevChar);
-                    bool isThisUpper = char.IsUpper(thisChar);
-                    bool isAcronym = isThisUpper && isPrevUpper;
-                    bool isTitleCase = isAcronym && isNextLower;
-                    bool isWordEnd = isThisUpper && isPrevLower;
-                    if (isWordEnd || isTitleCase)
-                    {
-                        builder.Add(' ');
-                    }
-                    builder.Add(thisChar);
-                    prevChar = thisChar;
-                }
-
-                result = new string(builder.ToArray());
-            }
-
-            return result;
-        }
-
-        public static string Replace(string value, char[] oldChars, char newChar)
-        {
-            string result = value?.Clone() as string ?? "";
-            if (oldChars != null)
-                foreach (var r in oldChars)
-                    result = result.Replace(r, newChar);
-            return result;
         }
 
         /// <summary> 
@@ -189,7 +109,7 @@ namespace MailKitSimplified.Sender.Services
             return result;
         }
 
-        public async Task<IEnumerable<MimeEntity>> GetMimeEntitiesFromFilePathsAsync(params string[] filePaths)
+        public async Task<IEnumerable<MimeEntity>> LoadFilePathsAsync(params string[] filePaths)
         {
             IEnumerable<MimeEntity> results = Array.Empty<MimeEntity>();
             if (filePaths != null && filePaths.Length == 1 && !string.IsNullOrWhiteSpace(filePaths[0]))

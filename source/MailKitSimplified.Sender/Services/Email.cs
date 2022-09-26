@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using MailKitSimplified.Sender.Abstractions;
-using MailKitSimplified.Sender.Extensions;
 using MailKitSimplified.Sender.Models;
 
 namespace MailKitSimplified.Sender.Services
@@ -31,11 +30,12 @@ namespace MailKitSimplified.Sender.Services
             _sender = emailSender ?? throw new ArgumentNullException(nameof(emailSender));
         }
 
+        public IFluentEmail Fluent => new FluentEmail(_sender);
+
         public IEmail Write(string fromAddress, string toAddress, string subject = "", string body = "", bool isHtml = true, params string[] attachmentFilePaths)
         {
-            var converter = new MimeEntityConverter();
-            From = converter.ParseEmailContacts(fromAddress).FirstOrDefault();
-            To = converter.ParseEmailContacts(toAddress).ToList();
+            From = EmailContact.ParseEmailContacts(fromAddress).FirstOrDefault();
+            To = EmailContact.ParseEmailContacts(toAddress).ToList();
             Subject = subject ?? string.Empty;
             Body = body ?? string.Empty;
             IsHtml = isHtml;
@@ -43,7 +43,7 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
-        public async Task<bool> SendAsync(CancellationToken token = default) =>
+        public async Task SendAsync(CancellationToken token = default) =>
             await _sender.SendAsync(this, token);
 
         public override string ToString()
@@ -52,12 +52,12 @@ namespace MailKitSimplified.Sender.Services
             using (var text = new StringWriter())
             {
                 text.WriteLine("From: {0}", From);
-                text.WriteLine("To: {0}", To.ToEnumeratedString(";"));
+                text.WriteLine("To: {0}", string.Join(";", To));
                 if (AttachmentCount > 0)
                     text.WriteLine("{0} Attachment{1}: {2}",
                         AttachmentCount,
                         AttachmentCount == 1 ? "" : "s",
-                        AttachmentFileNames.ToEnumeratedString(";"));
+                        string.Join(";", AttachmentFileNames));
                 text.WriteLine("Subject: {0}", Subject);
                 envelope = text.ToString();
             }
