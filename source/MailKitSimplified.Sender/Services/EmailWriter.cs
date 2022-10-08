@@ -7,12 +7,15 @@ namespace MailKitSimplified.Sender.Services
 {
     public class EmailWriter : IEmailWriter
     {
+        public IEmail Email => _email;
         private IEmail _email;
 
-        public EmailWriter(IEmailSender sender)
+        private EmailWriter(IEmail email)
         {
-            _email = new Email(sender);
+            _email = email;
         }
+
+        public static EmailWriter CreateFrom(IEmail email) => new EmailWriter(email);
 
         public IEmailWriter From(string emailAddress, string name = "")
         {

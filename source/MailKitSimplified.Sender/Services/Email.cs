@@ -30,9 +30,9 @@ namespace MailKitSimplified.Sender.Services
             _sender = emailSender ?? throw new ArgumentNullException(nameof(emailSender));
         }
 
-        public IEmailWriter Fluent => new EmailWriter(_sender);
+        public static Email CreateFrom(IEmailSender emailSender) => new Email(emailSender);
 
-        public IEmail Write(string fromAddress, string toAddress, string subject = "", string body = "", bool isHtml = true, params string[] attachmentFilePaths)
+        public IEmail HandWrite(string fromAddress, string toAddress, string subject = "", string body = "", bool isHtml = true, params string[] attachmentFilePaths)
         {
             From = EmailContact.ParseEmailContacts(fromAddress).FirstOrDefault();
             To = EmailContact.ParseEmailContacts(toAddress).ToList();
@@ -42,6 +42,8 @@ namespace MailKitSimplified.Sender.Services
             AttachmentFilePaths = attachmentFilePaths.ToList();
             return this;
         }
+
+        public IEmailWriter Write => EmailWriter.CreateFrom(this);
 
         public async Task SendAsync(CancellationToken token = default) =>
             await _sender.SendAsync(this, token);

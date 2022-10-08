@@ -15,6 +15,8 @@ namespace MailKitSimplified.Core.Abstractions
 
         IEmailWriter Attach(params string[] filePath);
 
+        IEmail Email { get; }
+
         Task SendAsync(CancellationToken cancellationToken = default);
     }
 }

@@ -44,7 +44,7 @@ namespace MailKitSimplified.Sender.Services
             _attachmentHandler = mimeAttachmentHandler ?? new MimeAttachmentHandler(loggerFactory?.CreateLogger<MimeAttachmentHandler>(), new FileHandler(loggerFactory?.CreateLogger<FileHandler>()));
         }
 
-        public static IMimeEmailSender Create(string smtpHost, int smtpPort = 0, NetworkCredential smtpCredential = null, string protocolLog = null)
+        public static EmailSender Create(string smtpHost, int smtpPort = 0, NetworkCredential smtpCredential = null, string protocolLog = null)
         {
             var senderOptions = new EmailSenderOptions(smtpHost, smtpPort, smtpCredential, protocolLog);
             var options = Options.Create(senderOptions);
@@ -52,13 +52,17 @@ namespace MailKitSimplified.Sender.Services
             return sender;
         }
 
-        public IEmailWriter Email => new EmailWriter(this);
+        private Email CreateEmail => Services.Email.CreateFrom(this);
 
-        public IEmailWriter MimeEmail => new MimeEmailWriter(this);
+        public IEmailWriter WriteEmail => CreateEmail.Write;
 
-        public IEmail WriteEmail(string fromAddress, string toAddress, string subject = "", string body = "", bool isHtml = true, params string[] attachmentFilePaths)
+        public MimeEmailWriter MimeEmail => MimeEmailWriter.CreateFrom(this);
+
+
+        [Obsolete("This method will be removed in a future version, use IEmailWriter WriteEmail instead.")]
+        public IEmail Email(string fromAddress, string toAddress, string subject = "", string body = "", bool isHtml = true, params string[] attachmentFilePaths)
         {
-            return new Email(this).Write(fromAddress, toAddress, subject, body, isHtml, attachmentFilePaths);
+            return CreateEmail.HandWrite(fromAddress, toAddress, subject, body, isHtml, attachmentFilePaths);
         }
 
         public static async Task<MimeMessage> ConvertToMimeMessage(IEmail email, IMimeAttachmentHandler attachmentHandler, CancellationToken cancellationToken = default)
@@ -101,8 +105,8 @@ namespace MailKitSimplified.Sender.Services
             bool isCircular = false;
             if (mimeMessage != null && mimeMessage.From != null && mimeMessage.To != null)
             {
-                var to = mimeMessage.To.Select(a => (a as MailboxAddress)?.Address.ToLower()).Where(a => a != null);
-                var from = mimeMessage.From.Select(a => (a as MailboxAddress)?.Address.ToLower()).Where(a => a != null);
+                var to = mimeMessage.To.Mailboxes.Select(a => a.Address.ToLower());
+                var from = mimeMessage.From.Mailboxes.Select(a => a.Address.ToLower());
                 isCircular = to.Intersect(from).Any();
             }
             return isCircular;

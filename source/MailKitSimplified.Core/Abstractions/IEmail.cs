@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MailKitSimplified.Core.Models;
@@ -13,7 +14,9 @@ namespace MailKitSimplified.Core.Abstractions
         string Subject { get; set; }
         string Body { get; set; }
         bool IsHtml { get; set; }
-        IEmail Write(string fromAddress, string toAddress, string subject = "", string body = "", bool isHtml = true, params string[] attachmentFilePaths);
+        IEmailWriter Write { get; }
+        [Obsolete("Use IEmailWriter Write method instead")]
+        IEmail HandWrite(string fromAddress, string toAddress, string subject = "", string body = "", bool isHtml = true, params string[] attachmentFilePaths);
         Task SendAsync(CancellationToken token = default);
     }
 }

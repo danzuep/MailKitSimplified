@@ -8,21 +8,41 @@ using MimeKit;
 using MimeKit.Text;
 using MailKitSimplified.Core.Abstractions;
 using MailKitSimplified.Sender.Abstractions;
+using MailKitSimplified.Core.Models;
 
 namespace MailKitSimplified.Sender.Services
 {
     [ExcludeFromCodeCoverage]
     public class MimeEmailWriter : IEmailWriter
     {
+        public IEmail Email
+        {
+            get
+            {
+                var from = _mimeMessage.From.Mailboxes.FirstOrDefault();
+                var to = _mimeMessage.To.Mailboxes;
+                var email = new Email(_emailClient)
+                {
+                    From = new EmailContact(from.Address, from.Name),
+                    To = to.Select(t => new EmailContact(t.Address, t.Name)).ToList(),
+                    Subject = _mimeMessage.Subject ?? string.Empty,
+                    Body = _mimeMessage.HtmlBody ?? _mimeMessage.TextBody ?? string.Empty,
+                };
+                return email;
+            }
+        }
+
         private MimeMessage _mimeMessage = new MimeMessage();
         private IList<string> _attachmentFilePaths = new List<string>();
 
         private readonly IMimeEmailSender _emailClient;
 
-        public MimeEmailWriter(IMimeEmailSender emailClient)
+        private MimeEmailWriter(IMimeEmailSender emailClient)
         {
             _emailClient = emailClient ?? throw new ArgumentNullException(nameof(emailClient));
         }
+
+        public static MimeEmailWriter CreateFrom(IMimeEmailSender emailClient) => new MimeEmailWriter(emailClient);
 
         public IEmailWriter From(string address, string name = "")
         {
