@@ -1,0 +1,70 @@
+name: Publish Packages
+
+on:
+  push:
+    branches:
+    - 'release'
+
+env:
+  PROJECT: 'source/MailKitSimplified.Sender/MailKitSimplified.Sender.csproj'
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Get full repository history
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        submodules: true  
+
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v0.9.7
+      with:
+        versionSpec: '5.x'
+
+    # https://gitversion.net/docs/reference/variables
+    - name: Determine version from repository history
+      id: gitversion # step id used as reference for output values
+      uses: gittools/actions/gitversion/execute@v0.9.7
+
+    - name: Markdown workflow job summary
+      run: echo "### $Workflow_Name $GITHUB_EVENT_NAME build summary" >> $GITHUB_STEP_SUMMARY
+      env:
+        Workflow_Name: "${{ github.repository }} version ${{ steps.gitversion.outputs.fullSemVer }}"
+
+    - name: Setup .NET environment
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore $PROJECT
+
+    - name: Build
+      run: dotnet build $PROJECT --configuration Release --no-restore -p:Version=${{ steps.gitversion.outputs.majorMinorPatch }}
+
+    - name: Test
+      run: dotnet test $PROJECT -c Release --no-build --verbosity normal
+
+    - name: Pack
+      run: dotnet pack $PROJECT -c Release --no-build -p:PackageVersion=${{ steps.gitversion.outputs.majorMinorPatch }} --version-suffix ${{ steps.gitversion.outputs.preReleaseTag }} --output .nupkg
+
+    - name: Markdown workflow job summary
+      run: echo "### Publishing $Package_Name to NuGet..." >> $GITHUB_STEP_SUMMARY
+      env:
+        Package_Name: "${{ github.event.repository.name }}.${{ steps.gitversion.outputs.fullSemVer }}"
+
+    - name: Publish
+      run: dotnet nuget push $Package_Name --api-key ${{ secrets.NUGET_TOKEN }} --source https://int.nugettest.org/ #https://api.nuget.org/v3/index.json
+      env:
+        Package_Name: ".nupkg/${{ github.event.repository.name }}.${{ steps.gitversion.outputs.fullSemVer }}.nupkg"
+
+    - name: Markdown workflow job summary
+      run: echo "### $Package_Name published to NuGet on $GITHUB_EVENT_NAME" >> $GITHUB_STEP_SUMMARY
+      env:
+        Package_Name: "${{ github.event.repository.name }}.${{ steps.gitversion.outputs.fullSemVer }}"
