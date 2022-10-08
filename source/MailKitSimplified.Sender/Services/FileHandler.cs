@@ -1,13 +1,14 @@
 ﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Sender.Abstractions;
 
 namespace MailKitSimplified.Sender.Services
 {
-    //[ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage]
     public sealed class FileHandler : IFileHandler
     {
         private readonly ILogger _logger;

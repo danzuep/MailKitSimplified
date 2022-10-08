@@ -33,7 +33,7 @@ jobs:
       uses: gittools/actions/gitversion/execute@v0.9.7
 
     - name: Markdown workflow job summary
-      run: echo "### $Workflow_Name build summary for $GITHUB_EVENT_NAME" >> $GITHUB_STEP_SUMMARY
+      run: echo "### $Workflow_Name $GITHUB_EVENT_NAME build summary" >> $GITHUB_STEP_SUMMARY
       env:
         Workflow_Name: "${{ github.repository }} version ${{ steps.gitversion.outputs.fullSemVer }}"
 

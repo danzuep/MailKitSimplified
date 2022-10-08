@@ -11,6 +11,7 @@ using MailKitSimplified.Sender.Abstractions;
 
 namespace MailKitSimplified.Sender.Services
 {
+    [ExcludeFromCodeCoverage]
     public class MimeEmailWriter : IEmailWriter
     {
         private MimeMessage _mimeMessage = new MimeMessage();

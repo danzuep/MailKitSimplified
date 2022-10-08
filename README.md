@@ -6,12 +6,14 @@ When I first started using MailKit I was surprised at how many steps were involv
 
 ### Setup
 
-Either dependency injection (IEmailSender smtpSender) or:
-
+Either dependency injection (`IEmailSender smtpSender`) or:
+```
 using var smtpSender = EmailSender.Create("smtp.example.com");
+```
 
 ### Sending Mail
 
+```
 var email = smtpSender.Email
     .From("me@example.com")
     .To("you@example.com")
@@ -20,3 +22,4 @@ var email = smtpSender.Email
     .Attach("C:/Temp/attachment1.txt", "C:/Temp/attachment2.pdf");
 
 await email.SendAsync();
+```
