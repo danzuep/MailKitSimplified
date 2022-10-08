@@ -5,8 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using MailKitSimplified.Sender.Abstractions;
-using MailKitSimplified.Sender.Models;
+using MailKitSimplified.Core.Abstractions;
+using MailKitSimplified.Core.Models;
 
 namespace MailKitSimplified.Sender.Services
 {
@@ -30,7 +30,7 @@ namespace MailKitSimplified.Sender.Services
             _sender = emailSender ?? throw new ArgumentNullException(nameof(emailSender));
         }
 
-        public IFluentEmail Fluent => new FluentEmail(_sender);
+        public IEmailWriter Fluent => new EmailWriter(_sender);
 
         public IEmail Write(string fromAddress, string toAddress, string subject = "", string body = "", bool isHtml = true, params string[] attachmentFilePaths)
         {

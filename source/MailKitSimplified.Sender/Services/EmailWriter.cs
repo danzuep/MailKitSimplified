@@ -1,45 +1,45 @@
 ﻿using System.Threading.Tasks;
 using System.Threading;
-using MailKitSimplified.Sender.Models;
-using MailKitSimplified.Sender.Abstractions;
+using MailKitSimplified.Core.Models;
+using MailKitSimplified.Core.Abstractions;
 
 namespace MailKitSimplified.Sender.Services
 {
-    public class FluentEmail : IFluentEmail
+    public class EmailWriter : IEmailWriter
     {
         private IEmail _email;
 
-        public FluentEmail(IEmailSender sender)
+        public EmailWriter(IEmailSender sender)
         {
             _email = new Email(sender);
         }
 
-        public IFluentEmail From(string emailAddress, string name = "")
+        public IEmailWriter From(string emailAddress, string name = "")
         {
             _email.From = new EmailContact(emailAddress, name);
             return this;
         }
 
-        public IFluentEmail To(string emailAddress, string name = "")
+        public IEmailWriter To(string emailAddress, string name = "")
         {
             _email.To.Add(new EmailContact(emailAddress, name));
             return this;
         }
 
-        public IFluentEmail Subject(string subject)
+        public IEmailWriter Subject(string subject)
         {
             _email.Subject = subject ?? string.Empty;
             return this;
         }
 
-        public IFluentEmail Body(string body, bool isHtml)
+        public IEmailWriter Body(string body, bool isHtml)
         {
             _email.Body = body ?? string.Empty;
             _email.IsHtml = isHtml;
             return this;
         }
 
-        public IFluentEmail Attach(params string[] filePaths)
+        public IEmailWriter Attach(params string[] filePaths)
         {
             if (filePaths != null)
                 foreach (var filePath in filePaths)
@@ -49,6 +49,6 @@ namespace MailKitSimplified.Sender.Services
         }
 
         public async Task SendAsync(CancellationToken cancellationToken = default) =>
-            await _email.SendAsync(cancellationToken);
+            await _email.SendAsync(cancellationToken).ConfigureAwait(false);
     }
 }

@@ -1,0 +1,88 @@
+﻿using System.Net.Mime;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
+using System.IO;
+using System;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
+using MimeKit;
+using MailKitSimplified.Sender.Abstractions;
+
+namespace MailKitSimplified.Sender.Services
+{
+    public sealed class MimeAttachmentHandler : IMimeAttachmentHandler
+    {
+        private readonly ILogger _logger;
+        private readonly IFileHandler _fileHandler;
+
+        public MimeAttachmentHandler(ILogger<MimeAttachmentHandler> logger, IFileHandler fileHandler)
+        {
+            _logger = logger ?? NullLogger<MimeAttachmentHandler>.Instance;
+            _fileHandler = fileHandler ?? new FileHandler(NullLogger<FileHandler>.Instance);
+        }
+
+        public static MimeEntity GetMimePart(Stream stream, string fileName, string contentType = "", string contentId = "")
+        {
+            MimeEntity result = null;
+            if (stream != null && stream.Length > 0)
+            {
+                stream.Position = 0; // reset stream position ready to read
+                if (string.IsNullOrWhiteSpace(contentType))
+                    contentType = MediaTypeNames.Application.Octet;
+                if (string.IsNullOrWhiteSpace(contentId))
+                    contentId = Path.GetFileNameWithoutExtension(Path.GetRandomFileName());
+                //streamIn.CopyTo(streamOut, 8192);
+                var attachment = MimeKit.ContentDisposition.Attachment;
+                result = new MimePart(contentType)
+                {
+                    Content = new MimeContent(stream),
+                    ContentTransferEncoding = ContentEncoding.Base64,
+                    ContentDisposition = new MimeKit.ContentDisposition(attachment),
+                    ContentId = contentId,
+                    FileName = fileName
+                };
+            }
+            return result;
+        }
+
+        public async Task<MimeEntity> GetMimeEntityFromFilePathAsync(string filePath, string mediaType = MediaTypeNames.Application.Octet, CancellationToken cancellationToken = default)
+        {
+            MimeEntity result = null;
+            if (!string.IsNullOrWhiteSpace(filePath))
+            {
+                var stream = await _fileHandler.GetFileStreamAsync(filePath, cancellationToken).ConfigureAwait(false);
+                if (stream != null)
+                {
+                    string fileName = Path.GetFileName(filePath);
+                    string contentType = Path.GetExtension(fileName)
+                        .Equals(".pdf", StringComparison.OrdinalIgnoreCase) ?
+                            MediaTypeNames.Application.Pdf : mediaType;
+                    result = GetMimePart(stream, fileName, contentType);
+                }
+            }
+            return result;
+        }
+
+        public async Task<IEnumerable<MimeEntity>> LoadFilePathAsync(string filePath, CancellationToken cancellationToken = default)
+        {
+            var separator = new char[] { '|' }; //';' is a valid attachment file name character
+            var filePaths = filePath?.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+            var results = await LoadFilePathsAsync(filePaths, cancellationToken).ConfigureAwait(false);
+            return results;
+        }
+
+        public async Task<IEnumerable<MimeEntity>> LoadFilePathsAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
+        {
+            IEnumerable<MimeEntity> results = Array.Empty<MimeEntity>();
+            if (filePaths?.Any() ?? false)
+            {
+                var mimeEntityTasks = filePaths.Select(name => GetMimeEntityFromFilePathAsync(name, cancellationToken: cancellationToken));
+                var mimeEntities = await Task.WhenAll(mimeEntityTasks).ConfigureAwait(false);
+                results = mimeEntities.Where(entity => entity != null);
+            }
+            return results;
+        }
+    }
+}

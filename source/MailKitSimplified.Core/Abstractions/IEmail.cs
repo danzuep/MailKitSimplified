@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using MailKitSimplified.Sender.Models;
+using MailKitSimplified.Core.Models;
 
-namespace MailKitSimplified.Sender.Abstractions
+namespace MailKitSimplified.Core.Abstractions
 {
     public interface IEmail
     {

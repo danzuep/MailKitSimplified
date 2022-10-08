@@ -3,7 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace MailKitSimplified.Sender.Models
+namespace MailKitSimplified.Core.Models
 {
     public class EmailContact
     {

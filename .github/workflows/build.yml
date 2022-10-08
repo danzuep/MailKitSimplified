@@ -1,0 +1,85 @@
+name: "Build and Test"
+
+on:
+  push:
+    branches:
+    - '*'
+  pull_request:
+    branches:
+    - '*'
+
+jobs:
+  dotnet_test:
+    runs-on: ubuntu-latest
+
+    env:
+      SOLUTION: 'samples/MailKitSimplified.Sender.sln'
+
+    steps:
+    - name: Get full repository history
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        submodules: true  
+
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v0.9.7
+      with:
+        versionSpec: '5.x'
+
+    # https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute/usage-examples.md#example-5
+    - name: Determine version from repository history
+      id: gitversion # step id used as reference for output values
+      uses: gittools/actions/gitversion/execute@v0.9.7
+
+    - name: Markdown workflow job summary
+      run: echo "### $Workflow_Name build summary for $GITHUB_EVENT_NAME" >> $GITHUB_STEP_SUMMARY
+      env:
+        Workflow_Name: "${{ github.repository }} version ${{ steps.gitversion.outputs.fullSemVer }}"
+
+    - name: Setup .NET environment
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore $SOLUTION
+
+    - name: Build
+      run: dotnet build $SOLUTION --configuration Release --no-restore -p:Version=${{ steps.gitversion.outputs.majorMinorPatch }}
+
+    # The "--logger trx" option causes duplicate folders and xml files to be created
+    # "coverlet.collector" package is included in the "xUnit" test project
+    - name: Test
+      run: dotnet test $SOLUTION -c Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory "./.coverage"
+
+    # Using ** finds duplicate coverage files if "--logger trx" was used whereas * should not
+    # "dotnet-coverage" included in "dotnet-reportgenerator-globaltool"
+    - name: Summarise Code Coverage results
+      run: |
+        dotnet tool install -g dotnet-reportgenerator-globaltool
+        reportgenerator -reports:".coverage/*/coverage.cobertura.xml" -targetdir:".coverage/CodeCoverageReport" -reporttypes:'Cobertura'
+
+    # Based on https://github.com/irongut/CodeCoverageSummary#net-workflow-example
+    - name: Code Coverage Summary
+      uses: irongut/CodeCoverageSummary@v1.3.0
+      with:
+        filename: ".coverage/CodeCoverageReport/Cobertura.xml"
+        badge: true
+        fail_below_min: false
+        format: markdown
+        hide_branch_rate: false
+        hide_complexity: true
+        indicators: true
+        output: both
+        thresholds: '60 80'
+
+    - name: Add Coverage PR Comment
+      uses: marocchino/sticky-pull-request-comment@v2.2.0
+      # if: github.event_name == 'pull_request'
+      with:
+        recreate: true
+        path: code-coverage-results.md
+
+    - name: Markdown code coverage job summary
+      run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY

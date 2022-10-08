@@ -1,10 +1,12 @@
-# MailKitSimplified
+# MailKitSimplified.Sender ![Build and test workflow result badge](https://github.com/danzuep/MailKitSimplified.Sender/workflows/Pipeline/badge.svg)
+
+When I first started using MailKit I was surprised at how many steps were involved in getting it all set up and working. The aim of this package is to make sending an email as simple as possible.
 
 ## Usage
 
 ### Setup
 
-Either dependance injection (IEmailSender smtpSender) or:
+Either dependency injection (IEmailSender smtpSender) or:
 
 using var smtpSender = EmailSender.Create("smtp.example.com");
 

@@ -1,0 +1,43 @@
+name: Publish Packages
+
+on:
+  push:
+    branches:
+    - 'release'
+
+env:
+  PROJECT: 'source/MailKitSimplified.Sender/MailKitSimplified.Sender.csproj'
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout repository, uncomment if using GitVersion
+      uses: actions/checkout@v3
+      # with:
+      #   fetch-depth: 0
+      #   submodules: true  
+
+    - name: Setup .NET environment
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore $PROJECT
+
+    - name: Build
+      run: dotnet build $PROJECT --configuration Release --no-restore
+
+    - name: Test
+      run: dotnet test $PROJECT -c Release --no-build --verbosity normal
+
+    - name: Pack
+      run: dotnet pack $PROJECT -c Release --no-build -p:PackageVersion=0.0.1 --version-suffix 'alpha-01' --output .nupkg
+
+    - name: Publish
+      run: dotnet nuget push '.nupkg\MailKitSimplified.Sender.0.0.1.nupkg' --api-key ${{ secrets.NUGET_TOKEN }} --source https://int.nugettest.org/ #https://api.nuget.org/v3/index.json

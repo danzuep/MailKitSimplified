@@ -2,11 +2,11 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MailKitSimplified.Sender.Abstractions
+namespace MailKitSimplified.Core.Abstractions
 {
     public interface IEmailSender : IDisposable
     {
-        IFluentEmail Email { get; }
+        IEmailWriter Email { get; }
         Task SendAsync(IEmail email, CancellationToken cancellationToken = default);
     }
 }
