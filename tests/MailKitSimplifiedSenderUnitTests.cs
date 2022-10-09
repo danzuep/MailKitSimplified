@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System;
 using System.Diagnostics;
+using MailKitSimplified.Core.Models;
 
 namespace MailKitSimplified.Sender.Tests
 {
@@ -43,7 +44,7 @@ namespace MailKitSimplified.Sender.Tests
         }
 
         [Fact]
-        public async void WriteEmail_WithMimeEmailSender_VerifyCreated()
+        public void WriteEmail_WithMimeEmailSender_VerifyCreated()
         {
             using var emailSender = MimeMessageSender.Create("mail.example.com");
             var email = emailSender.MimeEmail
@@ -52,7 +53,6 @@ namespace MailKitSimplified.Sender.Tests
                 .Subject("Hi")
                 .Body("~")
                 .Attach("./attachment1.txt");
-            await email.SendAsync();
             Assert.NotNull(email);
         }
 
@@ -80,18 +80,24 @@ namespace MailKitSimplified.Sender.Tests
         }
 
         [Fact]
-        public void SendAsync_WithEmail_VerifySent()
+        public async void TrySendAsync_WithEmail_VerifySent()
         {
             // Arrange
             var emailSenderMock = new Mock<IEmailSender>();
             emailSenderMock
                 .Setup(sender => sender.SendAsync(It.IsAny<IEmail>(), It.IsAny<CancellationToken>()))
                 .Returns(_completedTask);
-            var email = Email.Write(emailSenderMock.Object);
+            var email = new Email(emailSenderMock.Object)
+            {
+                From = new EmailContact("from@"),
+                To = EmailContact.ParseEmailContacts("to@").ToList(),
+                Subject = string.Empty,
+                Body = string.Empty,
+            };
             // Act
-            var result = email.SendAsync(It.IsAny<CancellationToken>());
+            var result = await email.TrySendAsync(It.IsAny<CancellationToken>());
             // Assert
-            Assert.Equal(_completedTask, result);
+            Assert.True(result);
             emailSenderMock.Verify(sender => sender.SendAsync(It.IsAny<IEmail>(), It.IsAny<CancellationToken>()), Times.Once());
         }
 

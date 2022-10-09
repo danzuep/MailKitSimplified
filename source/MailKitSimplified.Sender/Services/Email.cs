@@ -35,7 +35,7 @@ namespace MailKitSimplified.Sender.Services
             _logger = logger ?? NullLogger<Email>.Instance;
         }
 
-        public static IEmailWriter Write(IEmailSender emailSender) => EmailWriter.CreateFrom(new Email(emailSender));
+        public static EmailWriter Write(IEmailSender emailSender) => EmailWriter.CreateFrom(new Email(emailSender));
 
         [Obsolete("This method will be removed in a future version, use the Write method instead.")]
         public IEmail HandWrite(string fromAddress, string toAddress, string subject = "", string body = "", bool isHtml = true, params string[] attachmentFilePaths)
