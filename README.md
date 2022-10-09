@@ -1,4 +1,4 @@
-# MailKitSimplified.Sender ![Build and test workflow result badge](https://github.com/danzuep/MailKitSimplified.Sender/workflows/Pipeline/badge.svg)
+# MailKitSimplified.Sender ![Build and test workflow result badge](https://github.com/danzuep/MailKitSimplified.Sender/workflows/Build%20and%20Test/badge.svg)
 
 When I first started using MailKit I was surprised at how many steps were involved in getting it all set up and working. The aim of this package is to make sending an email as simple as possible.
 
