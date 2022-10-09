@@ -7,8 +7,9 @@ using System.Diagnostics.CodeAnalysis;
 using MimeKit;
 using MimeKit.Text;
 using MailKitSimplified.Core.Abstractions;
-using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Core.Models;
+using MailKitSimplified.Core.Services;
+using MailKitSimplified.Sender.Abstractions;
 
 namespace MailKitSimplified.Sender.Services
 {

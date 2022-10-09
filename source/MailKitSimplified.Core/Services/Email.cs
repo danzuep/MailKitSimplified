@@ -5,13 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using MailKitSimplified.Core.Abstractions;
-using MailKitSimplified.Core.Models;
-using MailKitSimplified.Sender.Abstractions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging;
+using MailKitSimplified.Core.Abstractions;
+using MailKitSimplified.Core.Models;
 
-namespace MailKitSimplified.Sender.Services
+namespace MailKitSimplified.Core.Services
 {
     public class Email : IEmail
     {

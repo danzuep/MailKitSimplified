@@ -13,6 +13,7 @@ using System.IO;
 using System;
 using System.Diagnostics;
 using MailKitSimplified.Core.Models;
+using MailKitSimplified.Core.Services;
 
 namespace MailKitSimplified.Sender.Tests
 {

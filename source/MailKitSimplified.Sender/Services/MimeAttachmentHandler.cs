@@ -8,6 +8,8 @@ using System;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging;
 using MimeKit;
+using MailKitSimplified.Core.Abstractions;
+using MailKitSimplified.Core.Services;
 using MailKitSimplified.Sender.Abstractions;
 
 namespace MailKitSimplified.Sender.Services

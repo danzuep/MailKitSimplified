@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
 using System.Threading;
-using MailKitSimplified.Core.Models;
 using MailKitSimplified.Core.Abstractions;
+using MailKitSimplified.Core.Models;
 
-namespace MailKitSimplified.Sender.Services
+namespace MailKitSimplified.Core.Services
 {
     public class EmailWriter : IEmailWriter
     {

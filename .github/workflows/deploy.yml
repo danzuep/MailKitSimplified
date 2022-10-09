@@ -6,7 +6,7 @@ on:
     - 'release'
   pull_request:
     branches:
-    - 'main'
+    - 'release'
 
 env:
   PROJECT: 'source/MailKitSimplified.Sender/MailKitSimplified.Sender.csproj'

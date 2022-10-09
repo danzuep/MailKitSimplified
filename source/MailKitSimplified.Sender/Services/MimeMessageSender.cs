@@ -16,6 +16,7 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using MailKitSimplified.Core.Abstractions;
 using MailKitSimplified.Core.Models;
+using MailKitSimplified.Core.Services;
 using MailKitSimplified.Sender.Abstractions;
 
 namespace MailKitSimplified.Sender.Services
