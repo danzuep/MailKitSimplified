@@ -84,5 +84,20 @@ namespace MailKitSimplified.Sender.Services
             }
             return results;
         }
+
+        public async Task<MimeMessage> AddAttachments(MimeMessage mimeMessage, IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
+        {
+            var mimeParts = await LoadFilePathsAsync(filePaths, cancellationToken).ConfigureAwait(false);
+            if (mimeMessage != null && mimeParts.Any())
+            {
+                var multipart = new Multipart();
+                if (mimeMessage.Body != null)
+                    multipart.Add(mimeMessage.Body);
+                foreach (var mimePart in mimeParts)
+                    multipart.Add(mimePart);
+                mimeMessage.Body = multipart;
+            }
+            return mimeMessage;
+        }
     }
 }

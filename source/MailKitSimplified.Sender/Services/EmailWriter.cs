@@ -53,5 +53,8 @@ namespace MailKitSimplified.Sender.Services
 
         public async Task SendAsync(CancellationToken cancellationToken = default) =>
             await _email.SendAsync(cancellationToken).ConfigureAwait(false);
+
+        public async Task<bool> TrySendAsync(CancellationToken cancellationToken = default) =>
+            await _email.TrySendAsync(cancellationToken).ConfigureAwait(false);
     }
 }
