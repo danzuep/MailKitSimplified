@@ -58,16 +58,16 @@ jobs:
       run: dotnet pack $PROJECT -c Release --no-build -p:PackageVersion=${{ steps.gitversion.outputs.majorMinorPatch }} --version-suffix ${{ steps.gitversion.outputs.preReleaseTag }} --output .nupkg
 
     - name: Markdown workflow job summary
-      run: echo "### Publishing $Package_Name to NuGet (${{ github.event.release.tag_name }})..." >> $GITHUB_STEP_SUMMARY
+      run: echo "### Publishing $Package_Name to NuGet..." >> $GITHUB_STEP_SUMMARY
       env:
         Package_Name: "${{ github.event.repository.name }}.${{ steps.gitversion.outputs.fullSemVer }}"
 
     - name: Publish
       run: dotnet nuget push $Package_Name --api-key ${{ secrets.NUGET_TOKEN }} --source https://int.nugettest.org/ #https://api.nuget.org/v3/index.json
       env:
-        Package_Name: ".nupkg/${{ github.event.repository.name }}.${{ steps.gitversion.outputs.fullSemVer }}.nupkg"
+        Package_Name: ".nupkg/${{ github.event.repository.name }}.${{ steps.gitversion.outputs.majorMinorPatch }}.nupkg"
 
     - name: Markdown workflow job summary
       run: echo "### $Package_Name published to NuGet on $GITHUB_EVENT_NAME" >> $GITHUB_STEP_SUMMARY
       env:
-        Package_Name: "${{ github.event.repository.name }}.${{ steps.gitversion.outputs.fullSemVer }}"
+        Package_Name: "${{ github.event.repository.name }}.${{ steps.gitversion.outputs.majorMinorPatch }}"
