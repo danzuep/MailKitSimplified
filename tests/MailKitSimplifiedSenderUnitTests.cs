@@ -36,11 +36,12 @@ namespace MailKitSimplified.Sender.Tests
         {
             using var emailSender = MimeMessageSender.Create(smtpHost);
             var email = emailSender.WriteEmail
-                .From("from.test@example.com")
-                .To("to.test@example.com")
-                .Subject("Hi")
-                .Body("~")
-                .Attach("./attachment1.txt");
+                .From("me@example.com", "My Name")
+                .To("you@example.com", "Your Name")
+                .To("friend@example.com")
+                .Subject("Hey You")
+                .Body("Hello World")
+                .Attach("C:/Temp/attachment1.txt", "C:/Temp/attachment2.pdf");
             Assert.NotNull(email);
         }
 
@@ -90,7 +91,7 @@ namespace MailKitSimplified.Sender.Tests
                 .Returns(_completedTask);
             var email = new Email(emailSenderMock.Object)
             {
-                From = new EmailContact("from@"),
+                From = EmailContact.ParseEmailContacts("from@").ToList(),
                 To = EmailContact.ParseEmailContacts("to@").ToList(),
                 Subject = string.Empty,
                 Body = string.Empty,

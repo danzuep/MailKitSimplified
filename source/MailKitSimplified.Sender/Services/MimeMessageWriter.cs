@@ -20,12 +20,12 @@ namespace MailKitSimplified.Sender.Services
         {
             get
             {
-                var from = _mimeMessage.From.Mailboxes.FirstOrDefault();
+                var from = _mimeMessage.From.Mailboxes;
                 var to = _mimeMessage.To.Mailboxes;
                 var email = new Email(_emailClient)
                 {
-                    From = new EmailContact(from.Address, from.Name),
-                    To = to.Select(t => new EmailContact(t.Address, t.Name)).ToList(),
+                    From = from.Select(m => new EmailContact(m.Address, m.Name)).ToList(),
+                    To = to.Select(m => new EmailContact(m.Address, m.Name)).ToList(),
                     Subject = _mimeMessage.Subject ?? string.Empty,
                     Body = _mimeMessage.HtmlBody ?? _mimeMessage.TextBody ?? string.Empty,
                 };

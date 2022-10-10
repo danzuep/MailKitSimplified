@@ -62,11 +62,11 @@ namespace MailKitSimplified.Sender.Services
         {
             var mimeMessage = new MimeMessage();
 
-            var from = new MailboxAddress(email.From.Name, email.From.Address);
-            mimeMessage.From.Add(from);
-            mimeMessage.ReplyTo.Add(from);
+            var from = email.From.Select(m => new MailboxAddress(m.Name, m.Address));
+            mimeMessage.From.AddRange(from);
+            mimeMessage.ReplyTo.AddRange(from);
 
-            var to = email.To.Select(t => new MailboxAddress(t.Name, t.Address));
+            var to = email.To.Select(m => new MailboxAddress(m.Name, m.Address));
             mimeMessage.To.AddRange(to);
 
             mimeMessage.Subject = email.Subject ?? string.Empty;
@@ -78,32 +78,17 @@ namespace MailKitSimplified.Sender.Services
             return mimeMessage;
         }
 
-        private static bool HasCircularReference(MimeMessage mimeMessage)
-        {
-            bool isCircular = false;
-            if (mimeMessage != null && mimeMessage.From != null && mimeMessage.To != null)
-            {
-                var to = mimeMessage.To.Mailboxes.Select(a => a.Address.ToLower());
-                var from = mimeMessage.From.Mailboxes.Select(a => a.Address.ToLower());
-                isCircular = to.Intersect(from).Any();
-            }
-            return isCircular;
-        }
-
         private void ValidateMimeMessage(MimeMessage mimeMessage)
         {
             if (mimeMessage is null)
                 throw new ArgumentNullException(nameof(mimeMessage));
+            if (mimeMessage.From.Count == 0)
+                throw new MissingMemberException(nameof(MimeMessage), nameof(MimeMessage.From));
             if (mimeMessage.To.Count == 0)
-                throw new MissingMemberException(nameof(IEmail), nameof(IEmail.To));
-            if (HasCircularReference(mimeMessage))
-                _logger.LogWarning("Circular reference, ToEmailAddress == FromEmailAddress");
-            foreach (var from in mimeMessage.From.Mailboxes)
-                if (!from.Address.Contains("@"))
-                    _logger.LogWarning($"From address is invalid ({from})");
-            foreach (var to in mimeMessage.To.Mailboxes)
-                if (!to.Address.Contains("@"))
-                    _logger.LogWarning($"To address is invalid ({to})");
+                throw new MissingMemberException(nameof(MimeMessage), nameof(MimeMessage.To));
+            var from = mimeMessage.From.Mailboxes.Select(m => m.Address);
+            var to = mimeMessage.To.Mailboxes.Select(m => m.Address);
+            Email.ValidateEmailAddresses(from, to, _logger);
         }
 
         public async Task ConnectSmtpClient(CancellationToken cancellationToken = default)

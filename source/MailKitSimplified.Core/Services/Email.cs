@@ -9,13 +9,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging;
 using MailKitSimplified.Core.Abstractions;
 using MailKitSimplified.Core.Models;
+using System.Diagnostics;
 
 namespace MailKitSimplified.Core.Services
 {
     public class Email : IEmail
     {
         [Required]
-        public EmailContact From { get; set; }
+        public IList<EmailContact> From { get; set; } = new List<EmailContact>();
         public IList<EmailContact> To { get; set; } = new List<EmailContact>();
         public IList<string> AttachmentFilePaths { get; set; } = new List<string>();
         public IEnumerable<string> AttachmentFileNames =>
@@ -39,7 +40,7 @@ namespace MailKitSimplified.Core.Services
         [Obsolete("This method will be removed in a future version, use the Write method instead.")]
         public IEmail HandWrite(string fromAddress, string toAddress, string subject = "", string body = "", bool isHtml = true, params string[] attachmentFilePaths)
         {
-            From = EmailContact.ParseEmailContacts(fromAddress).FirstOrDefault();
+            From = EmailContact.ParseEmailContacts(fromAddress).ToList();
             To = EmailContact.ParseEmailContacts(toAddress).ToList();
             Subject = subject ?? string.Empty;
             Body = body ?? string.Empty;
@@ -48,25 +49,43 @@ namespace MailKitSimplified.Core.Services
             return this;
         }
 
-        private bool HasCircularReference => To.Any(t => t.Address.Equals(From.Address, StringComparison.OrdinalIgnoreCase));
+        public static void ValidateEmailAddresses(IEnumerable<string> fromEmailAddresses, IEnumerable<string> toEmailAddresses, ILogger logger)
+        {
+            if (fromEmailAddresses is null)
+                throw new ArgumentNullException(nameof(fromEmailAddresses));
+            if (toEmailAddresses is null)
+                throw new ArgumentNullException(nameof(toEmailAddresses));
+            if (logger is null)
+                throw new ArgumentNullException(nameof(logger));
+            foreach (var from in fromEmailAddresses)
+            {
+                if (!from.Contains("@"))
+                    logger.LogWarning($"From address is invalid ({from})");
+                foreach (var to in toEmailAddresses)
+                {
+                    if (!to.Contains("@"))
+                        logger.LogWarning($"To address is invalid ({to})");
+                    if (to.Equals(from, StringComparison.OrdinalIgnoreCase))
+                        logger.LogWarning($"Circular reference, To ({to}) == From ({from})");
+                }
+            }
+        }
 
         private void Validate()
         {
-            if (To.Count == 0)
+            if (!From.Any())
+                throw new MissingMemberException(nameof(IEmail), nameof(IEmail.From));
+            if (!To.Any())
                 throw new MissingMemberException(nameof(IEmail), nameof(IEmail.To));
-            if (HasCircularReference)
-                _logger.LogWarning("Circular reference, ToEmailAddress == FromEmailAddress");
-            if (!From.Address.Contains("@"))
-                _logger.LogWarning($"From address is invalid ({From})");
-            foreach (var to in To)
-                if (!to.Address.Contains("@"))
-                    _logger.LogWarning($"To address is invalid ({to})");
+            var from = From.Select(m => m.Address);
+            var to = To.Select(m => m.Address);
+            ValidateEmailAddresses(from, to, _logger);
         }
 
-        public async Task SendAsync(CancellationToken token = default)
+        public async Task SendAsync(CancellationToken cancellationToken = default)
         {
             Validate();
-            await _sender.SendAsync(this, token).ConfigureAwait(false);
+            await _sender.SendAsync(this, cancellationToken).ConfigureAwait(false);
         }
 
 
@@ -90,7 +109,7 @@ namespace MailKitSimplified.Core.Services
             string envelope = string.Empty;
             using (var text = new StringWriter())
             {
-                text.WriteLine("From: {0}", From);
+                text.WriteLine("From: {0}", string.Join(";", From));
                 text.WriteLine("To: {0}", string.Join(";", To));
                 if (AttachmentCount > 0)
                     text.WriteLine("{0} Attachment{1}: {2}",

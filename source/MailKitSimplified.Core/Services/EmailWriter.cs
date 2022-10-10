@@ -19,7 +19,7 @@ namespace MailKitSimplified.Core.Services
 
         public IEmailWriter From(string emailAddress, string name = "")
         {
-            _email.From = new EmailContact(emailAddress, name);
+            _email.From.Add(new EmailContact(emailAddress, name));
             return this;
         }
 
