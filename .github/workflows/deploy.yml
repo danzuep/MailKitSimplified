@@ -1,12 +1,12 @@
 name: Publish Packages
 
 on:
-  push:
-    branches:
-    - 'release'
+  # push:
+  #   branches:
+  #   - 'release'
   pull_request:
     branches:
-    - 'release'
+    - 'main'
 
 env:
   PROJECT: 'source/MailKitSimplified.Sender/MailKitSimplified.Sender.csproj'
