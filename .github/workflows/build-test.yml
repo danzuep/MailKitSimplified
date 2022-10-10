@@ -16,9 +16,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SOLUTION_FILE: 'samples/${{ PROJECT_NAME }}.sln'
-      PROJECT_CORE_FILE: 'source/$PROJECT_CORE/$PROJECT_CORE.csproj'
-      PROJECT_SENDER_FILE: 'source/$PROJECT_SENDER/$PROJECT_SENDER.csproj'
+      SOLUTION_FILE: 'samples/$Env:PROJECT_NAME.sln'
+      PROJECT_CORE_FILE: 'source/$Env:PROJECT_CORE/$Env:PROJECT_CORE.csproj'
+      PROJECT_SENDER_FILE: 'source/$Env:PROJECT_SENDER/$Env:PROJECT_SENDER.csproj'
 
     steps:
     - name: Get full repository history
