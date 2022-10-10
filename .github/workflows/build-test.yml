@@ -3,17 +3,22 @@ name: "Build and Test"
 on:
   push:
     branches:
-    - '*'
-  # pull_request:
-  #   branches:
-  #   - 'main'
+    - 'develop'
+    # - 'main'
+
+env:
+  PROJECT_NAME: 'MailKitSimplified'
+  PROJECT_CORE: 'MailKitSimplified.Core'
+  PROJECT_SENDER: 'MailKitSimplified.Sender'
 
 jobs:
   dotnet_test:
     runs-on: ubuntu-latest
 
     env:
-      SOLUTION: 'samples/MailKitSimplified.Sender.sln'
+      SOLUTION_FILE: 'samples/MailKitSimplified.Sender.sln'
+      PROJECT_CORE_FILE: 'source/MailKitSimplified.Core/MailKitSimplified.Core.csproj'
+      PROJECT_SENDER_FILE: 'source/MailKitSimplified.Sender/MailKitSimplified.Sender.csproj'
 
     steps:
     - name: Get full repository history
@@ -42,15 +47,15 @@ jobs:
         dotnet-version: 6.0.x
 
     - name: Restore dependencies
-      run: dotnet restore $SOLUTION
+      run: dotnet restore $SOLUTION_FILE
 
     - name: Build
-      run: dotnet build $SOLUTION --configuration Release --no-restore -p:Version=${{ steps.gitversion.outputs.majorMinorPatch }}
+      run: dotnet build $SOLUTION_FILE --configuration Release --no-restore -p:Version=${{ steps.gitversion.outputs.majorMinorPatch }}
 
     # The "--logger trx" option causes duplicate folders and xml files to be created
     # "coverlet.collector" package is included in the "xUnit" test project
     - name: Test
-      run: dotnet test $SOLUTION -c Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory "./.coverage"
+      run: dotnet test $SOLUTION_FILE -c Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory "./.coverage"
 
     # Using ** finds duplicate coverage files if "--logger trx" was used whereas * should not
     # "dotnet-coverage" included in "dotnet-reportgenerator-globaltool"
@@ -75,10 +80,29 @@ jobs:
 
     - name: Add Coverage PR Comment
       uses: marocchino/sticky-pull-request-comment@v2.2.0
-      # if: github.event_name == 'pull_request'
       with:
         recreate: true
         path: code-coverage-results.md
 
     - name: Markdown code coverage job summary
       run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+
+    - name: Pack
+      run: |
+        dotnet pack $PROJECT_CORE_FILE -c Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} --output ".nupkg"
+        dotnet pack $PROJECT_SENDER_FILE -c Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} --output ".nupkg"
+
+    - name: Markdown workflow job summary
+      run: |
+        echo "### Packed ${{ github.event.repository.name }}" >> $GITHUB_STEP_SUMMARY
+        echo " * $Core_Package_Name" >> $GITHUB_STEP_SUMMARY
+        echo " * $Sender_Package_Name" >> $GITHUB_STEP_SUMMARY
+      env:
+        Core_Package_Name: "$Env.PROJECT_CORE.${{ steps.gitversion.outputs.nuGetVersion }}"
+        Sender_Package_Name: "$Env:PROJECT_SENDER.${{ steps.gitversion.outputs.nuGetVersion }}"
+
+    - name: Upload artifacts for deployment job
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.PROJECT_NAME }}
+        path: ".nupkg"
