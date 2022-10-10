@@ -98,14 +98,10 @@ jobs:
         echo " * $Core_Package_Name" >> $GITHUB_STEP_SUMMARY
         echo " * $Sender_Package_Name" >> $GITHUB_STEP_SUMMARY
       env:
-        Core_Package_Name: "${{ env.PROJECT_CORE }}.${{ steps.gitversion.outputs.nuGetVersion }}"
-        Sender_Package_Name: "${{ env:PROJECT_SENDER }}.${{ steps.gitversion.outputs.nuGetVersion }}"
+        Core_Package_Name: "$Env.PROJECT_CORE.${{ steps.gitversion.outputs.nuGetVersion }}"
+        Sender_Package_Name: "$Env:PROJECT_SENDER.${{ steps.gitversion.outputs.nuGetVersion }}"
 
-    - name: Zip .nupkg directory
-      run: Compress-Archive -CompressionLevel Fastest -Path ".nupkg/*" -DestinationPath "./$Env.PROJECT_NAME.zip"
-
-    - name: Upload artifact for deployment job
+    - name: Upload artifacts for deployment job
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.PROJECT_NAME }}
-        path: './${{ env.PROJECT_NAME }}.zip'
