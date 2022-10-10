@@ -3,21 +3,22 @@ name: "Build and Test"
 on:
   push:
     branches:
-    - '*'
-  # pull_request:
-  #   branches:
-  #   - 'main'
+    - 'develop'
+    # - 'main'
 
 env:
-  ENVIRONMENT_NAME: Staging
-  ARTIFACT_NAME: 'MailKitSimplified-Sender'
+  PROJECT_NAME: 'MailKitSimplified'
+  PROJECT_CORE: 'MailKitSimplified.Core'
+  PROJECT_SENDER: 'MailKitSimplified.Sender'
 
 jobs:
   dotnet_test:
     runs-on: ubuntu-latest
 
     env:
-      SOLUTION_FILE: 'samples/MailKitSimplified.Sender.sln'
+      SOLUTION_FILE: 'samples/${{ PROJECT_NAME }}.sln'
+      PROJECT_CORE_FILE: 'source/$PROJECT_CORE/$PROJECT_CORE.csproj'
+      PROJECT_SENDER_FILE: 'source/$PROJECT_SENDER/$PROJECT_SENDER.csproj'
 
     steps:
     - name: Get full repository history
@@ -79,7 +80,6 @@ jobs:
 
     - name: Add Coverage PR Comment
       uses: marocchino/sticky-pull-request-comment@v2.2.0
-      # if: github.event_name == 'pull_request'
       with:
         recreate: true
         path: code-coverage-results.md
@@ -87,14 +87,25 @@ jobs:
     - name: Markdown code coverage job summary
       run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
 
-    # - name: Publish
-    #   run: dotnet publish $SOLUTION_FILE --configuration Release --no-build --output "./publish"
+    - name: Pack
+      run: |
+        dotnet pack $PROJECT_CORE_FILE -c Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} --output ".nupkg"
+        dotnet pack $PROJECT_SENDER_FILE -c Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} --output ".nupkg"
 
-    # - name: Zip publish directory
-    #   run: Compress-Archive -CompressionLevel Fastest -Path "publish/*" -DestinationPath "./$ARTIFACT_NAME.zip"
+    - name: Markdown workflow job summary
+      run: |
+        echo "### Packed ${{ github.event.repository.name }}" >> $GITHUB_STEP_SUMMARY
+        echo " * $Core_Package_Name" >> $GITHUB_STEP_SUMMARY
+        echo " * $Sender_Package_Name" >> $GITHUB_STEP_SUMMARY
+      env:
+        Core_Package_Name: "${{ PROJECT_CORE }}.${{ steps.gitversion.outputs.nuGetVersion }}"
+        Sender_Package_Name: "${{ PROJECT_SENDER }}.${{ steps.gitversion.outputs.nuGetVersion }}"
 
-    # - name: Upload artifact for deployment job
-    #   uses: actions/upload-artifact@v3
-    #   with:
-    #     name: ${{ env.ARTIFACT_NAME }}
-    #     path: './${{ env.ARTIFACT_NAME }}.zip'
+    - name: Zip .nupkg directory
+      run: Compress-Archive -CompressionLevel Fastest -Path ".nupkg/*" -DestinationPath "./$PROJECT_NAME.zip"
+
+    - name: Upload artifact for deployment job
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.PROJECT_NAME }}
+        path: './${{ env.PROJECT_NAME }}.zip'
