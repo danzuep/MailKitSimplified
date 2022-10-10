@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SOLUTION_FILE: 'samples/MailKitSimplified.sln'
+      SOLUTION_FILE: 'samples/MailKitSimplified.Sender.sln'
       PROJECT_CORE_FILE: 'source/MailKitSimplified.Core/MailKitSimplified.Core.csproj'
       PROJECT_SENDER_FILE: 'source/MailKitSimplified.Sender/MailKitSimplified.Sender'
 
