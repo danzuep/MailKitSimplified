@@ -96,11 +96,8 @@ jobs:
     - name: Markdown workflow job summary
       run: |
         echo "### Packed ${{ github.event.repository.name }}" >> $GITHUB_STEP_SUMMARY
-        echo " * $Core_Package_Name" >> $GITHUB_STEP_SUMMARY
-        echo " * $Sender_Package_Name" >> $GITHUB_STEP_SUMMARY
-      env:
-        Core_Package_Name: "$PROJECT_CORE.${{ steps.gitversion.outputs.nuGetVersion }}"
-        Sender_Package_Name: "$PROJECT_SENDER.${{ steps.gitversion.outputs.nuGetVersion }}"
+        echo " * $PROJECT_CORE.${{ steps.gitversion.outputs.nuGetVersion }}" >> $GITHUB_STEP_SUMMARY
+        echo " * $PROJECT_SENDER.${{ steps.gitversion.outputs.nuGetVersion }}" >> $GITHUB_STEP_SUMMARY
 
     - name: Upload artifacts for deployment job
       uses: actions/upload-artifact@v3
