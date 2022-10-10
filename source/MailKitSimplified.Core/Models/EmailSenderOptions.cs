@@ -14,6 +14,8 @@ namespace MailKitSimplified.Core.Models
         public NetworkCredential SmtpCredential { get; set; } = null;
         public string ProtocolLog { get; set; } = null;
 
+        public EmailSenderOptions() { }
+
         public EmailSenderOptions(string smtpHost, int smtpPort = 0, NetworkCredential smtpCredential = null, string protocolLog = null)
         {
             if (string.IsNullOrWhiteSpace(smtpHost))

@@ -1,6 +1,7 @@
 using MailKitSimplified.Core.Abstractions;
 using MailKitSimplified.Core.Models;
 using MailKitSimplified.Core.Services;
+using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Services;
 using WorkerServiceExample;
 
@@ -24,8 +25,10 @@ public class Program
         // This adds IOptions<EmailSenderOptions> from appsettings.json
         services.Configure<EmailSenderOptions>(configuration
             .GetRequiredSection(EmailSenderOptions.SectionName));
-        services.AddScoped<IEmail, Email>();
-        services.AddScoped<IEmailWriter, EmailWriter>();
-        services.AddScoped<IEmailSender, MimeMessageSender>();
+        services.AddTransient<IFileHandler, FileHandler>();
+        services.AddTransient<IMimeAttachmentHandler, MimeAttachmentHandler>();
+        services.AddTransient<IEmail, Email>();
+        services.AddTransient<IEmailWriter, EmailWriter>();
+        services.AddTransient<IEmailSender, MimeMessageSender>();
     }
 }

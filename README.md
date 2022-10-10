@@ -1,6 +1,6 @@
-# MailKitSimplified.Sender ![Build and test workflow result badge](https://github.com/danzuep/MailKitSimplified.Sender/workflows/Build%20and%20Test/badge.svg)
+# MailKitSimplified.Sender ![Build and test results summary](https://github.com/danzuep/MailKitSimplified.Sender/workflows/Build%20and%20Test/badge.svg)[![Publish Packages](https://github.com/danzuep/MailKitSimplified.Sender/actions/workflows/deploy.yml/badge.svg)]
 
-Sending and receiving emails sounds simple, after all, electronic mail existed [decades](https://en.wikipedia.org/wiki/History_of_email) before the [Internet](https://en.wikipedia.org/wiki/History_of_the_Internet). If you're looking for a an all-in-one .NET solution for email, you'll quickly discover [MailKit](https://github.com/jstedfast/MailKit) is recommended by even the likes [Microsoft](https://learn.microsoft.com/en-us/dotnet/api/system.net.mail.smtpclient?view=net-6.0#remarks). Unfortunately for new users, MailKit can do too much though, so when I first started using it I was surprised at how many steps were involved in getting it all configured correctly and how poorly some real-world SMTP servers out there implement [the standard](https://www.rfc-editor.org/rfc/rfc2822). The aim of this package is to make sending an email as simple as possible.
+Sending and receiving emails sounds simple, after all, electronic mail existed [decades](https://en.wikipedia.org/wiki/History_of_email) before the [Internet](https://en.wikipedia.org/wiki/History_of_the_Internet). If you're looking for a an all-in-one .NET solution for email, you'll quickly discover [MailKit](https://github.com/jstedfast/MailKit) is recommended by even the likes of [Microsoft](https://learn.microsoft.com/en-us/dotnet/api/system.net.mail.smtpclient?view=net-6.0#remarks). Unfortunately for new users though, MailKit can do too much, so when I first started using it I was surprised at how many configured steps were involved in getting it set up, and on the receiving end how poorly some real-world SMTP servers out there implement [the standard](https://www.rfc-editor.org/rfc/rfc2822). The aim of this package is to make sending an email as simple as possible.
 
 ## Usage
 
@@ -66,9 +66,11 @@ public class Program
         // This adds IOptions<EmailSenderOptions> from appsettings.json
         services.Configure<EmailSenderOptions>(configuration
             .GetRequiredSection(EmailSenderOptions.SectionName));
-        services.AddScoped<IEmail, Email>();
-        services.AddScoped<IEmailWriter, EmailWriter>();
-        services.AddScoped<IEmailSender, MimeMessageSender>();
+        services.AddTransient<IFileHandler, FileHandler>();
+        services.AddTransient<IMimeAttachmentHandler, MimeAttachmentHandler>();
+        services.AddTransient<IEmail, Email>();
+        services.AddTransient<IEmailWriter, EmailWriter>();
+        services.AddTransient<IEmailSender, MimeMessageSender>();
     }
 }
 ```

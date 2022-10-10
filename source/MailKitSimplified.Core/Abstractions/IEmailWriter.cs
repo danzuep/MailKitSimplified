@@ -16,6 +16,7 @@ namespace MailKitSimplified.Core.Abstractions
         IEmailWriter Attach(params string[] filePath);
 
         Task SendAsync(CancellationToken cancellationToken = default);
+
         Task<bool> TrySendAsync(CancellationToken cancellationToken = default);
     }
 }

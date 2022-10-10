@@ -5,14 +5,14 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-	<VersionSuffix>$(VersionSuffix)</VersionSuffix>
-    <Title>Simple MailKit Sender</Title>
-    <Authors>danzuep</Authors>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified.Sender</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageTags>email; SMTP; MailKit; simple; fluent</PackageTags>
+    <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified.Sender</PackageProjectUrl>
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified.Sender</RepositoryUrl>
+    <Authors>danzuep</Authors>
+    <Title>Simple MailKit SMTP Sender</Title>
+    <PackageTags>email; SMTP; MailKit; simple; fluent</PackageTags>
+    <Description>Easy, fluent way to send emails with MailKit.</Description>
   </PropertyGroup>
 
   <ItemGroup>
