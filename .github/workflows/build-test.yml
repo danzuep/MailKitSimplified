@@ -89,8 +89,8 @@ jobs:
 
     - name: Pack
       run: |
-        dotnet pack $PROJECT_CORE_FILE -c Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} --output ".nupkg"
-        dotnet pack $PROJECT_SENDER_FILE -c Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} --output ".nupkg"
+        dotnet pack $Env:PROJECT_CORE_FILE -c Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} --output ".nupkg"
+        dotnet pack $Env:PROJECT_SENDER_FILE -c Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} --output ".nupkg"
 
     - name: Markdown workflow job summary
       run: |
@@ -98,11 +98,11 @@ jobs:
         echo " * $Core_Package_Name" >> $GITHUB_STEP_SUMMARY
         echo " * $Sender_Package_Name" >> $GITHUB_STEP_SUMMARY
       env:
-        Core_Package_Name: "${{ PROJECT_CORE }}.${{ steps.gitversion.outputs.nuGetVersion }}"
-        Sender_Package_Name: "${{ PROJECT_SENDER }}.${{ steps.gitversion.outputs.nuGetVersion }}"
+        Core_Package_Name: "$Env:PROJECT_CORE.${{ steps.gitversion.outputs.nuGetVersion }}"
+        Sender_Package_Name: "$Env:PROJECT_SENDER.${{ steps.gitversion.outputs.nuGetVersion }}"
 
     - name: Zip .nupkg directory
-      run: Compress-Archive -CompressionLevel Fastest -Path ".nupkg/*" -DestinationPath "./$PROJECT_NAME.zip"
+      run: Compress-Archive -CompressionLevel Fastest -Path ".nupkg/*" -DestinationPath "./$Env.PROJECT_NAME.zip"
 
     - name: Upload artifact for deployment job
       uses: actions/upload-artifact@v3
