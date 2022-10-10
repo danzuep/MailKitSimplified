@@ -16,9 +16,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SOLUTION_FILE: 'samples/$Env:PROJECT_NAME.sln'
-      PROJECT_CORE_FILE: 'source/$Env:PROJECT_CORE/$Env:PROJECT_CORE.csproj'
-      PROJECT_SENDER_FILE: 'source/$Env:PROJECT_SENDER/$Env:PROJECT_SENDER.csproj'
+      SOLUTION_FILE: 'samples/MailKitSimplified.sln'
+      PROJECT_CORE_FILE: 'source/MailKitSimplified.Core/MailKitSimplified.Core.csproj'
+      PROJECT_SENDER_FILE: 'source/MailKitSimplified.Sender/MailKitSimplified.Sender'
 
     steps:
     - name: Get full repository history
