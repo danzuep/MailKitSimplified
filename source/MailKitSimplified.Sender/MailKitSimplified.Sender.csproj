@@ -11,7 +11,7 @@
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified.Sender</RepositoryUrl>
     <Authors>danzuep</Authors>
     <Title>Simple MailKit SMTP Sender</Title>
-    <PackageTags>email; SMTP; MailKit; simple; fluent</PackageTags>
+    <PackageTags>email; SMTP; MailKit; simple; easy; fluent; sender</PackageTags>
     <Description>Easy, fluent way to send emails with MailKit.</Description>
   </PropertyGroup>
 

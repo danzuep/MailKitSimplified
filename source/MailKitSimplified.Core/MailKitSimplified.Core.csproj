@@ -4,12 +4,21 @@
     <TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageReadmeFile>..\..\README.md</PackageReadmeFile>
+    <PackageLicenseFile>..\..\LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified.Sender</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/danzuep/MailKitSimplified.Sender</RepositoryUrl>
+    <Authors>danzuep</Authors>
+    <Title>Simplified MailKit domain model</Title>
+    <PackageTags>email; MailKit; simple; easy; core</PackageTags>
+    <Description>Domain model for the simplified MailKit package.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
-    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.2" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
   </ItemGroup>
 
 </Project>
