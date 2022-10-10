@@ -1,12 +1,12 @@
 name: Publish Packages
 
 on:
-  push:
-    branches:
-    - 'release'
+  # push:
+  #   branches:
+  #   - 'release'
   pull_request:
     branches:
-    - 'release'
+    - 'main'
 
 env:
   PROJECT: 'source/MailKitSimplified.Sender/MailKitSimplified.Sender.csproj'
@@ -63,7 +63,7 @@ jobs:
         Package_Name: "${{ github.event.repository.name }}.${{ steps.gitversion.outputs.fullSemVer }}"
 
     - name: Publish
-      run: dotnet nuget push $Package_Name --api-key ${{ secrets.NUGET_TOKEN }} --source https://int.nugettest.org/ #https://api.nuget.org/v3/index.json
+      run: dotnet nuget push $Package_Name --api-key ${{ secrets.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json
       env:
         Package_Name: ".nupkg/${{ github.event.repository.name }}.${{ steps.gitversion.outputs.majorMinorPatch }}.nupkg"
 

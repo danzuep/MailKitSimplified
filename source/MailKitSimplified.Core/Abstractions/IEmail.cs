@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using MailKitSimplified.Core.Models;
 
 namespace MailKitSimplified.Core.Abstractions
 {
     public interface IEmail
     {
-        EmailContact From { get; set; }
+        IList<EmailContact> From { get; set; }
         IList<EmailContact> To { get; set; }
         IList<string> AttachmentFilePaths { get; set; }
         string Subject { get; set; }
