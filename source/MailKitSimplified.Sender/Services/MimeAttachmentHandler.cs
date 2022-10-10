@@ -8,6 +8,8 @@ using System;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging;
 using MimeKit;
+using MailKitSimplified.Core.Abstractions;
+using MailKitSimplified.Core.Services;
 using MailKitSimplified.Sender.Abstractions;
 
 namespace MailKitSimplified.Sender.Services
@@ -83,6 +85,21 @@ namespace MailKitSimplified.Sender.Services
                 results = mimeEntities.Where(entity => entity != null);
             }
             return results;
+        }
+
+        public async Task<MimeMessage> AddAttachments(MimeMessage mimeMessage, IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
+        {
+            var mimeParts = await LoadFilePathsAsync(filePaths, cancellationToken).ConfigureAwait(false);
+            if (mimeMessage != null && mimeParts.Any())
+            {
+                var multipart = new Multipart();
+                if (mimeMessage.Body != null)
+                    multipart.Add(mimeMessage.Body);
+                foreach (var mimePart in mimeParts)
+                    multipart.Add(mimePart);
+                mimeMessage.Body = multipart;
+            }
+            return mimeMessage;
         }
     }
 }

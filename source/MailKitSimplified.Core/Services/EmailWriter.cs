@@ -1,14 +1,14 @@
 ﻿using System.Threading.Tasks;
 using System.Threading;
-using MailKitSimplified.Core.Models;
 using MailKitSimplified.Core.Abstractions;
+using MailKitSimplified.Core.Models;
 
-namespace MailKitSimplified.Sender.Services
+namespace MailKitSimplified.Core.Services
 {
     public class EmailWriter : IEmailWriter
     {
         public IEmail Email => _email;
-        private IEmail _email;
+        private readonly IEmail _email;
 
         private EmailWriter(IEmail email)
         {
@@ -53,5 +53,8 @@ namespace MailKitSimplified.Sender.Services
 
         public async Task SendAsync(CancellationToken cancellationToken = default) =>
             await _email.SendAsync(cancellationToken).ConfigureAwait(false);
+
+        public async Task<bool> TrySendAsync(CancellationToken cancellationToken = default) =>
+            await _email.TrySendAsync(cancellationToken).ConfigureAwait(false);
     }
 }

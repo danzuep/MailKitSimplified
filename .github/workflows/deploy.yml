@@ -4,6 +4,9 @@ on:
   push:
     branches:
     - 'release'
+  pull_request:
+    branches:
+    - 'release'
 
 env:
   PROJECT: 'source/MailKitSimplified.Sender/MailKitSimplified.Sender.csproj'
@@ -62,9 +65,9 @@ jobs:
     - name: Publish
       run: dotnet nuget push $Package_Name --api-key ${{ secrets.NUGET_TOKEN }} --source https://int.nugettest.org/ #https://api.nuget.org/v3/index.json
       env:
-        Package_Name: ".nupkg/${{ github.event.repository.name }}.${{ steps.gitversion.outputs.fullSemVer }}.nupkg"
+        Package_Name: ".nupkg/${{ github.event.repository.name }}.${{ steps.gitversion.outputs.majorMinorPatch }}.nupkg"
 
     - name: Markdown workflow job summary
       run: echo "### $Package_Name published to NuGet on $GITHUB_EVENT_NAME" >> $GITHUB_STEP_SUMMARY
       env:
-        Package_Name: "${{ github.event.repository.name }}.${{ steps.gitversion.outputs.fullSemVer }}"
+        Package_Name: "${{ github.event.repository.name }}.${{ steps.gitversion.outputs.majorMinorPatch }}"

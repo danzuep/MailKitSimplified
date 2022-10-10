@@ -7,13 +7,14 @@ using System.Diagnostics.CodeAnalysis;
 using MimeKit;
 using MimeKit.Text;
 using MailKitSimplified.Core.Abstractions;
-using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Core.Models;
+using MailKitSimplified.Core.Services;
+using MailKitSimplified.Sender.Abstractions;
 
 namespace MailKitSimplified.Sender.Services
 {
     [ExcludeFromCodeCoverage]
-    public class MimeEmailWriter : IEmailWriter
+    public class MimeMessageWriter : IEmailWriter
     {
         public IEmail Email
         {
@@ -35,14 +36,14 @@ namespace MailKitSimplified.Sender.Services
         private MimeMessage _mimeMessage = new MimeMessage();
         private IList<string> _attachmentFilePaths = new List<string>();
 
-        private readonly IMimeEmailSender _emailClient;
+        private readonly IMimeMessageSender _emailClient;
 
-        private MimeEmailWriter(IMimeEmailSender emailClient)
+        private MimeMessageWriter(IMimeMessageSender emailClient)
         {
             _emailClient = emailClient ?? throw new ArgumentNullException(nameof(emailClient));
         }
 
-        public static MimeEmailWriter CreateFrom(IMimeEmailSender emailClient) => new MimeEmailWriter(emailClient);
+        public static MimeMessageWriter CreateFrom(IMimeMessageSender emailClient) => new MimeMessageWriter(emailClient);
 
         public IEmailWriter From(string address, string name = "")
         {
@@ -112,5 +113,8 @@ namespace MailKitSimplified.Sender.Services
         {
             await _emailClient.SendAsync(_mimeMessage, _attachmentFilePaths, cancellationToken).ConfigureAwait(false);
         }
+
+        public async Task<bool> TrySendAsync(CancellationToken cancellationToken = default) =>
+            await _emailClient.TrySendAsync(_mimeMessage, _attachmentFilePaths, cancellationToken).ConfigureAwait(false);
     }
 }

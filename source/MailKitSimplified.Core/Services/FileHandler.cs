@@ -4,9 +4,20 @@ using System.Threading.Tasks;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using MailKitSimplified.Sender.Abstractions;
 
-namespace MailKitSimplified.Sender.Services
+/* Unmerged change from project 'MailKitSimplified.Core (net6.0)'
+Before:
+using MailKitSimplified.Core.Abstractions;
+After:
+using MailKitSimplified.Core.Abstractions;
+using MailKitSimplified;
+using MailKitSimplified.Sender;
+using MailKitSimplified.Sender.Services;
+using MailKitSimplified.Core.Services;
+*/
+using MailKitSimplified.Core.Abstractions;
+
+namespace MailKitSimplified.Core.Services
 {
     [ExcludeFromCodeCoverage]
     public sealed class FileHandler : IFileHandler

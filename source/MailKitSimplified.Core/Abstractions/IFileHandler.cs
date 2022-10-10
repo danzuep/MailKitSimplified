@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MailKitSimplified.Sender.Abstractions
+namespace MailKitSimplified.Core.Abstractions
 {
     public interface IFileHandler
     {

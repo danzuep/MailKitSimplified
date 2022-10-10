@@ -14,9 +14,8 @@ namespace MailKitSimplified.Core.Abstractions
         string Subject { get; set; }
         string Body { get; set; }
         bool IsHtml { get; set; }
-        IEmailWriter Write { get; }
-        [Obsolete("Use IEmailWriter Write method instead")]
-        IEmail HandWrite(string fromAddress, string toAddress, string subject = "", string body = "", bool isHtml = true, params string[] attachmentFilePaths);
+
         Task SendAsync(CancellationToken token = default);
+        Task<bool> TrySendAsync(CancellationToken cancellationToken = default);
     }
 }
