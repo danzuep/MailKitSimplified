@@ -12,7 +12,7 @@ env:
   PROJECT_SENDER: 'MailKitSimplified.Sender'
 
 jobs:
-  dotnet_test:
+  build_test:
     runs-on: ubuntu-latest
 
     env:
@@ -79,10 +79,11 @@ jobs:
         thresholds: '60 80'
 
     - name: Add Coverage PR Comment
-      uses: marocchino/sticky-pull-request-comment@v2.2.0
+      uses: marocchino/sticky-pull-request-comment@v2
       with:
         recreate: true
         path: code-coverage-results.md
+        message: Release ${{ github.sha }}
 
     - name: Markdown code coverage job summary
       run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
@@ -98,8 +99,8 @@ jobs:
         echo " * $Core_Package_Name" >> $GITHUB_STEP_SUMMARY
         echo " * $Sender_Package_Name" >> $GITHUB_STEP_SUMMARY
       env:
-        Core_Package_Name: "$Env.PROJECT_CORE.${{ steps.gitversion.outputs.nuGetVersion }}"
-        Sender_Package_Name: "$Env:PROJECT_SENDER.${{ steps.gitversion.outputs.nuGetVersion }}"
+        Core_Package_Name: "$PROJECT_CORE.${{ steps.gitversion.outputs.nuGetVersion }}"
+        Sender_Package_Name: "$PROJECT_SENDER.${{ steps.gitversion.outputs.nuGetVersion }}"
 
     - name: Upload artifacts for deployment job
       uses: actions/upload-artifact@v3
