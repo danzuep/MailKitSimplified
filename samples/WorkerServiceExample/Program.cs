@@ -2,7 +2,6 @@ using MailKitSimplified.Core.Abstractions;
 using MailKitSimplified.Core.Models;
 using MailKitSimplified.Core.Services;
 using MailKitSimplified.Sender.Services;
-using Microsoft.Extensions.DependencyInjection;
 using WorkerServiceExample;
 
 public class Program
