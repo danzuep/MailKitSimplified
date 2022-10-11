@@ -16,7 +16,7 @@ namespace MailKitSimplified.Sender.Services
     [ExcludeFromCodeCoverage]
     public class MimeMessageWriter : IEmailWriter
     {
-        public IEmail Email
+        public IEmail GetEmail
         {
             get
             {
@@ -33,9 +33,8 @@ namespace MailKitSimplified.Sender.Services
             }
         }
 
-        private MimeMessage _mimeMessage = new MimeMessage();
-        private IList<string> _attachmentFilePaths = new List<string>();
-
+        private readonly MimeMessage _mimeMessage = new MimeMessage();
+        private readonly IList<string> _attachmentFilePaths = new List<string>();
         private readonly IMimeMessageSender _emailClient;
 
         private MimeMessageWriter(IMimeMessageSender emailClient)

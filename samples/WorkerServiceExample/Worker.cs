@@ -1,6 +1,6 @@
 using MailKitSimplified.Core.Abstractions;
 
-namespace WorkerServiceExample
+namespace ExampleNamespace
 {
     public class Worker : BackgroundService
     {

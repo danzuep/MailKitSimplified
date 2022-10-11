@@ -56,9 +56,9 @@ namespace MailKitSimplified.Sender.Services
 
         public MimeMessageWriter MimeEmail => MimeMessageWriter.CreateFrom(this);
 
-        public IEmailWriter WriteEmail => Email.Write(this);
+        public IEmailWriter WriteEmail => Email.Create(this);
 
-        public static async Task<MimeMessage> ConvertToMimeMessage(IEmail email, IMimeAttachmentHandler attachmentHandler, CancellationToken cancellationToken = default)
+        public static async Task<MimeMessage> ConvertToMimeMessageAsync(IEmail email, IMimeAttachmentHandler attachmentHandler, CancellationToken cancellationToken = default)
         {
             var mimeMessage = new MimeMessage();
 
@@ -116,7 +116,7 @@ namespace MailKitSimplified.Sender.Services
 
         public async Task SendAsync(IEmail email, CancellationToken cancellationToken = default)
         {
-            var mimeMessage = await ConvertToMimeMessage(email, _attachmentHandler, cancellationToken).ConfigureAwait(false);
+            var mimeMessage = await ConvertToMimeMessageAsync(email, _attachmentHandler, cancellationToken).ConfigureAwait(false);
             await ConnectSmtpClient(cancellationToken).ConfigureAwait(false);
             Debug.WriteLine("Sending email {0}", email.ToString());
             string serverResponse = await _smtpClient.SendAsync(mimeMessage, cancellationToken).ConfigureAwait(false);

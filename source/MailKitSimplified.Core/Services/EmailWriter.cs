@@ -7,7 +7,8 @@ namespace MailKitSimplified.Core.Services
 {
     public class EmailWriter : IEmailWriter
     {
-        public IEmail Email => _email;
+        public IEmail GetEmail => _email;
+
         private readonly IEmail _email;
 
         public EmailWriter(IEmail email)

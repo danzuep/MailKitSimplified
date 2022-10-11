@@ -11,6 +11,7 @@ using MimeKit;
 using MailKitSimplified.Core.Abstractions;
 using MailKitSimplified.Core.Services;
 using MailKitSimplified.Sender.Abstractions;
+using MimeKit.Utils;
 
 namespace MailKitSimplified.Sender.Services
 {
@@ -34,8 +35,7 @@ namespace MailKitSimplified.Sender.Services
                 if (string.IsNullOrWhiteSpace(contentType))
                     contentType = MediaTypeNames.Application.Octet;
                 if (string.IsNullOrWhiteSpace(contentId))
-                    contentId = Path.GetFileNameWithoutExtension(Path.GetRandomFileName());
-                //streamIn.CopyTo(streamOut, 8192);
+                    contentId = MimeUtils.GenerateMessageId();
                 var attachment = MimeKit.ContentDisposition.Attachment;
                 result = new MimePart(contentType)
                 {

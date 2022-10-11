@@ -7,7 +7,7 @@ Sending and receiving emails sounds simple, after all, electronic mail existed [
 
 ### Setup
 
-If you're not sure what dependency injection is then just use this:
+If you're not familiar with dependency injection then just use this:
 ```
 using var smtpSender = MimeMessageSender.Create("smtp.example.com");
 ```
@@ -16,6 +16,19 @@ using var smtpSender = MimeMessageSender.Create("smtp.example.com");
 
 ```
 var email = smtpSender.WriteEmail
+    .From("me@example.com")
+    .To("you@example.com")
+    .Subject("Hi")
+    .Body("~");
+
+await email.SendAsync();
+```
+
+An email must have a SMTP host address, a `From` and at least one `To` address; that's all. You can use each method as many times as you want, but setting a subject or body multiple times will overwrite previous subject or body values. The order of anything after WriteEmail does not matter.
+Any issues will throw an exception, but you can also opt to just log them and continue with a `false` output:
+
+```
+bool isSent = await smtpSender.WriteEmail
     .From("me@example.com", "My Name")
     .To("you@example.com", "Your Name")
     .To("friend1@example.com")
@@ -23,19 +36,7 @@ var email = smtpSender.WriteEmail
     .Subject("Hey You")
     .Body("Hello World")
     .Attach("C:/Temp/attachment1.txt", "C:/Temp/attachment2.pdf")
-    .Attach("./attachment3.docx");
-
-await email.SendAsync();
-```
-
-An email must have a `From` and at least one `To` address, order does not matter.
-Setting a subject or body will overwrite previous ones to make things simpler.
-Any issues will throw an exception, but you can also opt to just log them and continue with a `false` output:
-
-```
-bool isSent = await smtpSender.WriteEmail
-    .From("me@example.com")
-    .To("you@example.com")
+    .Attach("./attachment3.docx")
     .TrySendAsync();
 
 _logger.LogInformation("Email {result}.", isSent ? "sent" : "failed to send");
@@ -47,35 +48,30 @@ Further examples (detailed MailKit SMPT server logs etc.) can be found in MailKi
 
 This is recommended over manual setup as the built-in garbage collector will handle lifetime and disposal.
 ```
-public class Program
+using MailKitSimplified.Sender.Extensions;
+
+IHost host = Host.CreateDefaultBuilder(args)
+    .ConfigureServices((context, services) =>
+    {
+        services.AddHostedService<ExampleNamespace.Worker>();
+        services.AddMailKitSimplifiedEmailSender(context.Configuration);
+    })
+    .Build();
+
+await host.RunAsync();
+```
+
+You'll also need the following in appsettings.json:
+```
 {
-    public static async Task Main(string[] args)
-    {
-        IHost host = Host.CreateDefaultBuilder(args)
-            .ConfigureServices((context, services) =>
-            {
-                services.AddHostedService<Worker>();
-                ConfigureServices(services, context.Configuration);
-            })
-            .Build();
-
-        await host.RunAsync();
-    }
-
-    public static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
-    {
-        // This adds IOptions<EmailSenderOptions> from appsettings.json
-        services.Configure<EmailSenderOptions>(configuration
-            .GetRequiredSection(EmailSenderOptions.SectionName));
-        services.AddTransient<IFileHandler, FileHandler>();
-        services.AddTransient<IMimeAttachmentHandler, MimeAttachmentHandler>();
-        services.AddTransient<IEmail, Email>();
-        services.AddTransient<IEmailWriter, EmailWriter>();
-        services.AddTransient<IEmailSender, MimeMessageSender>();
-    }
+  "EmailSender:SmtpHost": "smtp.example.com"
 }
 ```
-This can then be referenced with no other setup in your service as follows:
+
+Other optional settings include SmtpPort, ProtocolLog, SmtpCredential:UserName and SmtpCredential:Password.
+
+Now you can use the fully configured IEmailSender anywhere you want with no other setup! For example:
+
 ```
 public class EmailService {
 

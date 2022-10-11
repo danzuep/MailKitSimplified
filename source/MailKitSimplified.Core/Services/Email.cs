@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using MailKitSimplified.Core.Abstractions;
 using MailKitSimplified.Core.Models;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace MailKitSimplified.Core.Services
 {
@@ -35,8 +36,9 @@ namespace MailKitSimplified.Core.Services
             _logger = logger ?? NullLogger<Email>.Instance;
         }
 
-        public static EmailWriter Write(IEmailSender emailSender) => EmailWriter.CreateFrom(new Email(emailSender));
+        public static EmailWriter Create(IEmailSender emailSender) => EmailWriter.CreateFrom(new Email(emailSender));
 
+        [ExcludeFromCodeCoverage]
         [Obsolete("This method will be removed in a future version, use the Write method instead.")]
         public IEmail HandWrite(string fromAddress, string toAddress, string subject = "", string body = "", bool isHtml = true, params string[] attachmentFilePaths)
         {
@@ -104,6 +106,7 @@ namespace MailKitSimplified.Core.Services
             return isSent;
         }
 
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             string envelope = string.Empty;
