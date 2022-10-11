@@ -61,11 +61,11 @@ namespace MailKitSimplified.Sender.Tests
             Assert.NotNull(email);
         }
 
-        private static async Task<MemoryStream> GetTestStream(int capacity = 1)
+        private static async Task<Stream> GetTestStream(int capacity = 1)
         {
             var randomBytes = new byte[capacity];
             new Random().NextBytes(randomBytes);
-            using var streamStub = new MemoryStream(capacity);
+            var streamStub = new MemoryStream(capacity);
             await streamStub.WriteAsync(randomBytes);
             streamStub.Position = 0;
             return streamStub;
@@ -77,7 +77,7 @@ namespace MailKitSimplified.Sender.Tests
         public async Task LoadFilePathsAsync_WithAnyAttachmentName_VerifyAttached(params string[] filePaths)
         {
             // Arrange
-            var taskStub = Task.FromResult(await GetTestStream() as Stream);
+            var taskStub = GetTestStream();
             var fileHandler = Mock.Of<IFileHandler>(file => file.GetFileStreamAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()) == taskStub);
             IMimeAttachmentHandler attachmentHandler = new MimeAttachmentHandler(_loggerFactory?.CreateLogger<MimeAttachmentHandler>(), fileHandler);
             // Act
@@ -89,6 +89,7 @@ namespace MailKitSimplified.Sender.Tests
             Assert.True(attachments.Any());
         }
 
+#if DEBUG
         [Theory]
         [InlineData("attachment1.txt|attachment2.pdf")]
         [InlineData("./attachment1.txt", "./attachment2.pdf")]
@@ -115,6 +116,7 @@ namespace MailKitSimplified.Sender.Tests
             Assert.NotNull(mimeMessage);
             Assert.True(mimeMessage.Attachments.Any());
         }
+#endif
 
         [Fact]
         public async void TrySendAsync_WithEmail_VerifySent()
