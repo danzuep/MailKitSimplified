@@ -83,8 +83,8 @@ jobs:
       with:
         name: ${{ env.PROJECT_NAME }}
 
-    - name: Unzip the artifact
-      run: Expand-Archive -Path "./${{ env.PROJECT_NAME }}.zip" -DestinationPath "./" -Force
+    - name: List files in the folder
+      run: Get-ChildItem -Path "./.nupkg" | Where-Object {$_.PSIsContainer -eq $false} | SELECT Name
 
     - name: Markdown workflow job summary
       run: echo "### $Workflow_Name $GITHUB_EVENT_NAME build summary" >> $GITHUB_STEP_SUMMARY
