@@ -48,19 +48,6 @@ namespace MailKitSimplified.Sender.Tests
             Assert.NotNull(email);
         }
 
-        [Fact]
-        public void WriteEmail_WithMimeEmailSender_VerifyCreated()
-        {
-            using var emailSender = MimeMessageSender.Create("mail.example.com");
-            var email = emailSender.MimeEmail
-                .From("from")
-                .To("to")
-                .Subject("Hi")
-                .Body("~")
-                .Attach("./attachment1.txt");
-            Assert.NotNull(email);
-        }
-
         private static async Task<Stream> GetTestStream(int capacity = 1)
         {
             var randomBytes = new byte[capacity];
@@ -144,33 +131,35 @@ namespace MailKitSimplified.Sender.Tests
         public void SendAsync_WithEmailWriter_VerifySent()
         {
             // Arrange
-            var emailSenderMock = new Mock<IEmail>();
-            emailSenderMock
+            var emailMock = new Mock<IEmail>();
+            emailMock
                 .Setup(sender => sender.SendAsync(It.IsAny<CancellationToken>()))
                 .Returns(_completedTask);
-            var email = EmailWriter.CreateFrom(emailSenderMock.Object);
+            var email = EmailWriter.CreateFrom(emailMock.Object);
             // Act
             var result = email.SendAsync(It.IsAny<CancellationToken>());
             // Assert
             Assert.Equal(_completedTask, result);
-            emailSenderMock.Verify(sender => sender.SendAsync(It.IsAny<CancellationToken>()), Times.Once());
+            emailMock.Verify(sender => sender.SendAsync(It.IsAny<CancellationToken>()), Times.Once());
         }
 
-        [Fact]
-        public void SendAsync_WithMimeEmailWriter_VerifySent()
-        {
-            // Arrange
-            var emailSenderMock = new Mock<IMimeMessageSender>();
-            emailSenderMock
-                .Setup(sender => sender.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(_completedTask);
-            var email = MimeMessageWriter.CreateFrom(emailSenderMock.Object);
-            // Act
-            var result = email.SendAsync(It.IsAny<CancellationToken>());
-            // Assert
-            Assert.Equal(_completedTask, result);
-            emailSenderMock.Verify(sender => sender.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Once());
-        }
+        //[Fact]
+        //public async Task SendAsync_WithMimeMessage_VerifySentAsync()
+        //{
+        //    // Arrange
+        //    var emailMock = new Mock<IEmail>();
+        //    emailMock
+        //        .Setup(sender => sender.SendAsync(It.IsAny<CancellationToken>()))
+        //        .Returns(_completedTask);
+        //    var emailSenderMock = new Mock<IMimeMessageSender>();
+        //    emailSenderMock
+        //        .Setup(sender => sender.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+        //        .Verifiable();
+        //    // Act
+        //    await emailSenderMock.Object.SendAsync(new MimeMessage(), It.IsAny<CancellationToken>());
+        //    // Assert
+        //    emailSenderMock.Verify(sender => sender.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Once());
+        //}
 
         [Fact]
         public async Task TrySendAsync_WithInvalidSmtpHost_VerifyNotSentAsync()

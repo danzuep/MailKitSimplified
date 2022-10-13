@@ -54,8 +54,6 @@ namespace MailKitSimplified.Sender.Services
             return sender;
         }
 
-        public MimeMessageWriter MimeEmail => MimeMessageWriter.CreateFrom(this);
-
         public IEmailWriter WriteEmail => Email.Create(this);
 
         public static async Task<MimeMessage> ConvertToMimeMessageAsync(IEmail email, IMimeAttachmentHandler attachmentHandler, CancellationToken cancellationToken = default)

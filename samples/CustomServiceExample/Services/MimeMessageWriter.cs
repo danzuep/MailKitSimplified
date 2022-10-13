@@ -11,7 +11,7 @@ using MailKitSimplified.Core.Models;
 using MailKitSimplified.Core.Services;
 using MailKitSimplified.Sender.Abstractions;
 
-namespace MailKitSimplified.Sender.Services
+namespace CustomServiceExample.Services
 {
     [ExcludeFromCodeCoverage]
     public class MimeMessageWriter : IEmailWriter
@@ -42,7 +42,7 @@ namespace MailKitSimplified.Sender.Services
             _emailClient = emailClient ?? throw new ArgumentNullException(nameof(emailClient));
         }
 
-        public static MimeMessageWriter CreateFrom(IMimeMessageSender emailClient) => new MimeMessageWriter(emailClient);
+        public static MimeMessageWriter CreateWith(IMimeMessageSender emailClient) => new MimeMessageWriter(emailClient);
 
         public IEmailWriter From(string address, string name = "")
         {
