@@ -42,29 +42,16 @@ jobs:
         run: dotnet build $PROJECT_FILE --configuration Release --no-restore
 
       # The xUnit test project template already integrates with coverlet.collector by default
-      # The "--logger trx" option causes duplicate folders and xml files to be created
+      # Don't use the "--logger trx" option as it causes duplicate folders and xml files to be created
       - name: Test
         if: steps.build-cache.outputs.cache-hit != 'true'
         run: dotnet test $PROJECT_FILE -c Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory "./.coverage"
-
-      # Using ** finds duplicate coverage files if "--logger trx" was used whereas * should not
-      - name: Merge all test project Code Coverage results into one report
-        run: |
-          dotnet tool install -g dotnet-reportgenerator-globaltool
-          reportgenerator -reports:".coverage/*/coverage.cobertura.xml" -targetdir:".coverage/report" -reporttypes:'Cobertura;HtmlSummary'
-
-      - name: Upload code coverage summary report artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: code-coverage-report
-          path: ".coverage/report/summary.html"
-          retention-days: 1
 
       # Based on https://github.com/irongut/CodeCoverageSummary#net-workflow-example
       - name: Code Coverage Summary
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          filename: ".coverage/report/Cobertura.xml"
+          filename: ".coverage/coverage.cobertura.xml"
           badge: true
           fail_below_min: false
           format: markdown
