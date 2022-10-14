@@ -17,6 +17,10 @@ on:
         description: 'Package version suffix'
         required: true
         type: string
+      test-project:
+        description: 'The name of the test project'
+        required: true
+        type: string
 
 jobs:
   deploy:
