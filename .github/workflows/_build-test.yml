@@ -44,7 +44,7 @@ jobs:
       # The xUnit test project template already integrates with coverlet.collector by default
       # Don't use the "--logger trx" option as it causes duplicate folders and xml files to be created
       - name: Test
-        run: dotnet test $PROJECT_FILE -c Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory "./.coverage"
+        run: dotnet test "tests\MailKitSimplified.Sender.Tests.csproj" -c Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory "./.coverage"
 
       - name: Merge all test project Code Coverage results into one report
         run: |
