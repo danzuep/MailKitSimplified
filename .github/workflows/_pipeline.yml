@@ -40,7 +40,7 @@ jobs:
     secrets: inherit
 
   deploy_core:
-    if: ${{ inputs.environment }} == 'release'
+    if: ${{ inputs.environment == 'release' }}
     needs: build_core
     uses: ./.github/workflows/_deploy-nuget.yml
     with:
@@ -50,7 +50,7 @@ jobs:
     secrets: inherit
 
   deploy_sender:
-    if: ${{ inputs.environment }} == 'release'
+    if: ${{ inputs.environment == 'release' }}
     needs: build_sender
     uses: ./.github/workflows/_deploy-nuget.yml
     with:
