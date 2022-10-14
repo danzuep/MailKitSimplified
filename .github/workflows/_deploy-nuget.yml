@@ -26,7 +26,7 @@ jobs:
       contents: read
     environment: ${{ inputs.environment }}
     env:
-      PACKAGE_NAME: '${{ inputs.project-name }}/${{ inputs.version }}.nupkg' #.nupkg/
+      PACKAGE_NAME: '${{ inputs.project-name }}.${{ inputs.version }}.nupkg' #.nupkg/
 
     steps:
       # - name: Checkout repository
@@ -43,12 +43,16 @@ jobs:
         with:
           name: ${{ inputs.project-name }}
 
+      - name: Markdown workflow job summary
+        run: echo "### $PACKAGE_NAME artifact downloaded" >> $GITHUB_STEP_SUMMARY
+
       # - name: List files in the folder
       #   run: Get-ChildItem -Path "./.nupkg" | Where-Object {$_.PSIsContainer -eq $false} | SELECT Name
 
       - name: Publish
-        run: |
-          dotnet nuget push "${{ env.PACKAGE_NAME }}" --api-key ${{ secrets.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json
+        if: ${{ inputs.environment }} == 'release'
+        run: dotnet nuget push "${{ env.PACKAGE_NAME }}" --api-key ${{ secrets.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json
 
       - name: Markdown workflow job summary
+        if: ${{ inputs.environment }} == 'release'
         run: echo "### $PACKAGE_NAME package published to NuGet from ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
