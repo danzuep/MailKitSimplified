@@ -49,7 +49,7 @@ jobs:
       - name: Merge all test project Code Coverage results into one report
         run: |
           dotnet tool install -g dotnet-reportgenerator-globaltool
-          reportgenerator -reports:".coverage/*/coverage.cobertura.xml" -targetdir:".coverage/report" -reporttypes:'Cobertura;HtmlSummary'
+          reportgenerator -reports:".coverage/**/coverage.cobertura.xml" -targetdir:".coverage/report" -reporttypes:'Cobertura;HtmlSummary'
 
       - name: Upload code coverage summary report artifact
         uses: actions/upload-artifact@v3
