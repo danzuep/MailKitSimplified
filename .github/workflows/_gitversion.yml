@@ -1,0 +1,43 @@
+name: 🧬 Get GitVersion
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'The build environment'
+        default: development
+        type: string
+    outputs:
+      version:
+        description: 'GitVersion suffix for NuGet package'
+        value: ${{ jobs.gitversion.outputs.version }}
+
+jobs:
+  gitversion:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    outputs:
+      version: ${{ steps.gitversion.outputs.nuGetVersion }}
+
+    steps:
+      - name: Fetch all tags and branches for GitVersion
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up GitVersion
+        uses: gittools/actions/gitversion/setup@v0.9.14
+        with:
+          versionSpec: '5.x'
+
+      # https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute/usage-examples.md#example-5
+      - name: Use GitVersion to determine version
+        id: gitversion # step id used as reference for output values
+        uses: gittools/actions/gitversion/execute@v0.9.14
+
+      - name: Markdown workflow job summary
+        run: echo "### ${{ env.Workflow_Name }} build summary" >> $GITHUB_STEP_SUMMARY
+        env:
+          Workflow_Name: "${{ github.repository }} version ${{ steps.gitversion.outputs.fullSemVer }}"

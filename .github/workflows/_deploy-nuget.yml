@@ -1,0 +1,54 @@
+name: 🚀 Deploy to NuGet
+run-name: Deploy ${{ inputs.tags }}
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'The build environment'
+        default: development
+        type: string
+      project-name:
+        description: 'The name of the project'
+        required: true
+        type: string
+      version:
+        description: 'Package version suffix'
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    environment: ${{ inputs.environment }}
+    env:
+      PACKAGE_NAME: '${{ inputs.project-name }}/${{ inputs.version }}.nupkg' #.nupkg/
+
+    steps:
+      # - name: Checkout repository
+      #   uses: actions/checkout@v3
+
+      - name: Setup .NET environment
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.0.x
+          dotnet-quality: 'ga'
+
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.project-name }}
+
+      # - name: List files in the folder
+      #   run: Get-ChildItem -Path "./.nupkg" | Where-Object {$_.PSIsContainer -eq $false} | SELECT Name
+
+      - name: Publish
+        run: |
+          dotnet nuget push "${{ env.PACKAGE_NAME }}" --api-key ${{ secrets.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json
+
+      - name: Markdown workflow job summary
+        run: echo "### $PACKAGE_NAME package published to NuGet from ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY

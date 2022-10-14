@@ -1,0 +1,59 @@
+name: Pipeline Template
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      environment:
+        default: development
+        type: string
+
+# Cancel any other running workflows with the same ID
+concurrency:
+  group: ci-${{ inputs.environment }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# https://docs.github.com/en/actions/using-workflows/reusing-workflows
+jobs:
+  version:
+    uses: ./.github/workflows/_gitversion.yml
+    with:
+      environment: ${{ inputs.environment }}
+    secrets: inherit
+
+  build_core:
+    needs: version
+    uses: ./.github/workflows/_build-test.yml
+    with:
+      environment: ${{ inputs.environment }}
+      project-name: 'MailKitSimplified.Core'
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  build_sender:
+    uses: ./.github/workflows/_build-test.yml
+    with:
+      environment: ${{ inputs.environment }}
+      project-name: 'MailKitSimplified.Sender'
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  deploy_core:
+    if: ${{ inputs.environment }} == 'release'
+    needs: build_core
+    uses: ./.github/workflows/_deploy-nuget.yml
+    with:
+      environment: ${{ inputs.environment }}
+      project-name: 'MailKitSimplified.Core'
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  deploy_sender:
+    if: ${{ inputs.environment }} == 'release'
+    needs: build_sender
+    uses: ./.github/workflows/_deploy-nuget.yml
+    with:
+      environment: ${{ inputs.environment }}
+      project-name: 'MailKitSimplified.Sender'
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit

@@ -1,0 +1,19 @@
+name: Development
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - release/*
+  push:
+    - main
+
+jobs:
+  ci_cd:
+    # if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/_pipeline.yml
+    with:
+      environment: development
+    secrets: inherit
