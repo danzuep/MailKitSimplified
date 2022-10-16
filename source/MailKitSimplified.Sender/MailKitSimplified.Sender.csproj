@@ -7,8 +7,8 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified.Sender</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/danzuep/MailKitSimplified.Sender</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
     <Authors>danzuep</Authors>
     <Title>Simple MailKit SMTP Sender</Title>
     <PackageTags>email; SMTP; MailKit; simple; easy; fluent; sender</PackageTags>

@@ -10,9 +10,9 @@
     <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
     <Authors>danzuep</Authors>
-    <Title>Simplified MailKit domain model</Title>
-    <PackageTags>email; MailKit; simple; easy; core</PackageTags>
-    <Description>Domain model for the simplified MailKit package.</Description>
+    <Title>Simple MailKit IMAP Receiver</Title>
+    <PackageTags>email; IMAP; MailKit; simple; easy; receiver</PackageTags>
+    <Description>Easy, simple way to receive emails with MailKit.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,7 +27,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
+    <PackageReference Include="MailKit" Version="3.4.1" />
+    <PackageReference Include="MimeKit" Version="3.4.1" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.2" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
   </ItemGroup>

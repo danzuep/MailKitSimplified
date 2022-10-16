@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailKitSimplified.Core", ".
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Sender", "..\source\MailKitSimplified.Sender\MailKitSimplified.Sender.csproj", "{374BB83A-06BA-434A-9FB3-6F636506CD62}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Sender.Tests", "..\tests\MailKitSimplified.Sender.Tests.csproj", "{A18AA6A6-D42B-44D9-8375-25C45B8B5C99}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Sender.Tests", "..\tests\MailKitSimplified.Sender.Tests\MailKitSimplified.Sender.Tests.csproj", "{A18AA6A6-D42B-44D9-8375-25C45B8B5C99}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

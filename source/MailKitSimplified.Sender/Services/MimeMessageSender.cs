@@ -31,24 +31,36 @@ namespace MailKitSimplified.Sender.Services
 
         public MimeMessageSender(IOptions<EmailSenderOptions> senderOptions, ILoggerFactory loggerFactory = null, IMimeAttachmentHandler mimeAttachmentHandler = null)
         {
-            _senderOptions = senderOptions?.Value ?? throw new ArgumentException(nameof(senderOptions));
+            _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.SmtpHost))
-                throw new NullReferenceException(nameof(_senderOptions.SmtpHost));
+                throw new NullReferenceException(nameof(EmailSenderOptions.SmtpHost));
             if (!string.IsNullOrEmpty(_senderOptions.ProtocolLog))
                 Directory.CreateDirectory(Path.GetDirectoryName(_senderOptions.ProtocolLog));
-            _smtpLogger = _senderOptions.ProtocolLog == null ? null :
-                string.IsNullOrEmpty(_senderOptions.ProtocolLog) ?
-                    new ProtocolLogger(Console.OpenStandardError()) :
-                        new ProtocolLogger(_senderOptions.ProtocolLog);
+            _smtpLogger = GetProtocolLogger(_senderOptions.ProtocolLog);
             _smtpClient = _smtpLogger != null ? new SmtpClient(_smtpLogger) : new SmtpClient();
             _logger = loggerFactory?.CreateLogger<MimeMessageSender>() ?? NullLogger<MimeMessageSender>.Instance;
             _attachmentHandler = mimeAttachmentHandler ?? new MimeAttachmentHandler(loggerFactory?.CreateLogger<MimeAttachmentHandler>(), new FileHandler(loggerFactory?.CreateLogger<FileHandler>()));
         }
 
-        public static MimeMessageSender Create(string smtpHost, int smtpPort = 0, string userName = null, string password = null, string protocolLog = null)
+        private static IProtocolLogger GetProtocolLogger(string logFilePath = null)
         {
-            var smtpCredential = userName == null && password == null ? null : new NetworkCredential(userName ?? "", password ?? "");
-            var senderOptions = new EmailSenderOptions(smtpHost, smtpPort, smtpCredential, protocolLog);
+            var protocolLogger = logFilePath == null ? null :
+                string.IsNullOrWhiteSpace(logFilePath) ?
+                    new ProtocolLogger(Console.OpenStandardError()) :
+                        new ProtocolLogger(logFilePath);
+            return protocolLogger;
+        }
+
+        public static MimeMessageSender Create(string smtpHost, ushort smtpPort = 0, string username = null, string password = null, string protocolLog = null)
+        {
+            var smtpCredential = username == null && password == null ? null : new NetworkCredential(username ?? "", password ?? "");
+            var sender = Create(smtpHost, smtpCredential, smtpPort, protocolLog);
+            return sender;
+        }
+
+        public static MimeMessageSender Create(string smtpHost, NetworkCredential smtpCredential = null, ushort smtpPort = 0, string protocolLog = null)
+        {
+            var senderOptions = new EmailSenderOptions(smtpHost, smtpCredential, smtpPort, protocolLog);
             var options = Options.Create(senderOptions);
             var sender = new MimeMessageSender(options);
             return sender;
@@ -89,7 +101,7 @@ namespace MailKitSimplified.Sender.Services
             Email.ValidateEmailAddresses(from, to, _logger);
         }
 
-        public async Task ConnectSmtpClient(CancellationToken cancellationToken = default)
+        public async Task ConnectSmtpClientAsync(CancellationToken cancellationToken = default)
         {
             if (!_smtpClient.IsConnected && !string.IsNullOrEmpty(_senderOptions.SmtpHost))
                 await _smtpClient.ConnectAsync(_senderOptions.SmtpHost, _senderOptions.SmtpPort, cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -106,7 +118,7 @@ namespace MailKitSimplified.Sender.Services
         public async Task SendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default)
         {
             ValidateMimeMessage(mimeMessage);
-            await ConnectSmtpClient(cancellationToken).ConfigureAwait(false);
+            await ConnectSmtpClientAsync(cancellationToken).ConfigureAwait(false);
             Debug.WriteLine("Sending to: {0}, subject: '{1}'", mimeMessage.To, mimeMessage.Subject);
             string serverResponse = await _smtpClient.SendAsync(mimeMessage, cancellationToken).ConfigureAwait(false);
             Debug.WriteLine(serverResponse);
@@ -115,7 +127,7 @@ namespace MailKitSimplified.Sender.Services
         public async Task SendAsync(IEmail email, CancellationToken cancellationToken = default)
         {
             var mimeMessage = await ConvertToMimeMessageAsync(email, _attachmentHandler, cancellationToken).ConfigureAwait(false);
-            await ConnectSmtpClient(cancellationToken).ConfigureAwait(false);
+            await ConnectSmtpClientAsync(cancellationToken).ConfigureAwait(false);
             Debug.WriteLine("Sending email {0}", email.ToString());
             string serverResponse = await _smtpClient.SendAsync(mimeMessage, cancellationToken).ConfigureAwait(false);
             Debug.WriteLine(serverResponse);
