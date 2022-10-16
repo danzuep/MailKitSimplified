@@ -78,7 +78,7 @@ jobs:
           thresholds: '60 80'
 
       - name: Add Coverage PR Comment
-        if: ${{ inputs.project-name != 'MailKitSimplified.Core' && github.event_name != 'pull_request' }}
+        if: ${{ inputs.project-name != 'MailKitSimplified.Core' }} #&& github.event_name != 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2.2.0
         with:
           recreate: true
