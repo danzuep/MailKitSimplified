@@ -39,7 +39,7 @@ jobs:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
-  build_sender:
+  build_receiver:
     needs: version
     uses: ./.github/workflows/_build-test.yml
     with:
@@ -68,9 +68,9 @@ jobs:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
-  deploy_sender:
+  deploy_receiver:
     if: ${{ inputs.environment == 'release' }}
-    needs: build_sender
+    needs: build_receiver
     uses: ./.github/workflows/_deploy-nuget.yml
     with:
       environment: ${{ inputs.environment }}
