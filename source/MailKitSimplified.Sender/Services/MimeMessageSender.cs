@@ -58,7 +58,7 @@ namespace MailKitSimplified.Sender.Services
             return sender;
         }
 
-        public static MimeMessageSender Create(string smtpHost, NetworkCredential smtpCredential = null, ushort smtpPort = 0, string protocolLog = null)
+        public static MimeMessageSender Create(string smtpHost, NetworkCredential smtpCredential, ushort smtpPort = 0, string protocolLog = null)
         {
             var senderOptions = new EmailSenderOptions(smtpHost, smtpCredential, smtpPort, protocolLog);
             var options = Options.Create(senderOptions);

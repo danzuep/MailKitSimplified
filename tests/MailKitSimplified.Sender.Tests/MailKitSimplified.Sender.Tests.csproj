@@ -24,8 +24,8 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\source\MailKitSimplified.Core\MailKitSimplified.Core.csproj" />
-    <ProjectReference Include="..\source\MailKitSimplified.Sender\MailKitSimplified.Sender.csproj" />
+    <ProjectReference Include="..\..\source\MailKitSimplified.Core\MailKitSimplified.Core.csproj" />
+    <ProjectReference Include="..\..\source\MailKitSimplified.Sender\MailKitSimplified.Sender.csproj" />
   </ItemGroup>
 
 </Project>
