@@ -2,23 +2,33 @@
 using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using MailKitSimplified.Core.Abstractions;
 
 namespace MailKitSimplified.Core.Models
 {
-    public class EmailContact
+    public class EmailContact : IEmailAddress
     {
         public string Name { get; set; }
 
         [Required(ErrorMessage = "Email address is required")]
         [DataType(DataType.EmailAddress)]
-        public string Address { get; set; }
+        public string Email { get; set; }
+
+        [Obsolete("Replace with the RFC 5322-compliant 'Email' property.")]
+        [Required(ErrorMessage = "Email address is required")]
+        [DataType(DataType.EmailAddress)]
+        public string Address
+        {
+            get => Email;
+            set => Email = value;
+        }
 
         private static readonly char[] _emailReplace = new char[] { '_', '.', '-' };
         private static readonly char[] _emailSeparator = new char[] { ';', ',', ' ', '&', '|' };
 
         public EmailContact(string emailAddress, string name = null)
         {
-            Address = emailAddress ?? throw new ArgumentNullException(nameof(emailAddress));
+            Email = emailAddress ?? throw new ArgumentNullException(nameof(emailAddress));
             bool hasNoName = string.IsNullOrWhiteSpace(name) ||
                 name.Equals(emailAddress, StringComparison.OrdinalIgnoreCase);
             Name = hasNoName ? GetNameFromEmailAddress(emailAddress) : name;
@@ -38,15 +48,15 @@ namespace MailKitSimplified.Core.Models
             return contact;
         }
 
-        public static IEnumerable<EmailContact> ParseEmailContacts(string value)
+        public static IEnumerable<IEmailAddress> ParseEmailContacts(string value)
         {
-            IEnumerable<EmailContact> contacts = null;
+            IEnumerable<IEmailAddress> contacts = null;
             if (!string.IsNullOrEmpty(value))
             {
                 var emailAddresses = value.Split(_emailSeparator, StringSplitOptions.RemoveEmptyEntries);
                 contacts = emailAddresses.Select(email => GetContactFromEmailAddress(email));
             }
-            return contacts ?? Enumerable.Empty<EmailContact>();
+            return contacts ?? Enumerable.Empty<IEmailAddress>();
         }
 
         private static string SpaceReplaceTitleCase(string value, char[] replace)
@@ -65,8 +75,8 @@ namespace MailKitSimplified.Core.Models
                     char thisChar = array[i];
                     char? nextChar = i + 1 < array.Length ?
                         array[i + 1] : null as char?;
-                    bool isNextLower = nextChar == null ?
-                        false : char.IsLower(nextChar.Value);
+                    bool isNextLower = nextChar != null &&
+                        char.IsLower(nextChar.Value);
                     bool isPrevUpper = char.IsUpper(prevChar);
                     bool isPrevLower = char.IsLower(prevChar);
                     bool isThisUpper = char.IsUpper(thisChar);
@@ -96,6 +106,6 @@ namespace MailKitSimplified.Core.Models
             return result;
         }
 
-        public override string ToString() => $"{Name} <{Address}>";
+        public override string ToString() => $"{Name} <{Email}>";
     }
 }

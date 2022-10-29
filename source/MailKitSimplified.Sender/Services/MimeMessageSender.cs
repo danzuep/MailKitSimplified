@@ -72,11 +72,11 @@ namespace MailKitSimplified.Sender.Services
         {
             var mimeMessage = new MimeMessage();
 
-            var from = email.From.Select(m => new MailboxAddress(m.Name, m.Address));
+            var from = email.From.Select(m => new MailboxAddress(m.Name, m.Email));
             mimeMessage.From.AddRange(from);
             mimeMessage.ReplyTo.AddRange(from);
 
-            var to = email.To.Select(m => new MailboxAddress(m.Name, m.Address));
+            var to = email.To.Select(m => new MailboxAddress(m.Name, m.Email));
             mimeMessage.To.AddRange(to);
 
             mimeMessage.Subject = email.Subject ?? string.Empty;

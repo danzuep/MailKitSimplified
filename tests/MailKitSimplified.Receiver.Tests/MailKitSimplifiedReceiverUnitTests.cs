@@ -17,15 +17,15 @@ namespace MailKitSimplified.Receiver.Tests
             Assert.NotNull(imapClient);
         }
 
-        //[Theory]
-        //[InlineData(_imapHost)]
-        //public async Task GetMessageAsync_WithAnyHost_ReturnsMimeMessage(string imapHost)
-        //{
-        //    using var imapClient = ImapClientService.Create(imapHost, new NetworkCredential());
-        //    using var mailFolderReader = new MailFolderReader(imapClient);
-        //    var mimeMessage = await mailFolderReader.GetMessageAsync();
-        //    Assert.NotNull(mimeMessage);
-        //}
+        [Theory]
+        [InlineData(_imapHost)]
+        public async Task GetMessageAsync_WithAnyHost_ReturnsMimeMessage(string imapHost)
+        {
+            using var imapClient = ImapClientService.Create(imapHost, new NetworkCredential());
+            using var mailFolderReader = new MailFolderReader(imapClient);
+            var mimeMessage = await mailFolderReader.GetMessageAsync();
+            Assert.NotNull(mimeMessage);
+        }
 
         //[Theory]
         //[InlineData(_imapHost)]

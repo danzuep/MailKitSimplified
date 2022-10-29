@@ -17,8 +17,8 @@ namespace MailKitSimplified.Core.Services
     public class Email : IEmail
     {
         [Required]
-        public IList<EmailContact> From { get; set; } = new List<EmailContact>();
-        public IList<EmailContact> To { get; set; } = new List<EmailContact>();
+        public IList<IEmailAddress> From { get; set; } = new List<IEmailAddress>();
+        public IList<IEmailAddress> To { get; set; } = new List<IEmailAddress>();
         public IList<string> AttachmentFilePaths { get; set; } = new List<string>();
         public IEnumerable<string> AttachmentFileNames =>
             AttachmentFilePaths?.Select(a => Path.GetFileName(a)) ?? Array.Empty<string>();
@@ -79,8 +79,8 @@ namespace MailKitSimplified.Core.Services
                 throw new MissingMemberException(nameof(IEmail), nameof(IEmail.From));
             if (!To.Any())
                 throw new MissingMemberException(nameof(IEmail), nameof(IEmail.To));
-            var from = From.Select(m => m.Address);
-            var to = To.Select(m => m.Address);
+            var from = From.Select(m => m.Email);
+            var to = To.Select(m => m.Email);
             ValidateEmailAddresses(from, to, _logger);
         }
 

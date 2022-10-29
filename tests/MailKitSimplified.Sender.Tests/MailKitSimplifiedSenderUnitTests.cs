@@ -76,34 +76,34 @@ namespace MailKitSimplified.Sender.Tests
             Assert.True(attachments.Any());
         }
 
-#if DEBUG
-        [Theory]
-        [InlineData("attachment1.txt|attachment2.pdf")]
-        [InlineData("./attachment1.txt", "./attachment2.pdf")]
-        public async Task ConvertToMimeMessageAsync_WithAnyAttachmentName_VerifyAttached(params string[] filePaths)
-        {
-            // Arrange
-            var multipart = new Multipart();
-            var stream = await GetTestStream();
-            foreach (var file in filePaths)
-                multipart.Add(new MimePart(MediaTypeNames.Application.Octet) {
-                    FileName = Path.GetFileName(file),
-                    Content = new MimeContent(stream),
-                    ContentTransferEncoding = ContentEncoding.Base64,
-                    ContentDisposition = new MimeKit.ContentDisposition(
-                        MimeKit.ContentDisposition.Attachment),
-                    ContentId = MimeUtils.GenerateMessageId()
-                });
-            var taskStub = Task.FromResult(new MimeMessage { Body = multipart });
-            var attachmentHandler = Mock.Of<IMimeAttachmentHandler>(file => file.AddAttachments(It.IsAny<MimeMessage>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()) == taskStub);
-            var email = Email.Create(MimeMessageSender.Create("smtp.host")).From("me@mine").To("you@yours").Attach(filePaths).GetEmail;
-            // Act
-            var mimeMessage = await MimeMessageSender.ConvertToMimeMessageAsync(email, attachmentHandler, CancellationToken.None);
-            // Assert
-            Assert.NotNull(mimeMessage);
-            Assert.True(mimeMessage.Attachments.Any());
-        }
-#endif
+//#if DEBUG
+//        [Theory]
+//        [InlineData("attachment1.txt|attachment2.pdf")]
+//        [InlineData("./attachment1.txt", "./attachment2.pdf")]
+//        public async Task ConvertToMimeMessageAsync_WithAnyAttachmentName_VerifyAttached(params string[] filePaths)
+//        {
+//            // Arrange
+//            var multipart = new Multipart();
+//            var stream = await GetTestStream();
+//            foreach (var file in filePaths)
+//                multipart.Add(new MimePart(MediaTypeNames.Application.Octet) {
+//                    FileName = Path.GetFileName(file),
+//                    Content = new MimeContent(stream),
+//                    ContentTransferEncoding = ContentEncoding.Base64,
+//                    ContentDisposition = new MimeKit.ContentDisposition(
+//                        MimeKit.ContentDisposition.Attachment),
+//                    ContentId = MimeUtils.GenerateMessageId()
+//                });
+//            var taskStub = Task.FromResult(new MimeMessage { Body = multipart });
+//            var attachmentHandler = Mock.Of<IMimeAttachmentHandler>(file => file.AddAttachments(It.IsAny<MimeMessage>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()) == taskStub);
+//            var email = Email.Create(MimeMessageSender.Create("smtp.host")).From("me@mine").To("you@yours").Attach(filePaths).GetEmail;
+//            // Act
+//            var mimeMessage = await MimeMessageSender.ConvertToMimeMessageAsync(email, attachmentHandler, CancellationToken.None);
+//            // Assert
+//            Assert.NotNull(mimeMessage);
+//            Assert.True(mimeMessage.Attachments.Any());
+//        }
+//#endif
 
         [Fact]
         public async void TrySendAsync_WithEmail_VerifySent()
