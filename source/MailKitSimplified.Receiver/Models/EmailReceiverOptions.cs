@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.ComponentModel.DataAnnotations;
+using MailKit.Security;
 
 namespace MailKitSimplified.Receiver.Models
 {
@@ -9,14 +10,14 @@ namespace MailKitSimplified.Receiver.Models
         public const string SectionName = "EmailReceiver";
 
         [Required]
-        public string ImapHost { get; set; }
-        public ushort ImapPort { get; set; }
+        public string ImapHost { get; set; } // "localhost";
+        public ushort ImapPort { get; set; } = 0;
         public NetworkCredential ImapCredential { get; set; }
         public string MailFolderName { get; set; } = "INBOX";
         public string ProtocolLog { get; set; } = null; // "C:/Temp/EmailClientImap.log";
         // public string DownloadPath { get; set; } = "C:/Temp/Emails";
 
-        public EmailReceiverOptions() { }
+        internal EmailReceiverOptions() { }
 
         public EmailReceiverOptions(string imapHost, NetworkCredential imapCredential, ushort imapPort = 0, string protocolLog = null)
         {
@@ -25,7 +26,7 @@ namespace MailKitSimplified.Receiver.Models
 
             ImapHost = imapHost;
             ImapPort = imapPort;
-            ImapCredential = imapCredential;
+            ImapCredential = imapCredential ?? new NetworkCredential();
             ProtocolLog = protocolLog;
         }
     }

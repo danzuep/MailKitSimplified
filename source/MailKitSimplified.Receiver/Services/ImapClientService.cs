@@ -30,7 +30,7 @@ namespace MailKitSimplified.Receiver.Services
             if (string.IsNullOrWhiteSpace(_emailReceiverOptions.ImapHost))
                 throw new NullReferenceException(nameof(EmailReceiverOptions.ImapHost));
             if (_emailReceiverOptions.ImapCredential == null)
-                throw new NullReferenceException(nameof(EmailReceiverOptions.ImapCredential));
+                _logger.LogWarning($"{nameof(EmailReceiverOptions.ImapCredential)} is null.");
             if (!string.IsNullOrWhiteSpace(_emailReceiverOptions.ProtocolLog))
                 Directory.CreateDirectory(Path.GetDirectoryName(_emailReceiverOptions.ProtocolLog));
             var imapLogger = GetProtocolLogger(_emailReceiverOptions.ProtocolLog);
@@ -87,14 +87,20 @@ namespace MailKitSimplified.Receiver.Services
             }
         }
 
-        /// <exception cref="AuthenticationException">Failed to authenticate</exception>
-        /// <exception cref="FolderNotFoundException">No mail folder has the specified name</exception>
         public async ValueTask<IMailFolder> ConnectAsync(CancellationToken ct = default)
         {
             await AuthenticateAsync(ct).ConfigureAwait(false);
-            var folderName = _emailReceiverOptions.MailFolderName;
-            var mailFolder = string.IsNullOrWhiteSpace(folderName) || folderName.Equals("INBOX", StringComparison.OrdinalIgnoreCase) ?
-                _imapClient.Inbox : await _imapClient.GetFolderAsync(folderName, ct).ConfigureAwait(false);
+            var mailFolder = await GetFolderAsync(_emailReceiverOptions.MailFolderName).ConfigureAwait(false);
+            return mailFolder;
+        }
+
+        /// <exception cref="AuthenticationException">Failed to authenticate</exception>
+        /// <exception cref="FolderNotFoundException">No mail folder has the specified name</exception>
+        public async ValueTask<IMailFolder> GetFolderAsync(string mailFolderName, CancellationToken ct = default)
+        {
+            await AuthenticateAsync(ct).ConfigureAwait(false);
+            var mailFolder = string.IsNullOrWhiteSpace(mailFolderName) || mailFolderName.Equals("INBOX", StringComparison.OrdinalIgnoreCase) ?
+                _imapClient.Inbox : await _imapClient.GetFolderAsync(mailFolderName, ct).ConfigureAwait(false);
             return mailFolder;
         }
 

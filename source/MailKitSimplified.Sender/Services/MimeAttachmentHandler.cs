@@ -20,7 +20,7 @@ namespace MailKitSimplified.Sender.Services
         private readonly ILogger _logger;
         private readonly IFileHandler _fileHandler;
 
-        public MimeAttachmentHandler(ILogger<MimeAttachmentHandler> logger, IFileHandler fileHandler)
+        public MimeAttachmentHandler(ILogger<MimeAttachmentHandler> logger = null, IFileHandler fileHandler = null)
         {
             _logger = logger ?? NullLogger<MimeAttachmentHandler>.Instance;
             _fileHandler = fileHandler ?? new FileHandler(NullLogger<FileHandler>.Instance);

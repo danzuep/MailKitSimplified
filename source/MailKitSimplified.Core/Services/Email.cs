@@ -4,13 +4,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging;
 using MailKitSimplified.Core.Abstractions;
 using MailKitSimplified.Core.Models;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 
 namespace MailKitSimplified.Core.Services
 {

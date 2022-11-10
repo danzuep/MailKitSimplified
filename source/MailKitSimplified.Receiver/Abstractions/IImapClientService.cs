@@ -8,5 +8,6 @@ namespace MailKitSimplified.Receiver.Abstractions
     public interface IImapClientService : IDisposable
     {
         ValueTask<IMailFolder> ConnectAsync(CancellationToken cancellationToken = default);
+        ValueTask<IMailFolder> GetFolderAsync(string mailFolderName, CancellationToken ct = default);
     }
 }

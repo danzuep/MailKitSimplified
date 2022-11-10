@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
+using MailKitSimplified.Receiver.Services;
 
 namespace MailKitSimplified.Receiver.Extensions
 {
@@ -9,13 +11,10 @@ namespace MailKitSimplified.Receiver.Extensions
         public static IServiceCollection AddMailKitSimplifiedEmailReceiver(this IServiceCollection services, IConfiguration configuration, string sectionName = EmailReceiverOptions.SectionName)
         {
             var configSection = configuration.GetRequiredSection(sectionName);
-            // This adds IOptions<EmailSenderOptions> from appsettings.json
+            // This adds IOptions<EmailReceiverOptions> from appsettings.json
             services.Configure<EmailReceiverOptions>(configSection);
-            //services.AddTransient<IFileHandler, FileHandler>();
-            //services.AddTransient<IMimeAttachmentHandler, MimeAttachmentHandler>();
-            //services.AddTransient<IEmail, Email>();
-            //services.AddTransient<IEmailWriter, EmailWriter>();
-            //services.AddTransient<IEmailSender, MimeMessageSender>();
+            services.AddTransient<IMailFolderReader, MailFolderReader>();
+            services.AddTransient<IImapClientService, ImapClientService>();
             return services;
         }
     }

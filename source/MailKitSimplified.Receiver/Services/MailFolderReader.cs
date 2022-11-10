@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using MailKitSimplified.Receiver.Abstractions;
+using MailKitSimplified.Receiver.Models;
 
 namespace MailKitSimplified.Receiver.Services
 {
@@ -29,6 +30,20 @@ namespace MailKitSimplified.Receiver.Services
         {
             _logger = logger ?? NullLogger<MailFolderReader>.Instance;
             _imapClientService = imapClientService ?? throw new ArgumentNullException(nameof(imapClientService));
+        }
+
+        public static MailFolderReader Create(string folderName, EmailReceiverOptions emailReceiverOptions)
+        {
+            var imapClientService = ImapClientService.Create(emailReceiverOptions);
+            var mailFolderReader = Create(folderName, imapClientService);
+            return mailFolderReader;
+        }
+
+        public static MailFolderReader Create(string folderName, IImapClientService imapClientService)
+        {
+            var mailFolderReader = new MailFolderReader(imapClientService);
+            mailFolderReader._mailFolder = imapClientService.GetFolderAsync(folderName).GetAwaiter().GetResult();
+            return mailFolderReader;
         }
 
         public async ValueTask ReconnectAsync(bool enableWrite = false, CancellationToken cancellationToken = default)
@@ -129,7 +144,7 @@ namespace MailKitSimplified.Receiver.Services
             if (messageSummaries != null)
             {
                 var uniqueIds = messageSummaries.Select(m => m.UniqueId);
-                mimeMessages = await GetMimeMessagesAsync(uniqueIds).ConfigureAwait(false);
+                mimeMessages = await GetMimeMessagesAsync(uniqueIds, ct).ConfigureAwait(false);
             }
             return mimeMessages;
         }
@@ -159,7 +174,6 @@ namespace MailKitSimplified.Receiver.Services
         /// <exception cref="OperationCanceledException">Message download task was cancelled.</exception>
         public async Task<MimeMessage> GetMimeMessageAsync(UniqueId uniqueId, CancellationToken ct = default)
         {
-            throw new OperationCanceledException();
             var mimeMessage = await _mailFolder.GetMessageAsync(uniqueId, ct).ConfigureAwait(false);
             if (mimeMessage != null && _mailFolder.Access == FolderAccess.ReadWrite)
                 await _mailFolder.AddFlagsAsync(uniqueId, MessageFlags.Seen, true, ct).ConfigureAwait(false);

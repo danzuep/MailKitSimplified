@@ -1,14 +1,14 @@
-﻿using System.Threading.Tasks;
+﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using MailKitSimplified.Core.Abstractions;
 using MailKitSimplified.Core.Models;
-using System;
 
 namespace MailKitSimplified.Core.Services
 {
     public class EmailWriter : IEmailWriter
     {
-        public IEmailBase GetEmail => _email;
+        public ISendableEmail GetEmail => _email;
 
         private readonly ISendableEmail _email;
 
@@ -64,9 +64,15 @@ namespace MailKitSimplified.Core.Services
         public IEmailWriter Attach(params string[] filePaths)
         {
             if (filePaths != null)
+            {
                 foreach (var filePath in filePaths)
+                {
                     if (!string.IsNullOrWhiteSpace(filePath))
+                    {
                         _email.AttachmentFilePaths.Add(filePath);
+                    }
+                }
+            }
             return this;
         }
 
