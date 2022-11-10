@@ -1,20 +1,10 @@
 ﻿using System.IO;
+using System.IO.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-
-/* Unmerged change from project 'MailKitSimplified.Core (net6.0)'
-Before:
-using MailKitSimplified.Core.Abstractions;
-After:
-using MailKitSimplified.Core.Abstractions;
-using MailKitSimplified;
-using MailKitSimplified.Sender;
-using MailKitSimplified.Sender.Services;
-using MailKitSimplified.Core.Services;
-*/
 using MailKitSimplified.Core.Abstractions;
 
 namespace MailKitSimplified.Core.Services
@@ -23,10 +13,12 @@ namespace MailKitSimplified.Core.Services
     public sealed class FileHandler : IFileHandler
     {
         private readonly ILogger _logger;
+        private readonly IFileSystem _fileSystem;
 
-        public FileHandler(ILogger<FileHandler> logger)
+        public FileHandler(ILogger<FileHandler> logger = null, IFileSystem fileSystem = null)
         {
             _logger = logger ?? NullLogger<FileHandler>.Instance;
+            _fileSystem = fileSystem ?? new FileSystem();
         }
 
         /// <summary> 
@@ -35,10 +27,10 @@ namespace MailKitSimplified.Core.Services
         /// </summary>
         /// <param name="filePath">Path to check</param>
         /// <returns>Modified path</returns>
-        public static string NormaliseFilePath(string filePath)
+        public string NormaliseFilePath(string filePath)
         {
-            if (!Path.HasExtension(filePath) && !filePath.EndsWith(Path.DirectorySeparatorChar.ToString()))
-                filePath = $"{filePath}{Path.DirectorySeparatorChar}";
+            if (!_fileSystem.Path.HasExtension(filePath) && !filePath.EndsWith(_fileSystem.Path.DirectorySeparatorChar.ToString()))
+                filePath = $"{filePath}{_fileSystem.Path.DirectorySeparatorChar}";
             return filePath;
         }
 
@@ -47,10 +39,10 @@ namespace MailKitSimplified.Core.Services
             if (!checkFile)
                 filePath = NormaliseFilePath(filePath);
 
-            var directory = Path.GetDirectoryName(filePath);
+            var directory = _fileSystem.Path.GetDirectoryName(filePath);
             bool isLocalDirectory = string.IsNullOrWhiteSpace(directory);
-            bool directoryExists = isLocalDirectory || Directory.Exists(directory);
-            bool fileExists = directoryExists && checkFile && File.Exists(filePath);
+            bool directoryExists = isLocalDirectory || _fileSystem.Directory.Exists(directory);
+            bool fileExists = directoryExists && checkFile && _fileSystem.File.Exists(filePath);
 
             if (!directoryExists)
                 _logger.LogWarning($"Folder not found: '{directory}'");
@@ -66,7 +58,7 @@ namespace MailKitSimplified.Core.Services
             var outputStream = new MemoryStream();
             if (FileCheckOk(filePath, true))
             {
-                using (var source = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize, useAsync: true))
+                using (var source = _fileSystem.File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
                     await source.CopyToAsync(outputStream, BufferSize, cancellationToken).ConfigureAwait(false);
                 };

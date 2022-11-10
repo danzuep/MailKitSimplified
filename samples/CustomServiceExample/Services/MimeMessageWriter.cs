@@ -16,16 +16,16 @@ namespace CustomServiceExample.Services
     [ExcludeFromCodeCoverage]
     public class MimeMessageWriter : IEmailWriter
     {
-        public IEmail GetEmail
+        public IEmailBase GetEmail
         {
             get
             {
-                var from = _mimeMessage.From.Mailboxes;
-                var to = _mimeMessage.To.Mailboxes;
                 var email = new Email(_emailClient)
                 {
-                    From = from.Select(m => new EmailContact(m.Address, m.Name)).ToList(),
-                    To = to.Select(m => new EmailContact(m.Address, m.Name)).ToList(),
+                    From = _mimeMessage.From.Mailboxes.Select(m => EmailContact.Create(m.Address, m.Name)).ToList(),
+                    To = _mimeMessage.To.Mailboxes.Select(m => EmailContact.Create(m.Address, m.Name)).ToList(),
+                    Cc = _mimeMessage.Cc.Mailboxes.Select(m => EmailContact.Create(m.Address, m.Name)).ToList(),
+                    Bcc = _mimeMessage.Bcc.Mailboxes.Select(m => EmailContact.Create(m.Address, m.Name)).ToList(),
                     Subject = _mimeMessage.Subject ?? string.Empty,
                     Body = _mimeMessage.HtmlBody ?? _mimeMessage.TextBody ?? string.Empty,
                 };
@@ -46,13 +46,27 @@ namespace CustomServiceExample.Services
 
         public IEmailWriter From(string address, string name = "")
         {
-            _mimeMessage.From.Add(new MailboxAddress(name, address));
+            var fromMailboxAddress = new MailboxAddress(name, address);
+            _mimeMessage.From.Add(fromMailboxAddress);
+            _mimeMessage.ReplyTo.Add(fromMailboxAddress);
             return this;
         }
 
         public IEmailWriter To(string address, string name = "")
         {
             _mimeMessage.To.Add(new MailboxAddress(name, address));
+            return this;
+        }
+
+        public IEmailWriter Cc(string address, string name = "")
+        {
+            _mimeMessage.Cc.Add(new MailboxAddress(name, address));
+            return this;
+        }
+
+        public IEmailWriter Bcc(string address, string name = "")
+        {
+            _mimeMessage.Bcc.Add(new MailboxAddress(name, address));
             return this;
         }
 

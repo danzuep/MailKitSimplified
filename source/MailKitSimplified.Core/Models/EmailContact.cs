@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using MailKitSimplified.Core.Abstractions;
 
 namespace MailKitSimplified.Core.Models
@@ -34,6 +36,9 @@ namespace MailKitSimplified.Core.Models
             Name = hasNoName ? GetNameFromEmailAddress(emailAddress) : name;
         }
 
+        public static IEmailAddress Create(string emailAddress, string name = null) =>
+            new EmailContact(emailAddress, name);
+
         private static string GetNameFromEmailAddress(string emailAddress)
         {
             var email = emailAddress?.Split('@')?.FirstOrDefault();
@@ -41,10 +46,10 @@ namespace MailKitSimplified.Core.Models
             return name;
         }
 
-        protected static EmailContact GetContactFromEmailAddress(string emailAddress)
+        protected static IEmailAddress GetContactFromEmailAddress(string emailAddress)
         {
             string name = GetNameFromEmailAddress(emailAddress);
-            var contact = new EmailContact(name, emailAddress);
+            var contact = Create(name, emailAddress);
             return contact;
         }
 
@@ -104,6 +109,47 @@ namespace MailKitSimplified.Core.Models
                 foreach (var r in oldChars)
                     result = result.Replace(r, newChar);
             return result;
+        }
+
+        public static bool ValidateEmailAddresses(IEnumerable<string> sourceEmailAddresses, IEnumerable<string> destinationEmailAddresses, ILogger logger)
+        {
+            if (sourceEmailAddresses is null)
+                throw new ArgumentNullException(nameof(sourceEmailAddresses));
+            if (destinationEmailAddresses is null)
+                throw new ArgumentNullException(nameof(destinationEmailAddresses));
+            if (logger is null)
+                logger = NullLogger<EmailContact>.Instance;
+            bool isValid = true;
+            int sourceEmailAddressCount = 0, destinationEmailAddressCount = 0;
+            foreach (var from in sourceEmailAddresses)
+            {
+                if (!from.Contains("@"))
+                {
+                    logger.LogWarning($"From address is invalid ({from})");
+                    isValid = false;
+                }
+                foreach (var to in destinationEmailAddresses)
+                {
+                    if (!to.Contains("@"))
+                    {
+                        logger.LogWarning($"To address is invalid ({to})");
+                        isValid = false;
+                    }
+                    if (to.Equals(from, StringComparison.OrdinalIgnoreCase))
+                    {
+                        logger.LogWarning($"Circular reference, To ({to}) == From ({from})");
+                        isValid = false;
+                    }
+                    destinationEmailAddressCount++;
+                }
+                sourceEmailAddressCount++;
+            }
+            if (sourceEmailAddressCount == 0)
+                logger.LogWarning("Source email address not specified");
+            if (destinationEmailAddressCount == 0)
+                logger.LogWarning("Destination email address not specified");
+            isValid &= sourceEmailAddressCount > 0 && destinationEmailAddressCount > 0;
+            return isValid;
         }
 
         public override string ToString() => $"{Name} <{Email}>";

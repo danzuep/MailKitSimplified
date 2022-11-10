@@ -28,16 +28,19 @@ jobs:
           fetch-depth: 0
 
       - name: Set up GitVersion
-        uses: gittools/actions/gitversion/setup@v0.9.14
+        uses: gittools/actions/gitversion/setup@v0.9.15
         with:
           versionSpec: '5.x'
 
       # https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute/usage-examples.md#example-5
       - name: Use GitVersion to determine version
         id: gitversion # step id used as reference for output values
-        uses: gittools/actions/gitversion/execute@v0.9.14
+        uses: gittools/actions/gitversion/execute@v0.9.15
 
       - name: Markdown workflow job summary
-        run: echo "### ${{ env.Workflow_Name }} build summary" >> $GITHUB_STEP_SUMMARY
+        run: |
+          echo "### ${{ env.Workflow_Name }} build summary" >> $GITHUB_STEP_SUMMARY
+          echo "Label: ${{ steps.gitversion.outputs.preReleaseLabel }}" >> $GITHUB_STEP_SUMMARY
+          echo "Version: ${{ steps.gitversion.outputs.majorMinorPatch }},${{ steps.gitversion.outputs.commitDate }}" >> $GITHUB_STEP_SUMMARY
         env:
           Workflow_Name: "${{ github.repository }} version ${{ steps.gitversion.outputs.fullSemVer }}"

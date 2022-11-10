@@ -14,7 +14,7 @@ namespace MailKit.Simple.Core.Extensions
         //    char.IsSeparator(c);
 
         internal static string ToSpaceReplaceTitleCase(
-            this string value, char[]? replace = null)
+            this string value, char[] replace)
         {
             string result = value.Replace(replace, ' ');
 
@@ -63,10 +63,9 @@ namespace MailKit.Simple.Core.Extensions
         }
 
         public static MailboxAddress FormatMailboxName(
-            this MailboxAddress contact, char[] replace = null)
+            this MailboxAddress contact, char[]? replace = null)
         {
-            if (replace == null)
-                replace = new char[] { '_', '.', '-' };
+            replace ??= new char[] { '_', '.', '-' };
 
             bool noName = string.IsNullOrWhiteSpace(contact.Name) ||
                 contact.Name.Equals(contact.Address, StringComparison.OrdinalIgnoreCase) ? true : false;

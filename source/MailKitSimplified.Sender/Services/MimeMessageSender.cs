@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.IO.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -29,7 +30,7 @@ namespace MailKitSimplified.Sender.Services
         private readonly ILogger _logger;
         private readonly IMimeAttachmentHandler _attachmentHandler;
 
-        public MimeMessageSender(IOptions<EmailSenderOptions> senderOptions, ILoggerFactory loggerFactory = null, IMimeAttachmentHandler mimeAttachmentHandler = null)
+        public MimeMessageSender(IOptions<EmailSenderOptions> senderOptions, IMimeAttachmentHandler mimeAttachmentHandler = null, ILoggerFactory loggerFactory = null)
         {
             _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.SmtpHost))
@@ -68,7 +69,7 @@ namespace MailKitSimplified.Sender.Services
 
         public IEmailWriter WriteEmail => Email.Create(this);
 
-        public static async Task<MimeMessage> ConvertToMimeMessageAsync(IEmail email, IMimeAttachmentHandler attachmentHandler, CancellationToken cancellationToken = default)
+        public static async Task<MimeMessage> ConvertToMimeMessageAsync(ISendableEmail email, IMimeAttachmentHandler attachmentHandler, CancellationToken cancellationToken = default)
         {
             var mimeMessage = new MimeMessage();
 
@@ -79,6 +80,12 @@ namespace MailKitSimplified.Sender.Services
             var to = email.To.Select(m => new MailboxAddress(m.Name, m.Email));
             mimeMessage.To.AddRange(to);
 
+            var cc = email.Cc.Select(m => new MailboxAddress(m.Name, m.Email));
+            mimeMessage.Cc.AddRange(cc);
+
+            var bcc = email.Bcc.Select(m => new MailboxAddress(m.Name, m.Email));
+            mimeMessage.Bcc.AddRange(bcc);
+
             mimeMessage.Subject = email.Subject ?? string.Empty;
 
             mimeMessage.Body = new TextPart(TextFormat.Html) { Text = email.Body ?? string.Empty };
@@ -88,17 +95,22 @@ namespace MailKitSimplified.Sender.Services
             return mimeMessage;
         }
 
-        private void ValidateMimeMessage(MimeMessage mimeMessage)
+        private bool ValidateMimeMessage(MimeMessage mimeMessage)
         {
-            if (mimeMessage is null)
-                throw new ArgumentNullException(nameof(mimeMessage));
-            if (mimeMessage.From.Count == 0)
-                throw new MissingMemberException(nameof(MimeMessage), nameof(MimeMessage.From));
-            if (mimeMessage.To.Count == 0)
-                throw new MissingMemberException(nameof(MimeMessage), nameof(MimeMessage.To));
-            var from = mimeMessage.From.Mailboxes.Select(m => m.Address);
-            var to = mimeMessage.To.Mailboxes.Select(m => m.Address);
-            Email.ValidateEmailAddresses(from, to, _logger);
+            bool isValid = false;
+            if (mimeMessage != null)
+            {
+                if (mimeMessage.From.Count == 0)
+                    mimeMessage.From.Add(new MailboxAddress("localhost", $"{Guid.NewGuid():N}@localhost"));
+                if (!mimeMessage.BodyParts.Any())
+                    mimeMessage.Body = new TextPart { Text = string.Empty };
+                var from = mimeMessage.From.Mailboxes.Select(m => m.Address);
+                var toCcBcc = mimeMessage.To.Mailboxes.Select(m => m.Address)
+                    .Concat(mimeMessage.Cc.Mailboxes.Select(m => m.Address))
+                    .Concat(mimeMessage.Bcc.Mailboxes.Select(m => m.Address));
+                isValid = EmailContact.ValidateEmailAddresses(from, toCcBcc, _logger);
+            }
+            return isValid;
         }
 
         public async Task ConnectSmtpClientAsync(CancellationToken cancellationToken = default)
@@ -117,23 +129,24 @@ namespace MailKitSimplified.Sender.Services
 
         public async Task SendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default)
         {
-            ValidateMimeMessage(mimeMessage);
+            _ = ValidateMimeMessage(mimeMessage);
             await ConnectSmtpClientAsync(cancellationToken).ConfigureAwait(false);
             Debug.WriteLine("Sending to: {0}, subject: '{1}'", mimeMessage.To, mimeMessage.Subject);
             string serverResponse = await _smtpClient.SendAsync(mimeMessage, cancellationToken).ConfigureAwait(false);
             Debug.WriteLine(serverResponse);
         }
 
-        public async Task SendAsync(IEmail email, CancellationToken cancellationToken = default)
+        public async Task SendAsync(ISendableEmail email, CancellationToken cancellationToken = default)
         {
             var mimeMessage = await ConvertToMimeMessageAsync(email, _attachmentHandler, cancellationToken).ConfigureAwait(false);
+            _ = ValidateMimeMessage(mimeMessage);
             await ConnectSmtpClientAsync(cancellationToken).ConfigureAwait(false);
             Debug.WriteLine("Sending email {0}", email.ToString());
             string serverResponse = await _smtpClient.SendAsync(mimeMessage, cancellationToken).ConfigureAwait(false);
             Debug.WriteLine(serverResponse);
         }
 
-        public async Task<bool> TrySendAsync(IEmail email, CancellationToken cancellationToken = default)
+        public async Task<bool> TrySendAsync(ISendableEmail email, CancellationToken cancellationToken = default)
         {
             bool isSent = false;
             try

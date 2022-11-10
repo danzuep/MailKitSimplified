@@ -6,7 +6,7 @@ namespace MailKitSimplified.Core.Abstractions
     public interface IEmailSender
     {
         IEmailWriter WriteEmail { get; }
-        Task SendAsync(IEmail email, CancellationToken cancellationToken = default);
-        Task<bool> TrySendAsync(IEmail email, CancellationToken cancellationToken = default);
+        Task SendAsync(ISendableEmail email, CancellationToken cancellationToken = default);
+        Task<bool> TrySendAsync(ISendableEmail email, CancellationToken cancellationToken = default);
     }
 }

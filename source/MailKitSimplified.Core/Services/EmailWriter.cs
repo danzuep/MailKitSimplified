@@ -2,31 +2,49 @@
 using System.Threading;
 using MailKitSimplified.Core.Abstractions;
 using MailKitSimplified.Core.Models;
+using System;
 
 namespace MailKitSimplified.Core.Services
 {
     public class EmailWriter : IEmailWriter
     {
-        public IEmail GetEmail => _email;
+        public IEmailBase GetEmail => _email;
 
-        private readonly IEmail _email;
+        private readonly ISendableEmail _email;
 
-        public EmailWriter(IEmail email)
+        public EmailWriter(ISendableEmail email)
         {
             _email = email;
         }
 
-        public static EmailWriter CreateFrom(IEmail email) => new EmailWriter(email);
+        public static EmailWriter CreateWith(ISendableEmail email) => new EmailWriter(email);
+
+        public static EmailWriter CreateWith(IEmailSender emailSender) => new EmailWriter(new Email(emailSender));
+
+        [Obsolete("Use 'CreateWith' instead.")]
+        public static EmailWriter CreateFrom(ISendableEmail email) => new EmailWriter(email);
 
         public IEmailWriter From(string emailAddress, string name = "")
         {
-            _email.From.Add(new EmailContact(emailAddress, name));
+            _email.From.Add(EmailContact.Create(emailAddress, name));
             return this;
         }
 
         public IEmailWriter To(string emailAddress, string name = "")
         {
-            _email.To.Add(new EmailContact(emailAddress, name));
+            _email.To.Add(EmailContact.Create(emailAddress, name));
+            return this;
+        }
+
+        public IEmailWriter Cc(string emailAddress, string name = "")
+        {
+            _email.Cc.Add(EmailContact.Create(emailAddress, name));
+            return this;
+        }
+
+        public IEmailWriter Bcc(string emailAddress, string name = "")
+        {
+            _email.Bcc.Add(EmailContact.Create(emailAddress, name));
             return this;
         }
 

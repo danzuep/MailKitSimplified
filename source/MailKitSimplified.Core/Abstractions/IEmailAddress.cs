@@ -2,6 +2,7 @@
 {
     /// <summary>
     /// <see href="https://datatracker.ietf.org/doc/html/rfc8621#section-4.1.2.3">RFC 8621</see>
+    /// <seealso href="https://datatracker.ietf.org/doc/html/rfc822#section-6">RFC 822</seealso>
     /// </summary>
     public interface IEmailAddress
     {
@@ -18,6 +19,10 @@
         string Email { get; set; }
 
 #if NET5_0_OR_GREATER
+        /// <summary>
+        /// Email contact name and address as a string.
+        /// </summary>
+        /// <returns></returns>
         string ToString() => $"{Name} <{Email}>";
 #endif
     }

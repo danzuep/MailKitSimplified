@@ -14,11 +14,13 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace MailKitSimplified.Core.Services
 {
-    public class Email : IEmail
+    public class Email : ISendableEmail
     {
         [Required]
         public IList<IEmailAddress> From { get; set; } = new List<IEmailAddress>();
         public IList<IEmailAddress> To { get; set; } = new List<IEmailAddress>();
+        public IList<IEmailAddress> Cc { get; set; } = new List<IEmailAddress>();
+        public IList<IEmailAddress> Bcc { get; set; } = new List<IEmailAddress>();
         public IList<string> AttachmentFilePaths { get; set; } = new List<string>();
         public IEnumerable<string> AttachmentFileNames =>
             AttachmentFilePaths?.Select(a => Path.GetFileName(a)) ?? Array.Empty<string>();
@@ -36,11 +38,11 @@ namespace MailKitSimplified.Core.Services
             _logger = logger ?? NullLogger<Email>.Instance;
         }
 
-        public static EmailWriter Create(IEmailSender emailSender) => EmailWriter.CreateFrom(new Email(emailSender));
+        public static EmailWriter Create(IEmailSender emailSender) => EmailWriter.CreateWith(emailSender);
 
         [ExcludeFromCodeCoverage]
         [Obsolete("This method will be removed in a future version, use the Write method instead.")]
-        public IEmail HandWrite(string fromAddress, string toAddress, string subject = "", string body = "", bool isHtml = true, params string[] attachmentFilePaths)
+        public ISendableEmail HandWrite(string fromAddress, string toAddress, string subject = "", string body = "", bool isHtml = true, params string[] attachmentFilePaths)
         {
             From = EmailContact.ParseEmailContacts(fromAddress).ToList();
             To = EmailContact.ParseEmailContacts(toAddress).ToList();
@@ -51,42 +53,8 @@ namespace MailKitSimplified.Core.Services
             return this;
         }
 
-        public static void ValidateEmailAddresses(IEnumerable<string> fromEmailAddresses, IEnumerable<string> toEmailAddresses, ILogger logger)
-        {
-            if (fromEmailAddresses is null)
-                throw new ArgumentNullException(nameof(fromEmailAddresses));
-            if (toEmailAddresses is null)
-                throw new ArgumentNullException(nameof(toEmailAddresses));
-            if (logger is null)
-                throw new ArgumentNullException(nameof(logger));
-            foreach (var from in fromEmailAddresses)
-            {
-                if (!from.Contains("@"))
-                    logger.LogWarning($"From address is invalid ({from})");
-                foreach (var to in toEmailAddresses)
-                {
-                    if (!to.Contains("@"))
-                        logger.LogWarning($"To address is invalid ({to})");
-                    if (to.Equals(from, StringComparison.OrdinalIgnoreCase))
-                        logger.LogWarning($"Circular reference, To ({to}) == From ({from})");
-                }
-            }
-        }
-
-        private void Validate()
-        {
-            if (!From.Any())
-                throw new MissingMemberException(nameof(IEmail), nameof(IEmail.From));
-            if (!To.Any())
-                throw new MissingMemberException(nameof(IEmail), nameof(IEmail.To));
-            var from = From.Select(m => m.Email);
-            var to = To.Select(m => m.Email);
-            ValidateEmailAddresses(from, to, _logger);
-        }
-
         public async Task SendAsync(CancellationToken cancellationToken = default)
         {
-            Validate();
             await _sender.SendAsync(this, cancellationToken).ConfigureAwait(false);
         }
 
@@ -106,7 +74,6 @@ namespace MailKitSimplified.Core.Services
             return isSent;
         }
 
-        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             string envelope = string.Empty;

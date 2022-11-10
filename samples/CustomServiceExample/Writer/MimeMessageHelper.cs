@@ -48,7 +48,7 @@ namespace CustomServiceExample.Writer
         }
 
         internal static string ToSpaceReplaceTitleCase(
-            this string value, char[] replace = null)
+            this string value, char[] replace)
         {
             string result = value.Replace(replace, ' ');
 
@@ -107,10 +107,9 @@ namespace CustomServiceExample.Writer
 
         internal static MimeMessage CreateMimeMessage(
             IEnumerable<MailboxAddress> from, IEnumerable<MailboxAddress> to, string subject,
-            MimeEntity textBody, IEnumerable<MailboxAddress> replyTo = null, IEnumerable<MimeEntity> attachments = null)
+            MimeEntity textBody, IEnumerable<MailboxAddress>? replyTo = null, IEnumerable<MimeEntity>? attachments = null)
         {
             var body = textBody ?? new TextPart(TextFormat.Html);
-            string attachmentNames = string.Empty;
 
             if (attachments != null && attachments.Any())
             {
@@ -119,8 +118,6 @@ namespace CustomServiceExample.Writer
                 foreach (var attachment in attachments)
                     multipart.Add(attachment);
                 body = multipart;
-                //attachmentNames = string.Format(", with attached: '{0}'",
-                //    attachments.GetAttachmentNames().ToEnumeratedString("', '"));
             }
 
             if (replyTo.IsNullOrEmpty())

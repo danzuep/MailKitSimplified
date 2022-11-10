@@ -1,16 +1,16 @@
 name: 🏗 Build Test Pack
-run-name: Build and test ${{ inputs.project-file }} in ${{ inputs.environment }}
+run-name: Build and test ${{ inputs.project-name }} in ${{ inputs.environment }}
 
 on:
   workflow_dispatch:
   workflow_call:
     inputs:
-      environment:
-        description: 'The build environment'
-        default: development
+      configuration:
+        description: 'The build configuration'
+        default: Release
         type: string
       project-name:
-        description: 'The name of the project'
+        description: 'The name of the project to build and test'
         required: true
         type: string
       version:
@@ -23,8 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     env:
+      SOLUTION_FILE: 'samples/${{ inputs.project-name }}.sln'
       PROJECT_FILE: 'source/${{ inputs.project-name }}/${{ inputs.project-name }}.csproj'
       TEST_PROJECT: 'tests/${{ inputs.project-name }}.Tests/${{ inputs.project-name }}.Tests.csproj'
+      PACKAGE_NAME: '${{ inputs.project-name }}.${{ inputs.version }}.nupkg'
 
     steps:
       - name: Checkout repository
@@ -40,14 +42,14 @@ jobs:
         run: dotnet restore $PROJECT_FILE
 
       - name: Build
-        run: dotnet build $PROJECT_FILE --configuration Release --no-restore
+        run: dotnet build $PROJECT_FILE --configuration ${{ inputs.configuration }} --no-restore
 
       # The xUnit test project template already integrates with coverlet.collector by default
       # Don't use the "--logger trx" option as it causes duplicate folders and xml files to be created
       - name: Test
         if: ${{ inputs.project-name != 'MailKitSimplified.Core' }}
-        run: dotnet test $TEST_PROJECT -c Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory "./.coverage"
-
+        run: dotnet test $TEST_PROJECT -c ${{ inputs.configuration }} --verbosity normal --collect:"XPlat Code Coverage" --results-directory "./.coverage"
+        
       - name: Merge all test project Code Coverage results into one report
         if: ${{ inputs.project-name != 'MailKitSimplified.Core' }}
         run: |
@@ -88,16 +90,15 @@ jobs:
         if: ${{ inputs.project-name != 'MailKitSimplified.Core' }}
         run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
 
-      - name: Pack
+      # Use either GeneratePackageOnBuild or dotnet pack, not both. See https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-pack
+      - name: Create NuGet package
         run: dotnet pack $PROJECT_FILE -c Release --no-build -p:PackageVersion=${{ inputs.version }} --output ".nupkg"
-
+        
       - name: Markdown workflow job summary
-        run: echo "### Packed ${{ env.Package_Name }}" >> $GITHUB_STEP_SUMMARY
-        env:
-          Package_Name: '${{ inputs.project-name }}.${{ inputs.version }}.nupkg'
+        run: echo "### Packed $PACKAGE_NAME" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload artifacts for deployment job
         uses: actions/upload-artifact@v3
         with:
           name: ${{ inputs.project-name }}
-          path: '.nupkg/${{ inputs.project-name }}.${{ inputs.version }}.nupkg'
+          path: './.nupkg/*.nupkg'

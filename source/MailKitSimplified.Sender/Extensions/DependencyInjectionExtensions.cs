@@ -17,7 +17,7 @@ namespace MailKitSimplified.Sender.Extensions
             services.Configure<EmailSenderOptions>(configSection);
             services.AddTransient<IFileHandler, FileHandler>();
             services.AddTransient<IMimeAttachmentHandler, MimeAttachmentHandler>();
-            services.AddTransient<IEmail, Email>();
+            services.AddTransient<ISendableEmail, Email>();
             services.AddTransient<IEmailWriter, EmailWriter>();
             services.AddTransient<IEmailSender, MimeMessageSender>();
             return services;

@@ -118,12 +118,12 @@ An email receiver must have a IMAP host address, a network credential, and a val
 ### Receiving Mail
 
 ```
-var receiver = imapReceiver
+var mailboxReceiver = imapReceiver
     .ReadFrom("INBOX")
     .Skip(0)
     .Take(10);
 
-await receiver.GetMimeMessagesAsync();
+await mailboxReceiver.GetMimeMessagesAsync();
 ```
 
 ```

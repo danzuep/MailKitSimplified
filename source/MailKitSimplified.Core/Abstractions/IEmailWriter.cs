@@ -9,13 +9,17 @@ namespace MailKitSimplified.Core.Abstractions
 
         IEmailWriter To(string emailAddress, string name = "");
 
+        IEmailWriter Cc(string emailAddress, string name = "");
+
+        IEmailWriter Bcc(string emailAddress, string name = "");
+
         IEmailWriter Subject(string subject);
 
         IEmailWriter Body(string body, bool isHtml = true);
 
         IEmailWriter Attach(params string[] filePath);
 
-        IEmail GetEmail { get; }
+        IEmailBase GetEmail { get; }
 
         Task SendAsync(CancellationToken cancellationToken = default);
 

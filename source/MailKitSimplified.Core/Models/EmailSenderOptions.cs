@@ -9,7 +9,7 @@ namespace MailKitSimplified.Core.Models
         public const string SectionName = "EmailSender";
 
         [Required]
-        public string SmtpHost { get; set; }
+        public string SmtpHost { get; set; } // "localhost";
         public ushort SmtpPort { get; set; } = 0; // 25, or 587 for SSL
         public NetworkCredential SmtpCredential { get; set; } = null;
         public string ProtocolLog { get; set; } = null; // "C:/Temp/EmailClientSmtp.log";
