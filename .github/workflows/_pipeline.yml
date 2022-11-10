@@ -1,7 +1,6 @@
 name: Pipeline Template
 
 on:
-  workflow_dispatch:
   workflow_call:
     inputs:
       environment:
@@ -35,33 +34,33 @@ jobs:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
-  build_receiver:
-    needs: version
-    uses: ./.github/workflows/_build-test.yml
-    with:
-      project-name: 'MailKitSimplified.Receiver'
-      version: ${{ needs.version.outputs.version }}
-    secrets: inherit
+  # build_receiver:
+  #   needs: version
+  #   uses: ./.github/workflows/_build-test.yml
+  #   with:
+  #     project-name: 'MailKitSimplified.Receiver'
+  #     version: ${{ needs.version.outputs.version }}
+  #   secrets: inherit
 
-   deploy_core:
-     if: ${{ inputs.environment == 'release' && github.event_name != 'pull_request' }}
-     needs: build_core
-     uses: ./.github/workflows/_deploy-nuget.yml
-     with:
-       environment: ${{ inputs.environment }}
-       project-name: 'MailKitSimplified.Core'
-       version: ${{ needs.version.outputs.version }}
-     secrets: inherit
+  #  deploy_core:
+  #    if: ${{ inputs.environment == 'release' && github.event_name != 'pull_request' }}
+  #    needs: build_core
+  #    uses: ./.github/workflows/_deploy-nuget.yml
+  #    with:
+  #      environment: ${{ inputs.environment }}
+  #      project-name: 'MailKitSimplified.Core'
+  #      version: ${{ needs.version.outputs.version }}
+  #    secrets: inherit
 
-   deploy_sender:
-     if: ${{ inputs.environment == 'release' && github.event_name != 'pull_request' }}
-     needs: build_sender
-     uses: ./.github/workflows/_deploy-nuget.yml
-     with:
-       environment: ${{ inputs.environment }}
-       project-name: 'MailKitSimplified.Sender'
-       version: ${{ needs.version.outputs.version }}
-     secrets: inherit
+  #  deploy_sender:
+  #    if: ${{ inputs.environment == 'release' && github.event_name != 'pull_request' }}
+  #    needs: build_sender
+  #    uses: ./.github/workflows/_deploy-nuget.yml
+  #    with:
+  #      environment: ${{ inputs.environment }}
+  #      project-name: 'MailKitSimplified.Sender'
+  #      version: ${{ needs.version.outputs.version }}
+  #    secrets: inherit
 
   # deploy_receiver:
   #   if: ${{ inputs.environment == 'release' && github.event_name != 'pull_request' }}

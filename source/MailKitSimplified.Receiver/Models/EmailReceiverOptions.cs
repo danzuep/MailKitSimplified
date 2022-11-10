@@ -17,7 +17,7 @@ namespace MailKitSimplified.Receiver.Models
         public string ProtocolLog { get; set; } = null; // "C:/Temp/EmailClientImap.log";
         // public string DownloadPath { get; set; } = "C:/Temp/Emails";
 
-        internal EmailReceiverOptions() { }
+        public EmailReceiverOptions() { }
 
         public EmailReceiverOptions(string imapHost, NetworkCredential imapCredential, ushort imapPort = 0, string protocolLog = null)
         {

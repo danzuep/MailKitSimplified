@@ -20,6 +20,7 @@ on:
 
 jobs:
   test:
+    name: Build Test Pack
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     env:
