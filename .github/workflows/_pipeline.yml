@@ -44,27 +44,27 @@ jobs:
 
   deploy_core:
     # if: ${{ inputs.environment == 'release' }}
-    needs: build_core
+    needs: [version,build_core]
     uses: ./.github/workflows/_deploy-nuget.yml
     with:
-    environment: ${{ inputs.environment }}
-    project-name: 'MailKitSimplified.Core'
-    version: ${{ needs.version.outputs.version }}
+      environment: ${{ inputs.environment }}
+      project-name: 'MailKitSimplified.Core'
+      version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
   deploy_sender:
     # if: ${{ inputs.environment == 'release' }}
-    needs: build_sender
+    needs: [version,build_sender]
     uses: ./.github/workflows/_deploy-nuget.yml
     with:
-    environment: ${{ inputs.environment }}
-    project-name: 'MailKitSimplified.Sender'
-    version: ${{ needs.version.outputs.version }}
+      environment: ${{ inputs.environment }}
+      project-name: 'MailKitSimplified.Sender'
+      version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
   # deploy_receiver:
   #   if: ${{ inputs.environment == 'release' }} && {{ github.event_name != 'pull_request' }}
-  #   needs: build_receiver
+  #   needs: [version,build_receiver]
   #   uses: ./.github/workflows/_deploy-nuget.yml
   #   with:
   #     environment: ${{ inputs.environment }}

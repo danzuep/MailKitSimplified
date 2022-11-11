@@ -18,15 +18,15 @@ using MailKitSimplified.Receiver.Extensions;
 
 namespace MailKitSimplified.Receiver.Services
 {
-    public class ImapClientService : IImapClientService
+    public class ImapReceiver : IImapReceiver
     {
         private readonly ILogger _logger;
         private readonly IImapClient _imapClient;
         private readonly EmailReceiverOptions _receiverOptions;
 
-        public ImapClientService(IOptions<EmailReceiverOptions> receiverOptions, IProtocolLogger protocolLogger = null, ILogger<ImapClientService> logger = null)
+        public ImapReceiver(IOptions<EmailReceiverOptions> receiverOptions, IProtocolLogger protocolLogger = null, ILogger<ImapReceiver> logger = null)
         {
-            _logger = logger ?? NullLogger<ImapClientService>.Instance;
+            _logger = logger ?? NullLogger<ImapReceiver>.Instance;
             _receiverOptions = receiverOptions.Value;
             if (string.IsNullOrWhiteSpace(_receiverOptions.ImapHost))
                 throw new NullReferenceException(nameof(EmailReceiverOptions.ImapHost));
@@ -36,25 +36,31 @@ namespace MailKitSimplified.Receiver.Services
             _imapClient = imapLogger != null ? new ImapClient(imapLogger) : new ImapClient();
         }
 
-        public static ImapClientService Create(string imapHost, ushort imapPort = 0, string username = null, string password = null, string protocolLog = null)
+        public static ImapReceiver Create(string imapHost, ushort imapPort = 0, string username = null, string password = null, string protocolLog = null)
         {
             var imapCredential = username == null && password == null ? null : new NetworkCredential(username ?? "", password ?? "");
             var receiver = Create(imapHost, imapCredential, imapPort, protocolLog);
             return receiver;
         }
 
-        public static ImapClientService Create(string imapHost, NetworkCredential imapCredential, ushort imapPort = 0, string protocolLog = null)
+        public static ImapReceiver Create(string imapHost, NetworkCredential imapCredential, ushort imapPort = 0, string protocolLog = null)
         {
             var receiverOptions = new EmailReceiverOptions(imapHost, imapCredential, imapPort, protocolLog);
             var receiver = Create(receiverOptions);
             return receiver;
         }
 
-        public static ImapClientService Create(EmailReceiverOptions emailReceiverOptions)
+        public static ImapReceiver Create(EmailReceiverOptions emailReceiverOptions)
         {
             var options = Options.Create(emailReceiverOptions);
-            var receiver = new ImapClientService(options);
+            var receiver = new ImapReceiver(options);
             return receiver;
+        }
+
+        public MailFolderReader ReadFrom(string mailFolderName)
+        {
+            var mailboxReceiver = MailFolderReader.Create(mailFolderName, this);
+            return mailboxReceiver;
         }
 
         /// <exception cref="AuthenticationException">Failed to authenticate</exception>

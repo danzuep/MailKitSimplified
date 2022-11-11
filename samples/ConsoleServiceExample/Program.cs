@@ -8,15 +8,15 @@ using MailKitSimplified.Receiver.Extensions;
 using var loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Trace).AddDebug().AddConsole());
 var logger = loggerFactory.CreateLogger<Program>();
 
-using var smtpSender = MimeMessageSender.Create("localhost", 25);
-bool isSent = await Email.Create(smtpSender)
+using var smtpSender = SmtpSender.Create("localhost", 25);
+bool isSent = await smtpSender.WriteEmail
     .Bcc($"{Guid.NewGuid():N}@localhost")
     .TrySendAsync();
 
 logger.LogInformation("Email {result}.", isSent ? "sent" : "failed to send");
 
-using var imapReceiver = ImapClientService.Create("localhost", null, 143);
-var messages = await MailFolderReader.Create("INBOX", imapReceiver)
+using var imapReceiver = ImapReceiver.Create("localhost", null, 143);
+var messageSummaries = await imapReceiver.ReadFrom("INBOX")
     .GetMessageSummariesAsync(MessageSummaryItems.UniqueId);
 
-logger.LogDebug($"Email received: {messages.Select(m => m.UniqueId).ToEnumeratedString()}");
+logger.LogDebug("Email(s) received: {ids}", messageSummaries.Select(m => m.UniqueId).ToEnumeratedString());

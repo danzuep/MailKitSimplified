@@ -22,17 +22,16 @@ using MailKitSimplified.Sender.Abstractions;
 
 namespace MailKitSimplified.Sender.Services
 {
-    [Obsolete("Use SmtpSender instead.")]
-    public class MimeMessageSender : IMimeMessageSender
+    public class SmtpSender : IMimeMessageSender
     {
         private readonly ILogger _logger;
         private readonly ISmtpClient _smtpClient;
         private readonly EmailSenderOptions _senderOptions;
         private readonly IMimeAttachmentHandler _attachmentHandler;
 
-        public MimeMessageSender(IOptions<EmailSenderOptions> senderOptions, IMimeAttachmentHandler mimeAttachmentHandler = null, ILogger<MimeMessageSender> logger = null)
+        public SmtpSender(IOptions<EmailSenderOptions> senderOptions, IMimeAttachmentHandler mimeAttachmentHandler = null, ILogger<SmtpSender> logger = null)
         {
-            _logger = logger ?? NullLogger<MimeMessageSender>.Instance;
+            _logger = logger ?? NullLogger<SmtpSender>.Instance;
             _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.SmtpHost))
                 throw new NullReferenceException(nameof(EmailSenderOptions.SmtpHost));
@@ -41,18 +40,18 @@ namespace MailKitSimplified.Sender.Services
             _smtpClient = smtpLogger != null ? new SmtpClient(smtpLogger) : new SmtpClient();
         }
 
-        public static MimeMessageSender Create(string smtpHost, ushort smtpPort = 0, string username = null, string password = null, string protocolLog = null)
+        public static SmtpSender Create(string smtpHost, ushort smtpPort = 0, string username = null, string password = null, string protocolLog = null)
         {
             var smtpCredential = username == null && password == null ? null : new NetworkCredential(username ?? "", password ?? "");
             var sender = Create(smtpHost, smtpCredential, smtpPort, protocolLog);
             return sender;
         }
 
-        public static MimeMessageSender Create(string smtpHost, NetworkCredential smtpCredential, ushort smtpPort = 0, string protocolLog = null)
+        public static SmtpSender Create(string smtpHost, NetworkCredential smtpCredential, ushort smtpPort = 0, string protocolLog = null)
         {
             var senderOptions = new EmailSenderOptions(smtpHost, smtpCredential, smtpPort, protocolLog);
             var options = Options.Create(senderOptions);
-            var sender = new MimeMessageSender(options);
+            var sender = new SmtpSender(options);
             return sender;
         }
 

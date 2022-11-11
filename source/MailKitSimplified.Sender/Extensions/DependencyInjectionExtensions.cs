@@ -19,7 +19,7 @@ namespace MailKitSimplified.Sender.Extensions
             services.AddTransient<IMimeAttachmentHandler, MimeAttachmentHandler>();
             services.AddTransient<ISendableEmail, Email>();
             services.AddTransient<IEmailWriter, EmailWriter>();
-            services.AddTransient<IEmailSender, MimeMessageSender>();
+            services.AddTransient<IEmailSender, SmtpSender>();
             return services;
         }
     }

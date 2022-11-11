@@ -14,7 +14,7 @@ namespace MailKitSimplified.Receiver.Extensions
             // This adds IOptions<EmailReceiverOptions> from appsettings.json
             services.Configure<EmailReceiverOptions>(configSection);
             services.AddTransient<IMailFolderReader, MailFolderReader>();
-            services.AddTransient<IImapClientService, ImapClientService>();
+            services.AddTransient<IImapReceiver, ImapReceiver>();
             return services;
         }
     }

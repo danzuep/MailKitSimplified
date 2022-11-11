@@ -23,10 +23,10 @@ namespace MailKitSimplified.Receiver.Services
         public int FolderCount => _mailFolder?.Count ?? 0;
 
         private readonly ILogger _logger;
-        private readonly IImapClientService _imapClientService;
+        private readonly IImapReceiver _imapClientService;
         private IMailFolder _mailFolder;
 
-        public MailFolderReader(IImapClientService imapClientService, ILogger<MailFolderReader> logger = null)
+        public MailFolderReader(IImapReceiver imapClientService, ILogger<MailFolderReader> logger = null)
         {
             _logger = logger ?? NullLogger<MailFolderReader>.Instance;
             _imapClientService = imapClientService ?? throw new ArgumentNullException(nameof(imapClientService));
@@ -34,12 +34,12 @@ namespace MailKitSimplified.Receiver.Services
 
         public static MailFolderReader Create(string folderName, EmailReceiverOptions emailReceiverOptions)
         {
-            var imapClientService = ImapClientService.Create(emailReceiverOptions);
+            var imapClientService = ImapReceiver.Create(emailReceiverOptions);
             var mailFolderReader = Create(folderName, imapClientService);
             return mailFolderReader;
         }
 
-        public static MailFolderReader Create(string folderName, IImapClientService imapClientService)
+        public static MailFolderReader Create(string folderName, IImapReceiver imapClientService)
         {
             var mailFolderReader = new MailFolderReader(imapClientService);
             mailFolderReader._mailFolder = imapClientService.GetFolderAsync(folderName).GetAwaiter().GetResult();

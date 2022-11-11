@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.ComponentModel.DataAnnotations;
+using MailKitSimplified.Core.Abstractions;
 
 namespace MailKitSimplified.Core.Models
 {
