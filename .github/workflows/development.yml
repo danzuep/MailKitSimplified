@@ -14,7 +14,7 @@ jobs:
     uses: ./.github/workflows/_gitversion.yml
     secrets: inherit
 
-  build_core:
+  test_core:
     needs: version
     uses: ./.github/workflows/_build-test.yml
     with:
@@ -22,7 +22,7 @@ jobs:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
-  build_sender:
+  test_sender:
     needs: version
     uses: ./.github/workflows/_build-test.yml
     with:
@@ -30,7 +30,7 @@ jobs:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
-  build_receiver:
+  test_receiver:
     needs: version
     uses: ./.github/workflows/_build-test.yml
     with:

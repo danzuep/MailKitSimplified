@@ -15,7 +15,7 @@ on:
 
 jobs:
   gitversion:
-    name: GitVersion
+    name: 🧬 GitVersion
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
 

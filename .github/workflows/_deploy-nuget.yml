@@ -24,7 +24,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy ${{ inputs.project-name }}
+    name: 🚀 Deploy ${{ inputs.project-name }}
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -32,7 +32,7 @@ jobs:
     environment: ${{ inputs.environment }}
     env:
       PACKAGE_NAME: '${{ inputs.project-name }}.${{ inputs.version }}.nupkg'
-      VERSION: ${GITHUB_REF##*v}
+      VERSION: ${{ github.ref }} # ##*v
 
     steps:
       - name: Download artifact from build job
@@ -40,9 +40,6 @@ jobs:
         with:
           name: ${{ inputs.project-name }}
 
-      - name: Markdown workflow job summary
-        run: echo "### $PACKAGE_NAME artifact downloaded" >> $GITHUB_STEP_SUMMARY
-        
       - name: Setup .NET environment
         uses: actions/setup-dotnet@v3
         with:
@@ -61,4 +58,4 @@ jobs:
       - name: Markdown workflow job summary
         run: |
           echo "### ${{ inputs.project-name }}.${{ inputs.version }}.nupkg package published to NuGet from ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
-          echo "${{ github.repository }} version $VERSION released" >> $GITHUB_STEP_SUMMARY
+          echo "${{ github.repository }} version $VERSION" >> $GITHUB_STEP_SUMMARY
