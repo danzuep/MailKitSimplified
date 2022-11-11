@@ -4,7 +4,7 @@
     /// <see href="https://datatracker.ietf.org/doc/html/rfc8621#section-4.1.2.3">RFC 8621</see>
     /// <seealso href="https://datatracker.ietf.org/doc/html/rfc822#section-6">RFC 822</seealso>
     /// </summary>
-    public interface IEmailAddress
+    public interface IEmailContact
     {
         /// <summary>
         /// The "name" or "display-name" of the "mailbox".

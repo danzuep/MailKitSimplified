@@ -1,7 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-
-namespace MailKitSimplified.Core.Abstractions
+﻿namespace MailKitSimplified.Core.Abstractions
 {
     public interface IEmailWriter
     {
@@ -17,12 +14,6 @@ namespace MailKitSimplified.Core.Abstractions
 
         IEmailWriter Body(string body, bool isHtml = true);
 
-        IEmailWriter Attach(params string[] filePath);
-
-        ISendableEmail GetEmail { get; }
-
-        Task SendAsync(CancellationToken cancellationToken = default);
-
-        Task<bool> TrySendAsync(CancellationToken cancellationToken = default);
+        IBasicEmail Result { get; }
     }
 }

@@ -8,7 +8,7 @@ using MailKitSimplified.Core.Abstractions;
 
 namespace MailKitSimplified.Core.Models
 {
-    public class EmailContact : IEmailAddress
+    public class EmailContact : IEmailContact
     {
         public string Name { get; set; }
 
@@ -28,7 +28,7 @@ namespace MailKitSimplified.Core.Models
         private static readonly char[] _emailReplace = new char[] { '_', '.', '-' };
         private static readonly char[] _emailSeparator = new char[] { ';', ',', ' ', '&', '|' };
 
-        public EmailContact(string emailAddress, string name = null)
+        private EmailContact(string emailAddress, string name = null)
         {
             Email = emailAddress ?? throw new ArgumentNullException(nameof(emailAddress));
             bool hasNoName = string.IsNullOrWhiteSpace(name) ||
@@ -36,7 +36,7 @@ namespace MailKitSimplified.Core.Models
             Name = hasNoName ? GetNameFromEmailAddress(emailAddress) : name;
         }
 
-        public static IEmailAddress Create(string emailAddress, string name = null) =>
+        public static IEmailContact Create(string emailAddress, string name = null) =>
             new EmailContact(emailAddress, name);
 
         private static string GetNameFromEmailAddress(string emailAddress)
@@ -46,22 +46,22 @@ namespace MailKitSimplified.Core.Models
             return name;
         }
 
-        protected static IEmailAddress GetContactFromEmailAddress(string emailAddress)
+        protected static IEmailContact GetContactFromEmailAddress(string emailAddress)
         {
             string name = GetNameFromEmailAddress(emailAddress);
             var contact = Create(name, emailAddress);
             return contact;
         }
 
-        public static IEnumerable<IEmailAddress> ParseEmailContacts(string value)
+        public static IEnumerable<IEmailContact> ParseEmailContacts(string value)
         {
-            IEnumerable<IEmailAddress> contacts = null;
+            IEnumerable<IEmailContact> contacts = null;
             if (!string.IsNullOrEmpty(value))
             {
                 var emailAddresses = value.Split(_emailSeparator, StringSplitOptions.RemoveEmptyEntries);
                 contacts = emailAddresses.Select(email => GetContactFromEmailAddress(email));
             }
-            return contacts ?? Enumerable.Empty<IEmailAddress>();
+            return contacts ?? Enumerable.Empty<IEmailContact>();
         }
 
         private static string SpaceReplaceTitleCase(string value, char[] replace)

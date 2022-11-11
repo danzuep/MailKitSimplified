@@ -4,11 +4,12 @@ using System.Collections.Generic;
 
 namespace MailKitSimplified.Core.Abstractions
 {
-    public interface ISendableEmail : IEmailBase
+    public interface ISendableEmail : IBasicEmail
     {
         IList<string> AttachmentFilePaths { get; set; }
-        IEnumerable<string> AttachmentFileNames { get; }
+
         Task SendAsync(CancellationToken cancellationToken = default);
+
         Task<bool> TrySendAsync(CancellationToken cancellationToken = default);
     }
 }

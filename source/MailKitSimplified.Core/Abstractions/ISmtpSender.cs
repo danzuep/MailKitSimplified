@@ -4,12 +4,10 @@ using System.Threading.Tasks;
 
 namespace MailKitSimplified.Core.Abstractions
 {
-    public interface IEmailSender : IDisposable
+    public interface ISmtpSender : IDisposable
     {
-        IEmailWriter WriteEmail { get; }
+        ISendableEmailWriter WriteEmail { get; }
 
         Task SendAsync(ISendableEmail email, CancellationToken cancellationToken = default);
-
-        Task<bool> TrySendAsync(ISendableEmail email, CancellationToken cancellationToken = default);
     }
 }

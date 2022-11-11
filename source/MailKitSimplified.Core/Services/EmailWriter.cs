@@ -1,28 +1,18 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using MailKitSimplified.Core.Abstractions;
+﻿using MailKitSimplified.Core.Abstractions;
 using MailKitSimplified.Core.Models;
 
 namespace MailKitSimplified.Core.Services
 {
     public class EmailWriter : IEmailWriter
     {
-        public ISendableEmail GetEmail => _email;
+        public IBasicEmail Result => _email;
 
-        private readonly ISendableEmail _email;
+        private readonly IBasicEmail _email;
 
-        public EmailWriter(ISendableEmail email)
+        public EmailWriter(IBasicEmail email = null)
         {
-            _email = email;
+            _email = email ?? new BasicEmail();
         }
-
-        public static EmailWriter CreateWith(ISendableEmail email) => new EmailWriter(email);
-
-        public static EmailWriter CreateWith(IEmailSender emailSender) => CreateWith(new Email(emailSender));
-
-        [Obsolete("Use 'CreateWith' instead.")]
-        public static EmailWriter CreateFrom(ISendableEmail email) => new EmailWriter(email);
 
         public IEmailWriter From(string emailAddress, string name = "")
         {
@@ -60,26 +50,5 @@ namespace MailKitSimplified.Core.Services
             _email.IsHtml = isHtml;
             return this;
         }
-
-        public IEmailWriter Attach(params string[] filePaths)
-        {
-            if (filePaths != null)
-            {
-                foreach (var filePath in filePaths)
-                {
-                    if (!string.IsNullOrWhiteSpace(filePath))
-                    {
-                        _email.AttachmentFilePaths.Add(filePath);
-                    }
-                }
-            }
-            return this;
-        }
-
-        public async Task SendAsync(CancellationToken cancellationToken = default) =>
-            await _email.SendAsync(cancellationToken).ConfigureAwait(false);
-
-        public async Task<bool> TrySendAsync(CancellationToken cancellationToken = default) =>
-            await _email.TrySendAsync(cancellationToken).ConfigureAwait(false);
     }
 }

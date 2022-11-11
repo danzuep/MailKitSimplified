@@ -19,6 +19,7 @@ using MailKitSimplified.Core.Abstractions;
 using MailKitSimplified.Core.Models;
 using MailKitSimplified.Core.Services;
 using MailKitSimplified.Sender.Abstractions;
+using MailKitSimplified.Sender.Models;
 
 namespace MailKitSimplified.Sender.Services
 {
@@ -27,15 +28,15 @@ namespace MailKitSimplified.Sender.Services
         private readonly ILogger _logger;
         private readonly ISmtpClient _smtpClient;
         private readonly EmailSenderOptions _senderOptions;
-        private readonly IMimeAttachmentHandler _attachmentHandler;
+        private readonly IAttachmentHandler _attachmentHandler;
 
-        public SmtpSender(IOptions<EmailSenderOptions> senderOptions, IMimeAttachmentHandler mimeAttachmentHandler = null, ILogger<SmtpSender> logger = null)
+        public SmtpSender(IOptions<EmailSenderOptions> senderOptions, IAttachmentHandler mimeAttachmentHandler = null, ILogger<SmtpSender> logger = null)
         {
             _logger = logger ?? NullLogger<SmtpSender>.Instance;
             _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.SmtpHost))
                 throw new NullReferenceException(nameof(EmailSenderOptions.SmtpHost));
-            _attachmentHandler = mimeAttachmentHandler ?? new MimeAttachmentHandler();
+            _attachmentHandler = mimeAttachmentHandler ?? new AttachmentHandler();
             var smtpLogger = GetProtocolLogger(_senderOptions.ProtocolLog);
             _smtpClient = smtpLogger != null ? new SmtpClient(smtpLogger) : new SmtpClient();
         }
@@ -55,7 +56,7 @@ namespace MailKitSimplified.Sender.Services
             return sender;
         }
 
-        public IEmailWriter WriteEmail => Email.Create(this);
+        public ISendableEmailWriter WriteEmail => SendableEmail.Create(this);
 
         public static IProtocolLogger GetProtocolLogger(string logFilePath = null, IFileSystem fileSystem = null)
         {

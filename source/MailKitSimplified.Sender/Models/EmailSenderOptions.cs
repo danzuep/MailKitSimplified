@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Net;
 using System.ComponentModel.DataAnnotations;
-using MailKitSimplified.Core.Abstractions;
 
-namespace MailKitSimplified.Core.Models
+namespace MailKitSimplified.Sender.Models
 {
     public class EmailSenderOptions
     {
