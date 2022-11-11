@@ -49,7 +49,7 @@ namespace MailKitSimplified.Core.Models
         protected static IEmailContact GetContactFromEmailAddress(string emailAddress)
         {
             string name = GetNameFromEmailAddress(emailAddress);
-            var contact = Create(name, emailAddress);
+            var contact = Create(emailAddress, name);
             return contact;
         }
 

@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using MailKit;
-using MailKitSimplified.Core.Services;
 using MailKitSimplified.Sender.Services;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Receiver.Extensions;
@@ -12,8 +11,6 @@ using var smtpSender = SmtpSender.Create("localhost", 25);
 bool isSent = await smtpSender.WriteEmail
     .Bcc($"{Guid.NewGuid():N}@localhost")
     .TrySendAsync();
-
-var email = BasicEmail.Write.Bcc($"{Guid.NewGuid():N}@localhost").Result;
 
 logger.LogInformation("Email {result}.", isSent ? "sent" : "failed to send");
 

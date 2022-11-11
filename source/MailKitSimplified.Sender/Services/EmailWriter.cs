@@ -3,30 +3,25 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using MimeKit;
 using MimeKit.Text;
 using MailKitSimplified.Sender.Abstractions;
+using MailKitSimplified.Sender.Helpers;
 
 namespace MailKitSimplified.Sender.Services
 {
-    public class MimeMessageWriter : IMimeMessageWriter
+    public class EmailWriter : IEmailWriter
     {
         public MimeMessage MimeMessage => _mimeMessage;
-
         private readonly MimeMessage _mimeMessage = new MimeMessage();
-        private readonly IList<string> _attachmentFilePaths = new List<string>();
-        private readonly IList<MimePart> _attachments = new List<MimePart>();
-        private readonly IMimeMessageSender _emailClient;
+        private readonly ISmtpSender _emailClient;
 
-        private MimeMessageWriter(IMimeMessageSender emailClient)
+        public EmailWriter(ISmtpSender emailClient)
         {
             _emailClient = emailClient ?? throw new ArgumentNullException(nameof(emailClient));
         }
 
-        public static MimeMessageWriter CreateWith(IMimeMessageSender emailClient) => new MimeMessageWriter(emailClient);
-
-        public IMimeMessageWriter From(string address, string name = "")
+        public IEmailWriter From(string address, string name = "")
         {
             var fromMailboxAddress = new MailboxAddress(name, address);
             _mimeMessage.From.Add(fromMailboxAddress);
@@ -34,25 +29,54 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
-        public IMimeMessageWriter To(string address, string name = "")
+        public IEmailWriter From(string addresses)
+        {
+            var mailboxAddresses = MailboxAddressHelper.ParseEmailContacts(addresses);
+            _mimeMessage.From.AddRange(mailboxAddresses);
+            _mimeMessage.ReplyTo.AddRange(mailboxAddresses);
+            return this;
+        }
+
+        public IEmailWriter To(string address, string name = "")
         {
             _mimeMessage.To.Add(new MailboxAddress(name, address));
             return this;
         }
 
-        public IMimeMessageWriter Cc(string address, string name = "")
+        public IEmailWriter To(string addresses)
+        {
+            var mailboxAddresses = MailboxAddressHelper.ParseEmailContacts(addresses);
+            _mimeMessage.To.AddRange(mailboxAddresses);
+            return this;
+        }
+
+        public IEmailWriter Cc(string address, string name = "")
         {
             _mimeMessage.Cc.Add(new MailboxAddress(name, address));
             return this;
         }
 
-        public IMimeMessageWriter Bcc(string address, string name = "")
+        public IEmailWriter Cc(string addresses)
+        {
+            var mailboxAddresses = MailboxAddressHelper.ParseEmailContacts(addresses);
+            _mimeMessage.Cc.AddRange(mailboxAddresses);
+            return this;
+        }
+
+        public IEmailWriter Bcc(string address, string name = "")
         {
             _mimeMessage.Bcc.Add(new MailboxAddress(name, address));
             return this;
         }
 
-        public IMimeMessageWriter Subject(string subject, bool append = false)
+        public IEmailWriter Bcc(string addresses)
+        {
+            var mailboxAddresses = MailboxAddressHelper.ParseEmailContacts(addresses);
+            _mimeMessage.Bcc.AddRange(mailboxAddresses);
+            return this;
+        }
+
+        public IEmailWriter Subject(string subject, bool append = false)
         {
             if (_mimeMessage.Subject == null)
                 _mimeMessage.Subject = subject ?? string.Empty;
@@ -61,7 +85,7 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
-        public IMimeMessageWriter Body(string bodyText, bool isHtml = true)
+        public IEmailWriter Body(string bodyText, bool isHtml = true)
         {
             if (_mimeMessage.Body == null)
             {
@@ -95,15 +119,32 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
-        public IMimeMessageWriter Attach(params string[] filePaths)
+        public IEmailWriter Attach(params string[] filePaths)
         {
             if (filePaths != null)
+            {
+                var builder = new BodyBuilder();
+                builder.HtmlBody = _mimeMessage.HtmlBody;
+                builder.TextBody = _mimeMessage.TextBody;
+                if (_mimeMessage.Attachments != null)
+                {
+                    var linkedResources = _mimeMessage.Attachments
+                        .Where(attachment => !attachment.IsAttachment);
+                    foreach (var linkedResource in linkedResources)
+                        builder.LinkedResources.Add(linkedResource);
+                    var attachments = _mimeMessage.Attachments
+                        .Where(attachment => attachment.IsAttachment);
+                    foreach (var attachment in attachments)
+                        builder.Attachments.Add(attachment);
+                }
                 foreach (var filePath in filePaths)
-                    _attachmentFilePaths.Add(filePath);
+                    builder.Attachments.Add(filePath);
+                _mimeMessage.Body = builder.ToMessageBody();
+            }
             return this;
         }
 
-        public IMimeMessageWriter Attach(MimePart mimePart, bool resource = false)
+        public IEmailWriter Attach(MimePart mimePart, bool resource = false)
         {
             if (_mimeMessage.Body == null)
             {
@@ -134,9 +175,9 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
-        public IMimeMessageWriter Attach(IEnumerable<MimePart> mimeParts, bool resource = false)
+        public IEmailWriter Attach(IEnumerable<MimePart> mimeParts, bool resource = false)
         {
-            if (mimeParts != null)
+            if (mimeParts != null && mimeParts.Any())
             {
                 var builder = new BodyBuilder();
                 builder.HtmlBody = _mimeMessage.HtmlBody;
@@ -164,10 +205,11 @@ namespace MailKitSimplified.Sender.Services
 
         public async Task SendAsync(CancellationToken cancellationToken = default)
         {
-            await _emailClient.SendAsync(_mimeMessage, _attachmentFilePaths, cancellationToken).ConfigureAwait(false);
+            await _emailClient.SendAsync(_mimeMessage, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<bool> TrySendAsync(CancellationToken cancellationToken = default) =>
-            await _emailClient.TrySendAsync(_mimeMessage, _attachmentFilePaths, cancellationToken).ConfigureAwait(false);
+
+            await _emailClient.TrySendAsync(_mimeMessage, cancellationToken).ConfigureAwait(false);
     }
 }

@@ -1,12 +1,8 @@
-﻿using MailKitSimplified.Core.Abstractions;
-using MailKitSimplified.Core.Models;
-using MailKitSimplified.Core.Services;
+﻿using System.IO.Abstractions;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
-using System.IO.Abstractions;
-using MailKit.Net.Smtp;
 using MailKitSimplified.Sender.Models;
 
 namespace MailKitSimplified.Sender.Extensions
@@ -20,8 +16,7 @@ namespace MailKitSimplified.Sender.Extensions
             services.Configure<EmailSenderOptions>(configSection);
             services.AddTransient<IFileSystem, FileSystem>();
             services.AddTransient<IAttachmentHandler, AttachmentHandler>();
-            services.AddTransient<ISendableEmail, SendableEmail>();
-            services.AddTransient<ISendableEmailWriter, SendableEmailWriter>();
+            services.AddTransient<IEmailWriter, EmailWriter>();
             services.AddTransient<ISmtpSender, SmtpSender>();
             return services;
         }

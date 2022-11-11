@@ -12,9 +12,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
 using MimeKit.Utils;
-using MailKitSimplified.Core.Abstractions;
-using MailKitSimplified.Core.Models;
-using MailKitSimplified.Core.Services;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Services;
 using MailKitSimplified.Sender.Models;
@@ -31,6 +28,7 @@ namespace MailKitSimplified.Sender.Tests
         private readonly IFileSystem _fileSystem;
         private readonly IAttachmentHandler _attachmentHandler;
         private readonly ISmtpSender _emailSender;
+        private readonly IEmailWriter _emailWriter;
         private readonly ILoggerFactory _loggerFactory;
 
         public MailKitSimplifiedSenderUnitTests()
@@ -46,7 +44,8 @@ namespace MailKitSimplified.Sender.Tests
             //var mailKitProtocolLogger = new MailKitProtocolLogger(null, _fileSystem, _loggerFactory.CreateLogger<MailKitProtocolLogger>());
             var senderOptions = new EmailSenderOptions("localhost");
             var options = Options.Create(senderOptions);
-            _emailSender = new SmtpSender(options, _attachmentHandler, _loggerFactory.CreateLogger<SmtpSender>());
+            _emailSender = new SmtpSender(options, _loggerFactory.CreateLogger<SmtpSender>());
+            _emailWriter = new EmailWriter(_emailSender);
         }
 
         [Theory]
@@ -54,7 +53,7 @@ namespace MailKitSimplified.Sender.Tests
         [InlineData("smtp.sendgrid.com")]
         [InlineData("smtp.mail.yahoo.com")]
         [InlineData("outlook.office365.com")]
-        public void WriteEmail_WithEmailSender_VerifyCreated(string smtpHost)
+        public void WriteEmail_WithEmailSender_VerifyCreatedAsync(string smtpHost)
         {
             using var smtpSender = SmtpSender.Create(smtpHost);
             var email = smtpSender.WriteEmail
@@ -63,22 +62,19 @@ namespace MailKitSimplified.Sender.Tests
                 .Cc("friend1@example.com")
                 .Bcc("friend2@example.com")
                 .Subject("Hey You")
-                .Body("Hello World")
-                .Attach("C:/Temp/attachment1.txt", "C:/Temp/attachment2.pdf");
+                //.Attach(_attachment1Path, _attachment2Path) // files must exist
+                .Body("Hello World");
             Assert.NotNull(email);
         }
 
         [Fact]
         public async Task TrySendAsync_WithInvalidSmtpHost_VerifyNotSentAsync()
         {
-            //EmailWriter.CreateWith(_emailSender)
-            //Email.Create("smtp.example.com")
             var isSent = await _emailSender.WriteEmail
                 .From("from")
                 .To("to")
                 .Subject("Hi")
                 .Body("~")
-                .Attach("./attachment1.txt")
                 .TrySendAsync();
             Assert.False(isSent);
         }
@@ -150,72 +146,46 @@ namespace MailKitSimplified.Sender.Tests
         public async Task ConvertToMimeMessageAsync_WithAnyAttachmentName_VerifyAttached(params string[] filePaths)
         {
             // Arrange
-            var multipart = new Multipart();
-            var stream = await GetTestStream();
-            foreach (var file in filePaths)
-                multipart.Add(AttachmentHandler.GetMimePart(stream, file));
-            var taskStub = Task.FromResult(new MimeMessage { Body = multipart });
-            var attachmentHandler = Mock.Of<IAttachmentHandler>(file => file.AddAttachmentsAsync(It.IsAny<MimeMessage>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()) == taskStub);
-            var email = SendableEmail.Create(SmtpSender.Create("smtp.host")).From("me@mine").To("you@yours").Attach(filePaths).Result;
+            var mimeMessage = new MimeMessage();
             // Act
-            var mimeMessage = SmtpSender.ConvertToMimeMessage(email);
-            mimeMessage = await attachmentHandler.AddAttachmentsAsync(mimeMessage, email.AttachmentFilePaths, CancellationToken.None).ConfigureAwait(false);
+            mimeMessage = await _attachmentHandler.AddAttachmentsAsync(mimeMessage, filePaths, CancellationToken.None).ConfigureAwait(false);
             // Assert
             Assert.NotNull(mimeMessage);
             Assert.True(mimeMessage.Attachments.Any());
         }
 
         [Fact]
-        public async void TrySendAsync_WithEmail_VerifySent()
+        public void SendAsync_WithEmailWriter_VerifySent()
         {
             // Arrange
             var emailSenderMock = new Mock<ISmtpSender>();
             emailSenderMock
-                .Setup(sender => sender.SendAsync(It.IsAny<ISendableEmail>(), It.IsAny<CancellationToken>()))
+                .Setup(sender => sender.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(_completedTask);
-            var email = new SendableEmail(emailSenderMock.Object)
-            {
-                From = EmailContact.ParseEmailContacts("from@").ToList(),
-                To = EmailContact.ParseEmailContacts("to@").ToList(),
-                Subject = string.Empty,
-                Body = string.Empty,
-            };
-            // Act
-            var result = await email.TrySendAsync(It.IsAny<CancellationToken>());
-            // Assert
-            Assert.True(result);
-            emailSenderMock.Verify(sender => sender.SendAsync(It.IsAny<ISendableEmail>(), It.IsAny<CancellationToken>()), Times.Once());
-        }
-
-        [Fact]
-        public void SendAsync_WithEmailWriter_VerifySent()
-        {
-            // Arrange
-            var emailMock = new Mock<ISendableEmail>();
-            emailMock
-                .Setup(sender => sender.SendAsync(It.IsAny<CancellationToken>()))
-                .Returns(_completedTask);
-            var email = new SendableEmailWriter(emailMock.Object);
+            var email = new EmailWriter(emailSenderMock.Object)
+                .From("from@localhost").To("to@localhost");
             // Act
             var result = email.SendAsync(It.IsAny<CancellationToken>());
             // Assert
             Assert.Equal(_completedTask, result);
-            emailMock.Verify(sender => sender.SendAsync(It.IsAny<CancellationToken>()), Times.Once());
+            emailSenderMock.Verify(sender => sender.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()), Times.Once());
         }
 
         [Fact]
-        public async Task SendAsync_WithMimeMessage_VerifySentAsync()
+        public async void TrySendAsync_WithEmailWriter_VerifySent()
         {
             // Arrange
-            var emailSenderMock = new Mock<IMimeMessageSender>();
-            var email = new SendableEmail(emailSenderMock.Object);
+            var emailSenderMock = new Mock<ISmtpSender>();
             emailSenderMock
-                .Setup(sender => sender.SendAsync(It.IsAny<ISendableEmail>(), It.IsAny<CancellationToken>()))
-                .Verifiable();
+                .Setup(sender => sender.TrySendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(true));
+            var email = new EmailWriter(emailSenderMock.Object)
+                .From("from@localhost").To("to@localhost");
             // Act
-            await email.SendAsync(It.IsAny<CancellationToken>());
+            var result = await email.TrySendAsync(It.IsAny<CancellationToken>());
             // Assert
-            emailSenderMock.Verify(sender => sender.SendAsync(It.IsAny<ISendableEmail>(), It.IsAny<CancellationToken>()), Times.Once());
+            Assert.True(result);
+            emailSenderMock.Verify(sender => sender.TrySendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()), Times.Once());
         }
 
 #if DEBUG
