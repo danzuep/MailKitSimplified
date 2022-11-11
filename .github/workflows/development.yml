@@ -3,19 +3,37 @@ name: Development
 on:
   workflow_dispatch:
   pull_request:
-    types:
-      - closed
     branches:
       - main
   push:
     branches:
-      - main
+      - feature/**
 
 jobs:
-  pipeline:
-    # if: ${{ github.event.pull_request.merged == true }}
-    name: CI/CD
-    uses: ./.github/workflows/_pipeline.yml
+  version:
+    uses: ./.github/workflows/_gitversion.yml
+    secrets: inherit
+
+  build_core:
+    needs: version
+    uses: ./.github/workflows/_build-test.yml
     with:
-      environment: development
+      project-name: 'MailKitSimplified.Core'
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  build_sender:
+    needs: version
+    uses: ./.github/workflows/_build-test.yml
+    with:
+      project-name: 'MailKitSimplified.Sender'
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  build_receiver:
+    needs: version
+    uses: ./.github/workflows/_build-test.yml
+    with:
+      project-name: 'MailKitSimplified.Receiver'
+      version: ${{ needs.version.outputs.version }}
     secrets: inherit
