@@ -1,7 +1,9 @@
 global using Xunit;
-using MailKitSimplified.Receiver.Services;
-using MimeKit;
+global using Moq;
 using System.Net;
+using MailKitSimplified.Receiver.Services;
+using MailKitSimplified.Receiver.Abstractions;
+using MailKit;
 
 namespace MailKitSimplified.Receiver.Tests
 {
@@ -17,14 +19,21 @@ namespace MailKitSimplified.Receiver.Tests
             Assert.NotNull(imapClient);
         }
 
-        [Theory]
-        [InlineData(_imapHost)]
-        public async Task GetMessageAsync_WithAnyHost_ReturnsMimeMessage(string imapHost)
+        [Fact]
+        public async Task GetMessageAsync_WithNullMessageSummary_ReturnsNull()
         {
-            using var imapClient = ImapClientService.Create(imapHost, new NetworkCredential());
-            using var mailFolderReader = new MailFolderReader(imapClient);
-            var mimeMessage = await mailFolderReader.GetMessageAsync();
-            Assert.NotNull(mimeMessage);
+            // Arrange
+            var mailFolderMock = new Mock<IMailFolder>();
+            var imapClientMock = new Mock<IImapClientService>();
+            using var mailFolderReader = new MailFolderReader(imapClientMock.Object);
+            imapClientMock.Setup(_ => _.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult(mailFolderMock.Object));
+            imapClientMock.Setup(_ => _.GetFolderAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult(mailFolderMock.Object));
+            // Act
+            var mimeMessage = await mailFolderReader.GetMimeMessageAsync(null);
+            // Assert
+            Assert.Null(mimeMessage);
         }
 
         //[Theory]

@@ -19,7 +19,7 @@ namespace MailKitSimplified.Core.Services
 
         public static EmailWriter CreateWith(ISendableEmail email) => new EmailWriter(email);
 
-        public static EmailWriter CreateWith(IEmailSender emailSender) => new EmailWriter(new Email(emailSender));
+        public static EmailWriter CreateWith(IEmailSender emailSender) => CreateWith(new Email(emailSender));
 
         [Obsolete("Use 'CreateWith' instead.")]
         public static EmailWriter CreateFrom(ISendableEmail email) => new EmailWriter(email);
@@ -54,7 +54,7 @@ namespace MailKitSimplified.Core.Services
             return this;
         }
 
-        public IEmailWriter Body(string body, bool isHtml)
+        public IEmailWriter Body(string body, bool isHtml = true)
         {
             _email.Body = body ?? string.Empty;
             _email.IsHtml = isHtml;

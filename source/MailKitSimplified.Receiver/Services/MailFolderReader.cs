@@ -104,11 +104,13 @@ namespace MailKitSimplified.Receiver.Services
 
         public async ValueTask<MimeMessage> GetMessageAsync(ushort index = 0, CancellationToken ct = default)
         {
+            bool closeWhenFinished = !_mailFolder?.IsOpen ?? true;
             await ReconnectAsync(false, ct).ConfigureAwait(false);
-            bool closeWhenFinished = !_mailFolder.IsOpen;
             if (closeWhenFinished)
-                _ = _mailFolder.OpenAsync(FolderAccess.ReadOnly, ct).ConfigureAwait(false);
-            _logger.LogTrace($"{this} mail folder briefly opened with read-only access to get message at index {index}.");
+            {
+                //_ = _mailFolder.OpenAsync(FolderAccess.ReadOnly, ct).ConfigureAwait(false);
+                _logger.LogTrace($"{this} mail folder briefly opened with read-only access to get message at index {index}.");
+            }
             var mimeMessage = await _mailFolder.GetMessageAsync(index, ct).ConfigureAwait(false);
             if (closeWhenFinished)
                 await _mailFolder.CloseAsync(false, ct).ConfigureAwait(false);

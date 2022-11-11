@@ -9,6 +9,6 @@ namespace MailKitSimplified.Sender.Abstractions
     {
         Task<IEnumerable<MimeEntity>> LoadFilePathAsync(string filePath, CancellationToken cancellationToken = default);
         Task<IEnumerable<MimeEntity>> LoadFilePathsAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default);
-        Task<MimeMessage> AddAttachments(MimeMessage mimeMessage, IEnumerable<string> filePaths, CancellationToken cancellationToken = default);
+        Task<MimeMessage> AddAttachmentsAsync(MimeMessage mimeMessage, IEnumerable<string> filePaths, CancellationToken cancellationToken = default);
     }
 }

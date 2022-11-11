@@ -1,17 +1,17 @@
-﻿using System.Net.Mime;
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Linq;
-using System.IO;
-using System;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging;
 using MimeKit;
+using MimeKit.Utils;
 using MailKitSimplified.Core.Abstractions;
 using MailKitSimplified.Core.Services;
 using MailKitSimplified.Sender.Abstractions;
-using MimeKit.Utils;
 
 namespace MailKitSimplified.Sender.Services
 {
@@ -77,17 +77,18 @@ namespace MailKitSimplified.Sender.Services
 
         public async Task<IEnumerable<MimeEntity>> LoadFilePathsAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
         {
-            IEnumerable<MimeEntity> results = Array.Empty<MimeEntity>();
+            IList<MimeEntity> results = Array.Empty<MimeEntity>();
             if (filePaths?.Any() ?? false)
             {
                 var mimeEntityTasks = filePaths.Select(name => GetMimeEntityFromFilePathAsync(name, cancellationToken: cancellationToken));
                 var mimeEntities = await Task.WhenAll(mimeEntityTasks).ConfigureAwait(false);
-                results = mimeEntities.Where(entity => entity != null);
+                results = mimeEntities.Where(entity => entity != null).ToList();
+                _logger.LogDebug($"{results.Count} attachments loaded.");
             }
             return results;
         }
 
-        public async Task<MimeMessage> AddAttachments(MimeMessage mimeMessage, IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
+        public async Task<MimeMessage> AddAttachmentsAsync(MimeMessage mimeMessage, IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
         {
             var mimeParts = await LoadFilePathsAsync(filePaths, cancellationToken).ConfigureAwait(false);
             if (mimeMessage != null && mimeParts.Any())

@@ -1,18 +1,19 @@
-﻿using MailKit;
-using MailKit.Security;
-using MailKit.Net.Imap;
+﻿using System;
+using System.IO;
+using System.Net;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System.IO.Abstractions;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging.Abstractions;
-using System;
-using System.IO;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
+using MailKit;
+using MailKit.Security;
+using MailKit.Net.Imap;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
-using System.Collections.Generic;
-using System.Linq;
 using MailKitSimplified.Receiver.Extensions;
 
 namespace MailKitSimplified.Receiver.Services
@@ -21,19 +22,17 @@ namespace MailKitSimplified.Receiver.Services
     {
         private readonly ILogger _logger;
         private readonly IImapClient _imapClient;
-        private readonly EmailReceiverOptions _emailReceiverOptions;
+        private readonly EmailReceiverOptions _receiverOptions;
 
-        public ImapClientService(IOptions<EmailReceiverOptions> receiverOptions, ILogger<ImapClientService> logger = null)
+        public ImapClientService(IOptions<EmailReceiverOptions> receiverOptions, IProtocolLogger protocolLogger = null, ILogger<ImapClientService> logger = null)
         {
             _logger = logger ?? NullLogger<ImapClientService>.Instance;
-            _emailReceiverOptions = receiverOptions.Value;
-            if (string.IsNullOrWhiteSpace(_emailReceiverOptions.ImapHost))
+            _receiverOptions = receiverOptions.Value;
+            if (string.IsNullOrWhiteSpace(_receiverOptions.ImapHost))
                 throw new NullReferenceException(nameof(EmailReceiverOptions.ImapHost));
-            if (_emailReceiverOptions.ImapCredential == null)
+            if (_receiverOptions.ImapCredential == null)
                 _logger.LogWarning($"{nameof(EmailReceiverOptions.ImapCredential)} is null.");
-            if (!string.IsNullOrWhiteSpace(_emailReceiverOptions.ProtocolLog))
-                Directory.CreateDirectory(Path.GetDirectoryName(_emailReceiverOptions.ProtocolLog));
-            var imapLogger = GetProtocolLogger(_emailReceiverOptions.ProtocolLog);
+            var imapLogger = protocolLogger ?? new MailKitProtocolLogger(_receiverOptions.ProtocolLog);
             _imapClient = imapLogger != null ? new ImapClient(imapLogger) : new ImapClient();
         }
 
@@ -51,20 +50,11 @@ namespace MailKitSimplified.Receiver.Services
             return receiver;
         }
 
-        public static ImapClientService Create(EmailReceiverOptions receiverOptions)
+        public static ImapClientService Create(EmailReceiverOptions emailReceiverOptions)
         {
-            var options = Options.Create(receiverOptions);
+            var options = Options.Create(emailReceiverOptions);
             var receiver = new ImapClientService(options);
             return receiver;
-        }
-
-        private static IProtocolLogger GetProtocolLogger(string logFilePath = null)
-        {
-            var protocolLogger = logFilePath == null ? null :
-                string.IsNullOrWhiteSpace(logFilePath) ?
-                    new ProtocolLogger(Console.OpenStandardError()) :
-                        new ProtocolLogger(logFilePath);
-            return protocolLogger;
         }
 
         /// <exception cref="AuthenticationException">Failed to authenticate</exception>
@@ -72,25 +62,25 @@ namespace MailKitSimplified.Receiver.Services
         {
             if (!_imapClient.IsConnected)
             {
-                await _imapClient.ConnectAsync(_emailReceiverOptions.ImapHost, _emailReceiverOptions.ImapPort, SecureSocketOptions.Auto, cancellationToken).ConfigureAwait(false);
+                await _imapClient.ConnectAsync(_receiverOptions.ImapHost, _receiverOptions.ImapPort, SecureSocketOptions.Auto, cancellationToken).ConfigureAwait(false);
                 if (_imapClient.Capabilities.HasFlag(ImapCapabilities.Compress))
                     await _imapClient.CompressAsync(cancellationToken).ConfigureAwait(false);
             }
             if (!_imapClient.IsAuthenticated)
             {
                 var ntlm = _imapClient.AuthenticationMechanisms.Contains("NTLM") ?
-                    new SaslMechanismNtlm(_emailReceiverOptions.ImapCredential) : null;
+                    new SaslMechanismNtlm(_receiverOptions.ImapCredential) : null;
                 if (ntlm?.Workstation != null)
                     await _imapClient.AuthenticateAsync(ntlm, cancellationToken).ConfigureAwait(false);
                 else
-                    await _imapClient.AuthenticateAsync(_emailReceiverOptions.ImapCredential, cancellationToken).ConfigureAwait(false);
+                    await _imapClient.AuthenticateAsync(_receiverOptions.ImapCredential, cancellationToken).ConfigureAwait(false);
             }
         }
 
         public async ValueTask<IMailFolder> ConnectAsync(CancellationToken ct = default)
         {
             await AuthenticateAsync(ct).ConfigureAwait(false);
-            var mailFolder = await GetFolderAsync(_emailReceiverOptions.MailFolderName).ConfigureAwait(false);
+            var mailFolder = await GetFolderAsync(_receiverOptions.MailFolderName).ConfigureAwait(false);
             return mailFolder;
         }
 
