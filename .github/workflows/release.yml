@@ -9,6 +9,11 @@ on:
     branches:
       - release/**
 
+# Cancel any other running workflows with the same ID
+concurrency:
+  group: cd-release-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   pipeline:
     name: 🪜 CI/CD

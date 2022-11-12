@@ -7,25 +7,41 @@ namespace MailKitSimplified.Sender.Abstractions
 {
     public interface IEmailWriter
     {
-        IEmailWriter From(string emailAddress, string name = "");
+        IEmailWriter From(string name, string emailAddress, bool replyTo = true);
 
-        IEmailWriter To(string emailAddress, string name = "");
+        IEmailWriter From(string emailAddress, bool replyTo = true);
 
-        IEmailWriter Cc(string emailAddress, string name = "");
+        IEmailWriter To(string name, string emailAddress);
 
-        IEmailWriter Bcc(string emailAddress, string name = "");
+        IEmailWriter To(string emailAddress);
+
+        IEmailWriter Cc(string name, string emailAddress);
+
+        IEmailWriter Cc(string emailAddress);
+
+        IEmailWriter Bcc(string name, string emailAddress);
+
+        IEmailWriter Bcc(string emailAddress);
 
         IEmailWriter Subject(string subject, bool append = false);
 
-        IEmailWriter Body(string body, bool isHtml = true);
+        IEmailWriter BodyHtml(string textHtml);
 
-        IEmailWriter Attach(params string[] filePaths);
+        IEmailWriter BodyText(string textPlain);
 
         IEmailWriter Attach(MimePart mimePart, bool resource = false);
 
         IEmailWriter Attach(IEnumerable<MimePart> mimeParts, bool resource = false);
 
+        IEmailWriter Attach(params string[] filePaths);
+
+        IEmailWriter TryAttach(params string[] filePaths);
+
         MimeMessage MimeMessage { get; }
+
+        void Send(CancellationToken cancellationToken = default);
+
+        bool TrySend(CancellationToken cancellationToken = default);
 
         Task SendAsync(CancellationToken cancellationToken = default);
 

@@ -1,6 +1,6 @@
 # MailKitSimplified [![Development](https://github.com/danzuep/MailKitSimplified/actions/workflows/development.yml/badge.svg)](https://github.com/danzuep/MailKitSimplified/actions/workflows/development.yml) [![Release](https://github.com/danzuep/MailKitSimplified/actions/workflows/release.yml/badge.svg)](https://github.com/danzuep/MailKitSimplified/actions/workflows/release.yml)
 
-Sending and receiving emails sounds simple, after all, electronic mail existed [decades](https://en.wikipedia.org/wiki/History_of_email) before the [Internet](https://en.wikipedia.org/wiki/History_of_the_Internet). If you're looking for a an all-in-one .NET solution for email, you'll quickly discover [MailKit](https://github.com/jstedfast/MailKit) is recommended by even the likes of [Microsoft](https://learn.microsoft.com/en-us/dotnet/api/system.net.mail.smtpclient?view=net-6.0#remarks) due to how it implements the [RFC standard](https://www.rfc-editor.org/rfc/rfc2822). Unfortunately the downside of doing it all is that MailKit can be difficult to [set up](https://github.com/jstedfast/MailKit#using-mailkit) [and use](https://github.com/jstedfast/MimeKit/blob/master/FAQ.md#messages-1), especially the first time you go to try something like [checking attachments](https://github.com/jstedfast/MimeKit/blob/master/FAQ.md#q-how-do-i-tell-if-a-message-has-attachments) or [writing a reply](https://github.com/jstedfast/MimeKit/blob/master/FAQ.md#q-how-do-i-reply-to-a-message). The aim of this package is to make sending (and receiving) emails as simple as possible!
+Sending and receiving emails sounds simple, after all, electronic mail existed [decades](https://en.wikipedia.org/wiki/History_of_email) before the [Internet](https://en.wikipedia.org/wiki/History_of_the_Internet). If you're looking for an all-in-one .NET solution for email, you'll quickly discover [MailKit](https://github.com/jstedfast/MailKit) is recommended by even the likes of [Microsoft](https://learn.microsoft.com/en-us/dotnet/api/system.net.mail.smtpclient?view=net-6.0#remarks) due to how it implements the [RFC standard](https://www.rfc-editor.org/rfc/rfc2822). Unfortunately the downside of doing it all is that MailKit can be difficult to [set up](https://github.com/jstedfast/MailKit#using-mailkit) [and use](https://github.com/jstedfast/MimeKit/blob/master/FAQ.md#messages-1), especially the first time you go to try something like [checking attachments](https://github.com/jstedfast/MimeKit/blob/master/FAQ.md#q-how-do-i-tell-if-a-message-has-attachments) or [writing a reply](https://github.com/jstedfast/MimeKit/blob/master/FAQ.md#q-how-do-i-reply-to-a-message). The aim of this package is to make sending (and receiving) emails as simple as possible!
 
 Sending an email is now as easy as:
 ```csharp
@@ -22,13 +22,12 @@ An email sender must have a SMTP host address, and sometimes a port number, but 
 ### Sending Mail
 
 ```csharp
-var email = smtpSender.WriteEmail
-    .From("me@example.com")
-    .To("you@example.com")
-    .Subject("Hi")
-    .Body("~");
-
-await email.SendAsync();
+await smtpSender.WriteEmail
+    .From("my.name@example.com")
+    .To("YourName@example.com")
+    .Subject("Hello World")
+    .Attach(@"C:\Temp\EmailClientSmtp.log")
+    .SendAsync();
 ```
 
 Any configuration issues will throw an exception, but you can also opt to just log any exceptions and continue with a `false` output:
@@ -37,22 +36,22 @@ Any configuration issues will throw an exception, but you can also opt to just l
 bool isSent = await smtpSender.WriteEmail
     .From("me@example.com", "My Name")
     .To("you@example.com", "Your Name")
-    .Cc("friend1@example.com")
-    .Bcc("friend2@example.com")
-    .Subject("Hey You")
-    .Body($"Hello at {DateTime.Now}.")
-    .Attach("C:/Temp/attachment1.txt", "C:/Temp/attachment2.pdf")
-    .Attach("./attachment3.docx")
+    .Cc("friend@example.com")
+    .Bcc("admin@localhost")
+    .Subject($"Hello at {DateTime.Now}!")
+    .BodyText("Optional text/plain content.")
+    .BodyHtml("Optional text/html content.</br>")
+    .TryAttach("C:/Temp/attachment1.txt", "C:/Temp/attachment2.pdf")
     .TrySendAsync();
 
 _logger.LogInformation("Email {result}.", isSent ? "sent" : "failed to send");
 ```
 
-Further examples (detailed MailKit SMPT server logs etc.) can be found in MailKitSimplifiedSenderUnitTests and the example solution file.
+Further examples (how to set up MailKit SMTP server logs etc.) can be found in the 'samples' and 'tests' folders on [GitHub](https://github.com/danzuep/MailKitSimplified).
 
 ### Dependency Injection
 
-This is recommended over manual setup as the built-in garbage collector will handle lifetime and disposal.
+[Dependency Injection](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-usage#register-services-for-di) is recommended over manual setup as the built-in garbage collector will handle lifetime and disposal.
 
 ```csharp
 using MailKitSimplified.Sender.Extensions;
@@ -78,15 +77,15 @@ You'll also need the following in appsettings.json:
 
 Other optional settings include SmtpPort, ProtocolLog, SmtpCredential:UserName and SmtpCredential:Password.
 
-Now you can use the fully configured IEmailSender or IEmailWriter anywhere you want with no other setup! For example:
+Now you can use the fully configured ISmtpSender or IEmailWriter anywhere you want with no other setup! For example:
 
 ```csharp
 public class EmailService
 {
     private readonly IEmailWriter _writeEmail;
 
-    public EmailService(IEmailWriter emailWriter) {
-        _writeEmail = emailWriter;
+    public EmailService(IEmailWriter smtpSender) {
+        _writeEmail = smtpSender;
     }
 }
 ```
@@ -101,7 +100,7 @@ await _writeEmail.To("test@localhost").SendAsync();
 
 ### Setup
 
-If you're not familiar with dependency injection then just use this:
+If you're not familiar with dependency injection then you can specify the IMAP host address like this:
 
 ```csharp
 using var imapReceiver = ImapReceiver.Create("imap.example.com", 0, "U5ern@me", "P@55w0rd");
@@ -110,6 +109,8 @@ using var imapReceiver = ImapReceiver.Create("imap.example.com", 0, "U5ern@me", 
 An email receiver must have a IMAP host address, a network credential (unless you're using something like `smtp4dev`), and sometimes a port number, but leaving the port as the default value of 0 will normally choose the right port automatically.
 
 ### Receiving Mail
+
+This hasn't been published yet, but here's what I'm building at the moment:
 
 ```csharp
 var mailboxReceiver = imapReceiver
@@ -126,4 +127,4 @@ var mimeMessageQueue = await imapReceiver
     .GetMimeMessagesAsync();
 ```
 
-Further examples (detailed MailKit IMAP server logs etc.) can be found in the 'samples' and 'tests' folders.
+Further examples (how to set up MailKit IMAP server logs etc.) can be found in the 'samples' and 'tests' folders on [GitHub](https://github.com/danzuep/MailKitSimplified).

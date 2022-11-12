@@ -49,6 +49,13 @@ namespace MailKitSimplified.Sender.Services
             return sender;
         }
 
+        public static SmtpSender Create(EmailSenderOptions emailSenderOptions)
+        {
+            var options = Options.Create(emailSenderOptions);
+            var sender = new SmtpSender(options);
+            return sender;
+        }
+
         public IEmailWriter WriteEmail => new EmailWriter(this);
 
         public static IProtocolLogger GetProtocolLogger(string logFilePath = null, IFileSystem fileSystem = null)
@@ -102,7 +109,7 @@ namespace MailKitSimplified.Sender.Services
             }
             if (sourceEmailAddressCount == 0)
                 logger.LogWarning("Source email address not specified");
-            if (destinationEmailAddressCount == 0)
+            else if (destinationEmailAddressCount == 0)
                 logger.LogWarning("Destination email address not specified");
             isValid &= sourceEmailAddressCount > 0 && destinationEmailAddressCount > 0;
             return isValid;
@@ -138,9 +145,10 @@ namespace MailKitSimplified.Sender.Services
         {
             _ = ValidateMimeMessage(mimeMessage, _logger);
             await ConnectSmtpClientAsync(cancellationToken).ConfigureAwait(false);
-            Debug.WriteLine("Sending to: {0}, subject: '{1}'", mimeMessage.To, mimeMessage.Subject);
+            _logger.LogTrace("Sending From: {0}; To: {1}; Cc: {2}; Bcc: {3}; Subject: '{4}'",
+                mimeMessage.From, mimeMessage.To, mimeMessage.Cc, mimeMessage.Bcc, mimeMessage.Subject);
             string serverResponse = await _smtpClient.SendAsync(mimeMessage, cancellationToken).ConfigureAwait(false);
-            Debug.WriteLine(serverResponse);
+            _logger.LogTrace(serverResponse);
         }
 
         public async Task<bool> TrySendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken)

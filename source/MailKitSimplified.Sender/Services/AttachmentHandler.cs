@@ -4,8 +4,9 @@ using System.Linq;
 using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.IO.Abstractions;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging;
 using MimeKit;
@@ -14,6 +15,7 @@ using MailKitSimplified.Sender.Abstractions;
 
 namespace MailKitSimplified.Sender.Services
 {
+    [ExcludeFromCodeCoverage]
     public sealed class AttachmentHandler : IAttachmentHandler
     {
         private readonly ILogger _logger;
@@ -104,9 +106,12 @@ namespace MailKitSimplified.Sender.Services
                 if (stream != null)
                 {
                     string fileName = Path.GetFileName(filePath);
-                    string contentType = Path.GetExtension(fileName)
+                    string fileExtension = Path.GetExtension(fileName);
+                    string contentType = fileExtension
                         .Equals(".pdf", StringComparison.OrdinalIgnoreCase) ?
-                            MediaTypeNames.Application.Pdf : mediaType;
+                            MediaTypeNames.Application.Pdf : fileExtension
+                        .Equals(".zip", StringComparison.OrdinalIgnoreCase) ?
+                            MediaTypeNames.Application.Zip : mediaType;
                     result = GetMimePart(stream, fileName, contentType);
                 }
             }

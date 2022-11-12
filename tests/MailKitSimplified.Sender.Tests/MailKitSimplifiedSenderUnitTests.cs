@@ -1,17 +1,10 @@
 global using Xunit;
 global using Moq;
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
-using MimeKit.Utils;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Services;
 using MailKitSimplified.Sender.Models;
@@ -57,26 +50,14 @@ namespace MailKitSimplified.Sender.Tests
         {
             using var smtpSender = SmtpSender.Create(smtpHost);
             var email = smtpSender.WriteEmail
-                .From("me@example.com", "My Name")
-                .To("you@example.com", "Your Name")
+                .From("My Name", "me@example.com")
+                .To("Your Name", "you@example.com")
                 .Cc("friend1@example.com")
                 .Bcc("friend2@example.com")
                 .Subject("Hey You")
                 //.Attach(_attachment1Path, _attachment2Path) // files must exist
-                .Body("Hello World");
+                .BodyHtml("Hello World");
             Assert.NotNull(email);
-        }
-
-        [Fact]
-        public async Task TrySendAsync_WithInvalidSmtpHost_VerifyNotSentAsync()
-        {
-            var isSent = await _emailSender.WriteEmail
-                .From("from")
-                .To("to")
-                .Subject("Hi")
-                .Body("~")
-                .TrySendAsync();
-            Assert.False(isSent);
         }
 
         private static async Task<Stream> GetTestStream(int capacity = 1)
@@ -180,7 +161,7 @@ namespace MailKitSimplified.Sender.Tests
                 .Setup(sender => sender.TrySendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(true));
             var email = new EmailWriter(emailSenderMock.Object)
-                .From("from@localhost").To("to@localhost");
+                .From("MyName@localhost").To("your.name@localhost");
             // Act
             var result = await email.TrySendAsync(It.IsAny<CancellationToken>());
             // Assert
@@ -189,6 +170,18 @@ namespace MailKitSimplified.Sender.Tests
         }
 
 #if DEBUG
+        //[Fact]
+        //public async Task TrySendAsync_WithInvalidSmtpHost_VerifyNotSentAsync()
+        //{
+        //    var isSent = await _emailSender.WriteEmail
+        //        .From("from")
+        //        .To("to")
+        //        .Subject("Hi")
+        //        .BodyHtml("~")
+        //        .TrySendAsync();
+        //    Assert.True(isSent);
+        //}
+
         //        [Theory]
         //        [InlineData("smtp.freesmtpservers.com")]
         //        public async Task SendEmail_WithMimeEmailWriter_EndToEndTest(string smtpHost, int port = 25, string log = @"C:\Temp\smptLog.txt")

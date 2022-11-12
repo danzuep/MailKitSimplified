@@ -53,6 +53,7 @@ namespace MailKitSimplified.Sender.Helpers
                         array[i + 1] : null as char?;
                     bool isNextLower = nextChar != null &&
                         char.IsLower(nextChar.Value);
+                    bool isPrevSpace = prevChar == ' ';
                     bool isPrevUpper = char.IsUpper(prevChar);
                     bool isPrevLower = char.IsLower(prevChar);
                     bool isThisUpper = char.IsUpper(thisChar);
@@ -62,6 +63,10 @@ namespace MailKitSimplified.Sender.Helpers
                     if (isWordEnd || isTitleCase)
                     {
                         builder.Add(' ');
+                    }
+                    else if (isPrevSpace && !isThisUpper)
+                    {
+                        thisChar = char.ToUpper(thisChar);
                     }
                     builder.Add(thisChar);
                     prevChar = thisChar;
