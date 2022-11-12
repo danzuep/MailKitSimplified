@@ -111,22 +111,22 @@ namespace MailKitSimplified.Receiver.Services
                 var inboxSubfolders = _imapClient.Inbox.GetSubfolders().Select(f => f.FullName);
                 mailFolderNames.AddRange(inboxSubfolders);
                 mailFolderNames.AddRange(subfolders);
-                _logger.LogDebug("{0} Inbox folders: {1}", subfolders.Count(), inboxSubfolders.ToEnumeratedString());
-                _logger.LogDebug("{0} personal folders: {1}", subfolders.Count(), subfolders.ToEnumeratedString());
+                _logger.LogDebug($"{inboxSubfolders.Count()} Inbox folders: {inboxSubfolders.ToEnumeratedString()}");
+                _logger.LogDebug($"{subfolders.Count()} personal folders: {subfolders.ToEnumeratedString()}");
             }
             if (_imapClient.SharedNamespaces.Count > 0)
             {
                 var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.SharedNamespaces[0]);
                 var subfolders = rootFolder.SelectMany(rf => rf.GetSubfolders().Select(sf => sf.Name));
                 mailFolderNames.AddRange(subfolders);
-                _logger.LogDebug("{0} shared folders: {1}", subfolders.Count(), subfolders.ToEnumeratedString());
+                _logger.LogDebug($"{subfolders.Count()} shared folders: {subfolders.ToEnumeratedString()}");
             }
             if (_imapClient.OtherNamespaces.Count > 0)
             {
                 var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.OtherNamespaces[0]);
                 var subfolders = rootFolder.SelectMany(rf => rf.GetSubfolders().Select(sf => sf.Name));
                 mailFolderNames.AddRange(subfolders);
-                _logger.LogDebug("{0} other folders: {1}", subfolders.Count(), subfolders.ToEnumeratedString());
+                _logger.LogDebug($"{subfolders.Count()} other folders: {subfolders.ToEnumeratedString()}");
             }
             return mailFolderNames;
         }
