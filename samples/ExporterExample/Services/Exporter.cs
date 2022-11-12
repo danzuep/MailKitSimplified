@@ -16,7 +16,7 @@ namespace ExporterExample.Services
 {
     public interface IExporter
     {
-        void ExportFile(IEnumerable<IMessageSummary> mimeMessageSummary, string mailFolderName, string folderPathExport, string csvFolderSuffix = "", string jsonFolderSuffix = "");
+        Task ExportToFileAsync(string mailFolderName, string folderPathExport, string csvFolderSuffix = "-csv", string jsonFolderSuffix = "-json");
     }
         
     public sealed class Exporter : IExporter
@@ -65,8 +65,9 @@ namespace ExporterExample.Services
         /// <param name="folderPathExport">Export file path</param>
         /// <param name="csvFolderSuffix">CSV folder suffix, null to disable</param>
         /// <param name="jsonFolderSuffix">JSON folder suffix, null to disable</param>
-        public void ExportFile(IEnumerable<IMessageSummary> mimeMessageSummary, string mailFolderName, string folderPathExport, string csvFolderSuffix = "-csv", string jsonFolderSuffix = "-json")
+        public async Task ExportToFileAsync(string mailFolderName, string folderPathExport, string csvFolderSuffix = "-csv", string jsonFolderSuffix = "-json")
         {
+            IEnumerable<IMessageSummary> mimeMessageSummary = await _mailFolderReader.GetMessageSummariesAsync(MessageSummaryItems.Envelope);
             var emailDtos = mimeMessageSummary.Select(m => m.ToDto());
             ExportFile(emailDtos, mailFolderName, folderPathExport, csvFolderSuffix, jsonFolderSuffix);
         }

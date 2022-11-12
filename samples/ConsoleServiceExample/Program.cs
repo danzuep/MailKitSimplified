@@ -11,9 +11,7 @@ var logger = loggerFactory.CreateLogger<Program>();
 
 var senderOptions = Options.Create(new EmailSenderOptions(smtpHost: "localhost", smtpPort: 25));
 using var smtpSender = new SmtpSender(senderOptions, loggerFactory.CreateLogger<SmtpSender>());
-var writeEmail = smtpSender.WriteEmail;
-await writeEmail.To("test@localhost").SendAsync();
-bool isSent = await writeEmail
+bool isSent = await smtpSender.WriteEmail
     .From("my.name@example.com")
     .To("YourName@example.com")
     .Subject("Hello World")

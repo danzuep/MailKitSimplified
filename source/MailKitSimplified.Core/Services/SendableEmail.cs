@@ -33,6 +33,14 @@ namespace MailKitSimplified.Core.Services
         public async Task SendAsync(CancellationToken cancellationToken = default)
         {
             await _sender.SendAsync(this, cancellationToken).ConfigureAwait(false);
+            From.Clear();
+            To.Clear();
+            Cc.Clear();
+            Bcc.Clear();
+            AttachmentFilePaths.Clear();
+            Subject = string.Empty;
+            Body = string.Empty;
+            IsHtml = false;
         }
 
         public async Task<bool> TrySendAsync(CancellationToken cancellationToken = default)

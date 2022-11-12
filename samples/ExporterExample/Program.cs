@@ -4,18 +4,14 @@ using Microsoft.Extensions.Configuration;
 
 namespace ExporterExample
 {
-    internal class Program
+    public class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             var config = GetConfiguration(args).Get<ConsoleOptions>();
-            if (!string.IsNullOrEmpty(config.FilePath))
+            if (!string.IsNullOrEmpty(config.MailFolderName) && !string.IsNullOrEmpty(config.ExportFolderPath))
             {
-                //Exporter.Create(useDebugLogger: true).ExportFile(config.FilePath, config.FolderPath, verbose: config.VerboseExport);
-            }
-            else if (!string.IsNullOrEmpty(config.FolderPath))
-            {
-                //Exporter.Create().ExportFolder($"{config.FolderPath}-bin", config.FolderPath, "*.s1L", verbose: config.VerboseExport);
+                await Exporter.Create(useDebugLogger: true).ExportToFileAsync(config.MailFolderName, config.ExportFolderPath);
             }
         }
 
@@ -23,13 +19,10 @@ namespace ExporterExample
         {
             var switchMappings = new Dictionary<string, string>()
             {
-                { "--folder", "FolderPath" },
-                { "--path", "FolderPath" },
-                { "-p", "FolderPath" },
-                { "--file", "FilePath" },
-                { "-f", "FilePath" },
-                { "--verbose", "VerboseExport" },
-                { "-v", "VerboseExport" },
+                { "--MailFolderName", "MailFolderName" },
+                { "-m", "MailFolderName" },
+                { "--ExportFolderPath", "ExportFolderPath" },
+                { "-e", "ExportFolderPath" },
             };
             var builder = new ConfigurationBuilder().AddCommandLine(args, switchMappings);
             return builder.Build();
