@@ -29,9 +29,9 @@ namespace MailKitSimplified.Sender.Abstractions
 
         IEmailWriter BodyText(string textPlain);
 
-        IEmailWriter Attach(MimePart mimePart, bool resource = false);
+        IEmailWriter Attach(MimeEntity mimeEntity, bool resource = false);
 
-        IEmailWriter Attach(IEnumerable<MimePart> mimeParts, bool resource = false);
+        IEmailWriter Attach(IEnumerable<MimeEntity> mimeEntities, bool resource = false);
 
         IEmailWriter Attach(params string[] filePaths);
 

@@ -3,35 +3,33 @@ using System.Net;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Diagnostics;
-using System.Collections.Generic;
 using System.IO.Abstractions;
+using System.Collections.Generic;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MimeKit;
 using MailKit;
 using MailKit.Net.Smtp;
-using MailKit.Security;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Models;
 
 namespace MailKitSimplified.Sender.Services
 {
-    public class SmtpSender : ISmtpSender
+    public sealed class SmtpSender : ISmtpSender
     {
         private readonly ILogger _logger;
         private readonly ISmtpClient _smtpClient;
         private readonly EmailSenderOptions _senderOptions;
 
-        public SmtpSender(IOptions<EmailSenderOptions> senderOptions, ILogger<SmtpSender> logger = null)
+        public SmtpSender(IOptions<EmailSenderOptions> senderOptions, ILogger<SmtpSender> logger = null, ISmtpClient smtpClient = null, IProtocolLogger protocolLogger = null)
         {
             _logger = logger ?? NullLogger<SmtpSender>.Instance;
             _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.SmtpHost))
                 throw new NullReferenceException(nameof(EmailSenderOptions.SmtpHost));
-            var smtpLogger = GetProtocolLogger(_senderOptions.ProtocolLog);
-            _smtpClient = smtpLogger != null ? new SmtpClient(smtpLogger) : new SmtpClient();
+            var smtpLogger = protocolLogger ?? GetProtocolLogger(_senderOptions.ProtocolLog);
+            _smtpClient = smtpClient ?? (smtpLogger !=null ? new SmtpClient(smtpLogger) : new SmtpClient());
         }
 
         public static SmtpSender Create(string smtpHost, ushort smtpPort = 0, string username = null, string password = null, string protocolLog = null)
@@ -44,15 +42,14 @@ namespace MailKitSimplified.Sender.Services
         public static SmtpSender Create(string smtpHost, NetworkCredential smtpCredential, ushort smtpPort = 0, string protocolLog = null)
         {
             var senderOptions = new EmailSenderOptions(smtpHost, smtpCredential, smtpPort, protocolLog);
-            var options = Options.Create(senderOptions);
-            var sender = new SmtpSender(options);
+            var sender = Create(senderOptions);
             return sender;
         }
 
         public static SmtpSender Create(EmailSenderOptions emailSenderOptions)
         {
-            var options = Options.Create(emailSenderOptions);
-            var sender = new SmtpSender(options);
+            var senderOptions = Options.Create(emailSenderOptions);
+            var sender = new SmtpSender(senderOptions);
             return sender;
         }
 
@@ -159,7 +156,7 @@ namespace MailKitSimplified.Sender.Services
                 await SendAsync(mimeMessage, cancellationToken).ConfigureAwait(false);
                 isSent = true;
             }
-            catch (AuthenticationException ex)
+            catch (MailKit.Security.AuthenticationException ex)
             {
                 _logger.LogError(ex, "Failed to authenticate with mail server.");
             }
@@ -177,7 +174,8 @@ namespace MailKitSimplified.Sender.Services
         public void DisconnectSmtpClient()
         {
             if (_smtpClient?.IsConnected ?? false)
-                _smtpClient?.Disconnect(true);
+                lock (_smtpClient.SyncRoot)
+                    _smtpClient.Disconnect(true);
         }
 
         public void Dispose()

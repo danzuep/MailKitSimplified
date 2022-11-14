@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Linq;
+using System.IO;
+using System.IO.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using MimeKit;
 using MimeKit.Text;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Helpers;
-using System.IO;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Sender.Extensions;
 
 namespace MailKitSimplified.Sender.Services
@@ -20,11 +21,13 @@ namespace MailKitSimplified.Sender.Services
         private MimeMessage _mimeMessage = new MimeMessage();
         private readonly ILogger _logger;
         private readonly ISmtpSender _emailClient;
+        private readonly IFileSystem _fileSystem;
 
-        public EmailWriter(ISmtpSender emailClient, ILogger<EmailWriter> logger = null)
+        public EmailWriter(ISmtpSender emailClient, ILogger<EmailWriter> logger = null, IFileSystem fileSystem = null)
         {
             _logger = logger ?? NullLogger<EmailWriter>.Instance;
             _emailClient = emailClient ?? throw new ArgumentNullException(nameof(emailClient));
+            _fileSystem = fileSystem;
         }
 
         public IEmailWriter From(string name, string address, bool replyTo = true)
@@ -135,36 +138,49 @@ namespace MailKitSimplified.Sender.Services
         {
             if (filePaths != null)
             {
-                var builder = new BodyBuilder
+                if (_fileSystem != null)
                 {
-                    HtmlBody = _mimeMessage.HtmlBody,
-                    TextBody = _mimeMessage.TextBody
-                };
-                if (_mimeMessage.Attachments != null)
-                {
-                    var linkedResources = _mimeMessage.Attachments
-                        .Where(attachment => !attachment.IsAttachment);
-                    foreach (var linkedResource in linkedResources)
-                        builder.LinkedResources.Add(linkedResource);
-                    var attachments = _mimeMessage.Attachments
-                        .Where(attachment => attachment.IsAttachment);
-                    foreach (var attachment in attachments)
-                        builder.Attachments.Add(attachment);
+                    var mimeEntities = new List<MimePart>();
+                    foreach (var filePath in filePaths)
+                    {
+                        var mimeEntity = AttachmentHandler.GetMimePart(filePath, _fileSystem);
+                        mimeEntities.Add(mimeEntity);
+                    }
+                    Attach(mimeEntities);
                 }
-                foreach (var filePath in filePaths)
-                    builder.Attachments.Add(filePath);
-                _mimeMessage.Body = builder.ToMessageBody();
+                else
+                {
+                    var builder = new BodyBuilder
+                    {
+                        HtmlBody = _mimeMessage.HtmlBody,
+                        TextBody = _mimeMessage.TextBody
+                    };
+                    if (_mimeMessage.Attachments != null)
+                    {
+                        var linkedResources = _mimeMessage.Attachments
+                            .Where(attachment => !attachment.IsAttachment);
+                        foreach (var linkedResource in linkedResources)
+                            builder.LinkedResources.Add(linkedResource);
+                        var attachments = _mimeMessage.Attachments
+                            .Where(attachment => attachment.IsAttachment);
+                        foreach (var attachment in attachments)
+                            builder.Attachments.Add(attachment);
+                    }
+                    foreach (var filePath in filePaths)
+                        builder.Attachments.Add(filePath);
+                    _mimeMessage.Body = builder.ToMessageBody();
+                }
             }
             return this;
         }
 
-        public IEmailWriter Attach(MimePart mimePart, bool resource = false)
+        public IEmailWriter Attach(MimeEntity mimeEntity, bool resource = false)
         {
             if (_mimeMessage.Body == null)
             {
-                _mimeMessage.Body = mimePart;
+                _mimeMessage.Body = mimeEntity;
             }
-            else if (mimePart != null)
+            else if (mimeEntity != null)
             {
                 var builder = new BodyBuilder
                 {
@@ -183,17 +199,17 @@ namespace MailKitSimplified.Sender.Services
                         builder.Attachments.Add(attachment);
                 }
                 if (!resource)
-                    builder.Attachments.Add(mimePart);
+                    builder.Attachments.Add(mimeEntity);
                 else
-                    builder.LinkedResources.Add(mimePart);
+                    builder.LinkedResources.Add(mimeEntity);
                 _mimeMessage.Body = builder.ToMessageBody();
             }
             return this;
         }
 
-        public IEmailWriter Attach(IEnumerable<MimePart> mimeParts, bool resource = false)
+        public IEmailWriter Attach(IEnumerable<MimeEntity> mimeEntities, bool resource = false)
         {
-            if (mimeParts != null && mimeParts.Any())
+            if (mimeEntities != null && mimeEntities.Any())
             {
                 var builder = new BodyBuilder
                 {
@@ -211,7 +227,7 @@ namespace MailKitSimplified.Sender.Services
                     foreach (var attachment in attachments)
                         builder.Attachments.Add(attachment);
                 }
-                foreach(var mimePart in mimeParts)
+                foreach(var mimePart in mimeEntities)
                     if (!resource)
                         builder.Attachments.Add(mimePart);
                     else

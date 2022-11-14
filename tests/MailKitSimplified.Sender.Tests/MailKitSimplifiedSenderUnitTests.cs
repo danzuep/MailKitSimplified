@@ -5,6 +5,8 @@ using System.IO.Abstractions.TestingHelpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using MailKit;
+using MailKit.Net.Smtp;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Services;
 using MailKitSimplified.Sender.Models;
@@ -34,18 +36,23 @@ namespace MailKitSimplified.Sender.Tests
             });
             _loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Trace).AddDebug().AddConsole());
             _attachmentHandler = new AttachmentHandler(_loggerFactory.CreateLogger<AttachmentHandler>(), _fileSystem);
+            var smtpClientMock = new Mock<ISmtpClient>();
+            smtpClientMock.Setup(_ => _.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
+                .ReturnsAsync("Mail accepted").Verifiable();
             //var mailKitProtocolLogger = new MailKitProtocolLogger(null, _fileSystem, _loggerFactory.CreateLogger<MailKitProtocolLogger>());
             var senderOptions = new EmailSenderOptions("localhost");
             var options = Options.Create(senderOptions);
-            _emailSender = new SmtpSender(options, _loggerFactory.CreateLogger<SmtpSender>());
-            _emailWriter = new EmailWriter(_emailSender);
+            _emailSender = new SmtpSender(options, _loggerFactory.CreateLogger<SmtpSender>(), smtpClientMock.Object);
+            _emailWriter = new EmailWriter(_emailSender, _loggerFactory.CreateLogger<EmailWriter>(), _fileSystem);
         }
 
         [Theory]
+        [InlineData("localhost")]
         [InlineData("smtp.google.com")]
         [InlineData("smtp.sendgrid.com")]
         [InlineData("smtp.mail.yahoo.com")]
         [InlineData("outlook.office365.com")]
+        [InlineData("smtp.freesmtpservers.com")]
         public void WriteEmail_WithEmailSender_VerifyCreatedAsync(string smtpHost)
         {
             using var smtpSender = SmtpSender.Create(smtpHost);
@@ -55,9 +62,33 @@ namespace MailKitSimplified.Sender.Tests
                 .Cc("friend1@example.com")
                 .Bcc("friend2@example.com")
                 .Subject("Hey You")
-                //.Attach(_attachment1Path, _attachment2Path) // files must exist
                 .BodyHtml("Hello World");
             Assert.NotNull(email);
+        }
+
+        [Fact]
+        public async Task SendAsync_WithAttachment_VerifySentAsync()
+        {
+            await _emailWriter
+                .From("from@localhost")
+                .To("to@localhost")
+                .Subject("Hi")
+                .BodyHtml("~")
+                .Attach(_attachment1Path, _attachment2Path)
+                .SendAsync();
+        }
+
+        [Fact]
+        public async Task TrySendAsync_WithAttachment_VerifySentAsync()
+        {
+            var isSent = await _emailWriter
+                .From("from@localhost")
+                .To("to@localhost")
+                .Subject("Hi")
+                .BodyHtml("~")
+                .TryAttach(_attachment1Path, _attachment2Path)
+                .TrySendAsync();
+            Assert.True(isSent);
         }
 
         private static async Task<Stream> GetTestStream(int capacity = 1)
@@ -168,49 +199,5 @@ namespace MailKitSimplified.Sender.Tests
             Assert.True(result);
             emailSenderMock.Verify(sender => sender.TrySendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()), Times.Once());
         }
-
-#if DEBUG
-        //[Fact]
-        //public async Task TrySendAsync_WithInvalidSmtpHost_VerifyNotSentAsync()
-        //{
-        //    var isSent = await _emailSender.WriteEmail
-        //        .From("from")
-        //        .To("to")
-        //        .Subject("Hi")
-        //        .BodyHtml("~")
-        //        .TrySendAsync();
-        //    Assert.True(isSent);
-        //}
-
-        //        [Theory]
-        //        [InlineData("smtp.freesmtpservers.com")]
-        //        public async Task SendEmail_WithMimeEmailWriter_EndToEndTest(string smtpHost, int port = 25, string log = @"C:\Temp\smptLog.txt")
-        //        {
-        //            var options = Options.Create(new EmailSenderOptions(smtpHost, port, protocolLog: log));
-        //            using var emailSender = new EmailSender(options, _loggerFactory);
-        //            var email = new MimeEmailWriter(emailSender)
-        //                .From("mailkitsimplifiedsender@freesmtpservers.com")
-        //                .To("mailkitsimplifiedsender@freesmtpservers.com")
-        //                .Subject("Hi1")
-        //                .Body("~");
-        //            await email.SendAsync();
-        //            Assert.NotNull(email);
-        //        }
-
-        //        [Theory]
-        //        [InlineData("smtp.freesmtpservers.com")]
-        //        public async Task SendEmail_WithEmailWriter_EndToEndTest(string smtpHost, int port = 25, string log = @"C:\Temp\smptLog.txt")
-        //        {
-        //            var options = Options.Create(new EmailSenderOptions(smtpHost, port, protocolLog: log));
-        //            using var emailSender = new EmailSender(options, _loggerFactory);
-        //            var email = new EmailWriter(emailSender)
-        //                .From("mailkitsimplifiedsender@freesmtpservers.com")
-        //                .To("mailkitsimplifiedsender@freesmtpservers.com")
-        //                .Subject("Hi2")
-        //                .Body("~");
-        //            await email.SendAsync();
-        //            Assert.NotNull(email);
-        //        }
-#endif
     }
 }

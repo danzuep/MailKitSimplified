@@ -84,8 +84,8 @@ public class EmailService
 {
     private readonly IEmailWriter _writeEmail;
 
-    public EmailService(IEmailWriter smtpSender) {
-        _writeEmail = smtpSender;
+    public EmailService(IEmailWriter writeEmail) {
+        _writeEmail = writeEmail;
     }
 }
 ```

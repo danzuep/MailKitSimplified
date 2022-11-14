@@ -76,7 +76,7 @@ namespace MailKitSimplified.Sender.Services
 
         public static MimePart GetMimePart(Stream stream, string fileName, string contentType = "", string contentId = "")
         {
-            MimePart result = null;
+            MimePart mimePart = null;
             if (stream != null && stream.Length > 0)
             {
                 stream.Position = 0; // reset stream position ready to read
@@ -85,7 +85,7 @@ namespace MailKitSimplified.Sender.Services
                 if (string.IsNullOrWhiteSpace(contentId))
                     contentId = MimeUtils.GenerateMessageId();
                 var attachment = MimeKit.ContentDisposition.Attachment;
-                result = new MimePart(contentType)
+                mimePart = new MimePart(contentType)
                 {
                     Content = new MimeContent(stream),
                     ContentTransferEncoding = ContentEncoding.Base64,
@@ -94,28 +94,50 @@ namespace MailKitSimplified.Sender.Services
                     FileName = fileName
                 };
             }
-            return result;
+            return mimePart;
+        }
+
+        public static MimePart GetMimePart(string filePath, IFileSystem fileSystem = null)
+        {
+            MimePart mimePart = null;
+            if (!string.IsNullOrWhiteSpace(filePath))
+            {
+                var _fileSystem = fileSystem ?? new FileSystem();
+                using (var stream = _fileSystem.File.OpenRead(filePath))
+                {
+                    string fileName = _fileSystem.Path.GetFileName(filePath);
+                    string fileExtension = _fileSystem.Path.GetExtension(fileName);
+                    string contentType = fileExtension
+                        .Equals(".pdf", StringComparison.OrdinalIgnoreCase) ?
+                            MediaTypeNames.Application.Pdf : fileExtension
+                        .Equals(".zip", StringComparison.OrdinalIgnoreCase) ?
+                            MediaTypeNames.Application.Zip :
+                            MediaTypeNames.Application.Octet;
+                    mimePart = GetMimePart(stream, fileName, contentType);
+                }
+            }
+            return mimePart;
         }
 
         public async Task<MimePart> GetMimePartAsync(string filePath, string mediaType = MediaTypeNames.Application.Octet, CancellationToken cancellationToken = default)
         {
-            MimePart result = null;
+            MimePart mimePart = null;
             if (!string.IsNullOrWhiteSpace(filePath))
             {
                 var stream = await GetFileStreamAsync(filePath, cancellationToken).ConfigureAwait(false);
                 if (stream != null)
                 {
-                    string fileName = Path.GetFileName(filePath);
-                    string fileExtension = Path.GetExtension(fileName);
+                    string fileName = _fileSystem.Path.GetFileName(filePath);
+                    string fileExtension = _fileSystem.Path.GetExtension(fileName);
                     string contentType = fileExtension
                         .Equals(".pdf", StringComparison.OrdinalIgnoreCase) ?
                             MediaTypeNames.Application.Pdf : fileExtension
                         .Equals(".zip", StringComparison.OrdinalIgnoreCase) ?
                             MediaTypeNames.Application.Zip : mediaType;
-                    result = GetMimePart(stream, fileName, contentType);
+                    mimePart = GetMimePart(stream, fileName, contentType);
                 }
             }
-            return result;
+            return mimePart;
         }
 
         public async Task<IEnumerable<MimePart>> LoadFilePathAsync(string filePath, CancellationToken cancellationToken = default)

@@ -79,7 +79,7 @@ namespace MailKitSimplified.Receiver.Services
             return messageSummaries;
         }
 
-        public async Task<IEnumerable<IMessageSummary>> GetMessageSummariesAsync(uint from, uint to = 0, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken ct = default)
+        public async ValueTask<IEnumerable<IMessageSummary>> GetMessageSummariesAsync(uint from, uint to = 0, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken ct = default)
         {
             if (to < from)
                 to = from;
@@ -88,14 +88,14 @@ namespace MailKitSimplified.Receiver.Services
             return filteredSummaries;
         }
 
-        public async Task<IEnumerable<MimeMessage>> GetRangeAsync(ushort count = 0, CancellationToken ct = default)
+        public async ValueTask<IEnumerable<MimeMessage>> GetRangeAsync(ushort count = 0, CancellationToken ct = default)
         {
             await ReconnectAsync(false, ct).ConfigureAwait(false);
             var mimeMessages = await GetRangeAsync(0, count, ct: ct).ConfigureAwait(false);
             return mimeMessages;
         }
 
-        public async Task<IEnumerable<MimeMessage>> GetRangeAsync(ushort startIndex, ushort endCount, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken ct = default)
+        public async ValueTask<IEnumerable<MimeMessage>> GetRangeAsync(ushort startIndex, ushort endCount, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken ct = default)
         {
             var messageSummaries = await FetchMessageSummariesAsync(startIndex, endCount, filter, ct).ConfigureAwait(false);
             var mimeMessages = await GetMimeMessagesAsync(messageSummaries, ct).ConfigureAwait(false);
@@ -117,7 +117,7 @@ namespace MailKitSimplified.Receiver.Services
             return mimeMessage;
         }
 
-        public async Task<IList<IMessageSummary>> GetMessageSummariesAsync(IEnumerable<UniqueId> uniqueIds, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken ct = default)
+        public async ValueTask<IList<IMessageSummary>> GetMessageSummariesAsync(IEnumerable<UniqueId> uniqueIds, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken ct = default)
         {
             IList<IMessageSummary> messageSummaries = new List<IMessageSummary>();
             if (uniqueIds != null)
@@ -129,7 +129,7 @@ namespace MailKitSimplified.Receiver.Services
             return messageSummaries;
         }
 
-        public async Task<MimeMessage> GetMimeMessageAsync(IMessageSummary messageSummary, CancellationToken ct = default)
+        public async ValueTask<MimeMessage> GetMimeMessageAsync(IMessageSummary messageSummary, CancellationToken ct = default)
         {
             MimeMessage mimeMessage = null;
             if (messageSummary?.UniqueId != null)
@@ -140,7 +140,7 @@ namespace MailKitSimplified.Receiver.Services
             return mimeMessage;
         }
 
-        public async Task<IList<MimeMessage>> GetMimeMessagesAsync(IEnumerable<IMessageSummary> messageSummaries, CancellationToken ct = default)
+        public async ValueTask<IList<MimeMessage>> GetMimeMessagesAsync(IEnumerable<IMessageSummary> messageSummaries, CancellationToken ct = default)
         {
             IList<MimeMessage> mimeMessages = Array.Empty<MimeMessage>();
             if (messageSummaries != null)
@@ -151,7 +151,7 @@ namespace MailKitSimplified.Receiver.Services
             return mimeMessages;
         }
 
-        public async Task<IList<MimeMessage>> GetMimeMessagesAsync(IEnumerable<UniqueId> uniqueIds, CancellationToken ct = default)
+        public async ValueTask<IList<MimeMessage>> GetMimeMessagesAsync(IEnumerable<UniqueId> uniqueIds, CancellationToken ct = default)
         {
             IList<MimeMessage> mimeMessages = new List<MimeMessage>();
             if (uniqueIds != null)
@@ -174,7 +174,7 @@ namespace MailKitSimplified.Receiver.Services
         /// <exception cref="FolderNotOpenException">Message not downloaded</exception>
         /// <exception cref="InvalidOperationException">Message not downloaded</exception>
         /// <exception cref="OperationCanceledException">Message download task was cancelled.</exception>
-        public async Task<MimeMessage> GetMimeMessageAsync(UniqueId uniqueId, CancellationToken ct = default)
+        public async ValueTask<MimeMessage> GetMimeMessageAsync(UniqueId uniqueId, CancellationToken ct = default)
         {
             var mimeMessage = await _mailFolder.GetMessageAsync(uniqueId, ct).ConfigureAwait(false);
             if (mimeMessage != null && _mailFolder.Access == FolderAccess.ReadWrite)
@@ -186,10 +186,9 @@ namespace MailKitSimplified.Receiver.Services
 
         public virtual void Dispose()
         {
-            _imapClientService?.Dispose();
             if (_mailFolder != null)
-                lock (_mailFolder?.SyncRoot)
-                    _mailFolder?.Close(false);
+                lock (_mailFolder.SyncRoot)
+                    _mailFolder.Close(false);
         }
     }
 }
