@@ -1,25 +1,41 @@
+using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Sender.Abstractions;
 
-namespace ExampleNamespace
+namespace ExampleNamespace;
+
+public class Worker : BackgroundService
 {
-    public class Worker : BackgroundService
+    private readonly ILogger<Worker> _logger;
+    private readonly ISmtpSender _smtpSender;
+    private readonly IImapReceiver _imapReceiver;
+
+    public Worker(ILogger<Worker> logger, ISmtpSender smtpSender, IImapReceiver imapReceiver)
     {
-        private readonly ILogger<Worker> _logger;
-        private readonly ISmtpSender _smtpSender;
+        _logger = logger;
+        _smtpSender = smtpSender;
+        _imapReceiver = imapReceiver;
+    }
 
-        public Worker(ILogger<Worker> logger, ISmtpSender emailSender)
-        {
-            _logger = logger;
-            _smtpSender = emailSender;
-        }
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken = default)
+    {
+        await SendAsync(stoppingToken);
+        await ReceiveAsync(stoppingToken);
+    }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken = default)
-        {
-            bool isSent = await _smtpSender.WriteEmail
-                .From("me@localhost")
-                .To($"{Guid.NewGuid():N}@localhost")
-                .TrySendAsync(stoppingToken);
-            _logger.LogInformation("Email {result}.", isSent ? "sent" : "failed to send");
-        }
+    private async Task ReceiveAsync(CancellationToken cancellationToken = default)
+    {
+        var emails = await _imapReceiver.ReadMail
+            .Skip(0).Take(10)
+            .GetMessageSummariesAsync(cancellationToken);
+        _logger.LogInformation("Email(s) received: {emails}.", emails.Select(m => m.UniqueId));
+    }
+
+    private async Task SendAsync(CancellationToken cancellationToken = default)
+    {
+        bool isSent = await _smtpSender.WriteEmail
+            .From("me@localhost")
+            .To($"{Guid.NewGuid():N}@localhost")
+            .TrySendAsync(cancellationToken);
+        _logger.LogInformation("Email {result}.", isSent ? "sent" : "failed to send");
     }
 }

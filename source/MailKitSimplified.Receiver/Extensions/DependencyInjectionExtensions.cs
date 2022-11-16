@@ -1,5 +1,4 @@
 ﻿using MailKit;
-using MailKit.Net.Imap;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
@@ -19,7 +18,6 @@ namespace MailKitSimplified.Receiver
             services.Configure<EmailReceiverOptions>(configSection);
             services.AddTransient<IMailReader, MailReader>();
             services.AddTransient<IProtocolLogger, MailKitProtocolLogger>();
-            services.AddTransient<IImapClient, ImapClient>();
             services.AddTransient<IImapReceiver, ImapReceiver>();
             return services;
         }
