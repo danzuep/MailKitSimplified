@@ -6,9 +6,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace MailKitSimplified.Receiver.Extensions
 {
+    [ExcludeFromCodeCoverage]
     public static class AttachmentExtensions
     {
         public static IEnumerable<string> GetAttachmentNames(this IEnumerable<MimeEntity> mimeEntities)
@@ -57,24 +59,25 @@ namespace MailKitSimplified.Receiver.Extensions
         public static async Task<MemoryStream> GetMimeEntityStream(this MimeEntity mimeEntity, CancellationToken ct = default)
         {
             var memoryStream = new MemoryStream();
-            if (mimeEntity != null)
-                await mimeEntity.WriteToStreamAsync(memoryStream, ct);
-            memoryStream.Position = 0;
+            await mimeEntity.WriteToStreamAsync(memoryStream, ct);
             return memoryStream;
         }
 
         public static async Task<Stream> WriteToStreamAsync(this MimeEntity entity, Stream stream, CancellationToken ct = default)
         {
-            if (entity is MessagePart messagePart)
+            if (entity != null && stream != null)
             {
-                await messagePart.Message.WriteToAsync(stream, ct);
+                if (entity is MessagePart messagePart)
+                {
+                    await messagePart.Message.WriteToAsync(stream, ct);
+                }
+                else if (entity is MimePart mimePart && mimePart.Content != null)
+                {
+                    await mimePart.Content.DecodeToAsync(stream, ct);
+                }
+                // rewind the stream so the next process can read it from the beginning
+                stream.Position = 0;
             }
-            else if (entity is MimePart mimePart && mimePart.Content != null)
-            {
-                await mimePart.Content.DecodeToAsync(stream, ct);
-            }
-            // rewind the stream so the next process can read it from the beginning
-            stream.Position = 0;
             return stream;
         }
     }

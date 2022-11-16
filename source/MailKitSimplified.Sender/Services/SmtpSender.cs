@@ -1,4 +1,7 @@
-﻿using System;
+﻿using MimeKit;
+using MailKit;
+using MailKit.Net.Smtp;
+using System;
 using System.Net;
 using System.Linq;
 using System.Threading;
@@ -8,9 +11,6 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using MimeKit;
-using MailKit;
-using MailKit.Net.Smtp;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Models;
 
@@ -22,19 +22,19 @@ namespace MailKitSimplified.Sender.Services
         private readonly ISmtpClient _smtpClient;
         private readonly EmailSenderOptions _senderOptions;
 
-        public SmtpSender(IOptions<EmailSenderOptions> senderOptions, ILogger<SmtpSender> logger = null, ISmtpClient smtpClient = null, IProtocolLogger protocolLogger = null)
+        public SmtpSender(IOptions<EmailSenderOptions> senderOptions, ILogger<SmtpSender> logger = null, IProtocolLogger protocolLogger = null, ISmtpClient smtpClient = null)
         {
             _logger = logger ?? NullLogger<SmtpSender>.Instance;
             _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.SmtpHost))
                 throw new NullReferenceException(nameof(EmailSenderOptions.SmtpHost));
-            var smtpLogger = protocolLogger ?? GetProtocolLogger(_senderOptions.ProtocolLog);
+            var smtpLogger = protocolLogger ?? GetProtocolLogger(smtpClient == null ? _senderOptions.ProtocolLog : null);
             _smtpClient = smtpClient ?? (smtpLogger !=null ? new SmtpClient(smtpLogger) : new SmtpClient());
         }
 
         public static SmtpSender Create(string smtpHost, ushort smtpPort = 0, string username = null, string password = null, string protocolLog = null)
         {
-            var smtpCredential = username == null && password == null ? null : new NetworkCredential(username ?? "", password ?? "");
+            var smtpCredential = new NetworkCredential(username, password);
             var sender = Create(smtpHost, smtpCredential, smtpPort, protocolLog);
             return sender;
         }
@@ -46,10 +46,10 @@ namespace MailKitSimplified.Sender.Services
             return sender;
         }
 
-        public static SmtpSender Create(EmailSenderOptions emailSenderOptions)
+        public static SmtpSender Create(EmailSenderOptions emailSenderOptions, ILogger<SmtpSender> logger = null)
         {
             var senderOptions = Options.Create(emailSenderOptions);
-            var sender = new SmtpSender(senderOptions);
+            var sender = new SmtpSender(senderOptions, logger);
             return sender;
         }
 
@@ -59,10 +59,9 @@ namespace MailKitSimplified.Sender.Services
         {
             if (!string.IsNullOrEmpty(logFilePath))
             {
-                if (fileSystem == null)
-                    fileSystem = new FileSystem();
-                var directoryName = fileSystem.Path.GetDirectoryName(logFilePath);
-                fileSystem.Directory.CreateDirectory(directoryName);
+                var _fileSystem = fileSystem ?? new FileSystem();
+                var directoryName = _fileSystem.Path.GetDirectoryName(logFilePath);
+                _fileSystem.Directory.CreateDirectory(directoryName);
             }
             var protocolLogger = logFilePath == null ? null :
                 string.IsNullOrWhiteSpace(logFilePath) ?
@@ -130,30 +129,37 @@ namespace MailKitSimplified.Sender.Services
             return isValid;
         }
 
-        public async Task ConnectSmtpClientAsync(CancellationToken cancellationToken = default)
+        public async ValueTask<ISmtpClient> ConnectSmtpClientAsync(CancellationToken cancellationToken = default)
         {
             if (!_smtpClient.IsConnected && !string.IsNullOrEmpty(_senderOptions.SmtpHost))
+            {
                 await _smtpClient.ConnectAsync(_senderOptions.SmtpHost, _senderOptions.SmtpPort, cancellationToken: cancellationToken).ConfigureAwait(false);
+                _logger.LogTrace($"SMTP client connected to {_senderOptions.SmtpHost}");
+            }
             if (_senderOptions.SmtpCredential != null && _senderOptions.SmtpCredential != default && !_smtpClient.IsAuthenticated)
+            {
                 await _smtpClient.AuthenticateAsync(_senderOptions.SmtpCredential, cancellationToken).ConfigureAwait(false);
+                _logger.LogTrace($"SMTP client authenticated with {_senderOptions.SmtpHost}");
+            }
+            return _smtpClient;
         }
 
-        public async Task SendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default)
+        public async Task SendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
         {
             _ = ValidateMimeMessage(mimeMessage, _logger);
-            await ConnectSmtpClientAsync(cancellationToken).ConfigureAwait(false);
+            _ = await ConnectSmtpClientAsync(cancellationToken).ConfigureAwait(false);
             _logger.LogTrace("Sending From: {0}; To: {1}; Cc: {2}; Bcc: {3}; Subject: '{4}'",
                 mimeMessage.From, mimeMessage.To, mimeMessage.Cc, mimeMessage.Bcc, mimeMessage.Subject);
-            string serverResponse = await _smtpClient.SendAsync(mimeMessage, cancellationToken).ConfigureAwait(false);
+            string serverResponse = await _smtpClient.SendAsync(mimeMessage, cancellationToken, transferProgress).ConfigureAwait(false);
             _logger.LogTrace(serverResponse);
         }
 
-        public async Task<bool> TrySendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken)
+        public async Task<bool> TrySendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken, ITransferProgress transferProgress = null)
         {
             bool isSent = false;
             try
             {
-                await SendAsync(mimeMessage, cancellationToken).ConfigureAwait(false);
+                await SendAsync(mimeMessage, cancellationToken, transferProgress).ConfigureAwait(false);
                 isSent = true;
             }
             catch (MailKit.Security.AuthenticationException ex)

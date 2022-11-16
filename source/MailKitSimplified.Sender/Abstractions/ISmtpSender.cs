@@ -2,6 +2,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using MimeKit;
+using MailKit;
+using MailKit.Net.Smtp;
 
 namespace MailKitSimplified.Sender.Abstractions
 {
@@ -9,8 +11,10 @@ namespace MailKitSimplified.Sender.Abstractions
     {
         IEmailWriter WriteEmail { get; }
 
-        Task SendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default);
+        ValueTask<ISmtpClient> ConnectSmtpClientAsync(CancellationToken cancellationToken = default);
 
-        Task<bool> TrySendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken);
+        Task SendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default, ITransferProgress transferProgress = null);
+
+        Task<bool> TrySendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default, ITransferProgress transferProgress = null);
     }
 }

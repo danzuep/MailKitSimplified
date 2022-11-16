@@ -1,23 +1,25 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using MailKit;
+using MailKit.Net.Imap;
+using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Receiver.Services;
-using MailKit;
-using MailKit.Net.Imap;
 
-namespace MailKitSimplified.Receiver.Extensions
+namespace MailKitSimplified.Receiver
 {
+    [ExcludeFromCodeCoverage]
     public static class DependencyInjectionExtensions
     {
         public static IServiceCollection AddMailKitSimplifiedEmailReceiver(this IServiceCollection services, IConfiguration configuration, string sectionName = EmailReceiverOptions.SectionName)
         {
-            var configSection = configuration.GetRequiredSection(sectionName);
             // This adds IOptions<EmailReceiverOptions> from appsettings.json
+            var configSection = configuration.GetRequiredSection(sectionName);
             services.Configure<EmailReceiverOptions>(configSection);
+            services.AddTransient<IMailReader, MailReader>();
+            services.AddTransient<IProtocolLogger, MailKitProtocolLogger>();
             services.AddTransient<IImapClient, ImapClient>();
-            services.AddTransient<IProtocolLogger, ProtocolLogger>();
-            services.AddTransient<IMailFolderReader, MailFolderReader>();
             services.AddTransient<IImapReceiver, ImapReceiver>();
             return services;
         }

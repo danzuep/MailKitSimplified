@@ -81,7 +81,7 @@ namespace MailKitSimplified.Sender.Services
             {
                 stream.Position = 0; // reset stream position ready to read
                 if (string.IsNullOrWhiteSpace(contentType))
-                    contentType = MediaTypeNames.Application.Octet;
+                    contentType = MimeTypes.GetMimeType(fileName);
                 if (string.IsNullOrWhiteSpace(contentId))
                     contentId = MimeUtils.GenerateMessageId();
                 var attachment = MimeKit.ContentDisposition.Attachment;
@@ -97,50 +97,67 @@ namespace MailKitSimplified.Sender.Services
             return mimePart;
         }
 
-        public static MimePart GetMimePart(string filePath, IFileSystem fileSystem = null)
+        public IList<MimePart> GetMimeParts(params string[] filePaths)
         {
-            MimePart mimePart = null;
-            if (!string.IsNullOrWhiteSpace(filePath))
+            var mimeEntities = new List<MimePart>();
+            if (filePaths != null && filePaths.Length > 0)
             {
-                var _fileSystem = fileSystem ?? new FileSystem();
-                using (var stream = _fileSystem.File.OpenRead(filePath))
+                foreach (var filePath in filePaths)
                 {
-                    string fileName = _fileSystem.Path.GetFileName(filePath);
-                    string fileExtension = _fileSystem.Path.GetExtension(fileName);
-                    string contentType = fileExtension
-                        .Equals(".pdf", StringComparison.OrdinalIgnoreCase) ?
-                            MediaTypeNames.Application.Pdf : fileExtension
-                        .Equals(".zip", StringComparison.OrdinalIgnoreCase) ?
-                            MediaTypeNames.Application.Zip :
-                            MediaTypeNames.Application.Octet;
-                    mimePart = GetMimePart(stream, fileName, contentType);
+                    if (!string.IsNullOrWhiteSpace(filePath) && _fileSystem.File.Exists(filePath))
+                    {
+                        using (var stream = _fileSystem.File.OpenRead(filePath))
+                        {
+                            string fileName = _fileSystem.Path.GetFileName(filePath);
+                            var mimeEntity = GetMimePart(stream, fileName);
+                            mimeEntities.Add(mimeEntity);
+                        }
+                    }
                 }
             }
-            return mimePart;
+            return mimeEntities;
         }
 
-        public async Task<MimePart> GetMimePartAsync(string filePath, string mediaType = MediaTypeNames.Application.Octet, CancellationToken cancellationToken = default)
+        public async Task<IList<MimeEntity>> GetMimeEntitiesAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
         {
-            MimePart mimePart = null;
-            if (!string.IsNullOrWhiteSpace(filePath))
+            var mimeEntities = new List<MimeEntity>();
+            if (filePaths != null)
             {
-                var stream = await GetFileStreamAsync(filePath, cancellationToken).ConfigureAwait(false);
-                if (stream != null)
+                foreach (var filePath in filePaths)
                 {
-                    string fileName = _fileSystem.Path.GetFileName(filePath);
-                    string fileExtension = _fileSystem.Path.GetExtension(fileName);
-                    string contentType = fileExtension
-                        .Equals(".pdf", StringComparison.OrdinalIgnoreCase) ?
-                            MediaTypeNames.Application.Pdf : fileExtension
-                        .Equals(".zip", StringComparison.OrdinalIgnoreCase) ?
-                            MediaTypeNames.Application.Zip : mediaType;
-                    mimePart = GetMimePart(stream, fileName, contentType);
+                    var mimeEntity = await GetMimeEntityAsync(filePath, cancellationToken).ConfigureAwait(false);
+                    if (mimeEntity != null)
+                        mimeEntities.Add(mimeEntity);
                 }
             }
-            return mimePart;
+            return mimeEntities;
         }
 
-        public async Task<IEnumerable<MimePart>> LoadFilePathAsync(string filePath, CancellationToken cancellationToken = default)
+        public async Task<MimeEntity> GetMimeEntityAsync(string filePath, CancellationToken cancellationToken = default)
+        {
+            MimeEntity mimeEntity = null;
+            if (!string.IsNullOrWhiteSpace(filePath) && _fileSystem.File.Exists(filePath))
+            {
+                using (var stream = await GetFileStreamAsync(filePath, cancellationToken).ConfigureAwait(false))
+                {
+                    if (stream != null)
+                    {
+                        string fileName = _fileSystem.Path.GetFileName(filePath);
+                        mimeEntity = GetMimePart(stream, fileName);
+                        // mimeEntity = new BodyBuilder().Attachments.Add(filePath);
+                        // The following is to ensure the same behaviour as above:
+                        if (mimeEntity.ContentType == new MimeKit.ContentType("message", "rfc822"))
+                        {
+                            var mimeMessage = await MimeMessage.LoadAsync(stream, cancellationToken);
+                            mimeEntity = new MessagePart { Message = mimeMessage };
+                        }
+                    }
+                }
+            }
+            return mimeEntity;
+        }
+
+        public async Task<IEnumerable<MimeEntity>> LoadFilePathAsync(string filePath, CancellationToken cancellationToken = default)
         {
             var separator = new char[] { '|' }; //';' is a valid attachment file name character
             var filePaths = filePath?.Split(separator, StringSplitOptions.RemoveEmptyEntries);
@@ -148,12 +165,12 @@ namespace MailKitSimplified.Sender.Services
             return results;
         }
 
-        public async Task<IEnumerable<MimePart>> LoadFilePathsAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<MimeEntity>> LoadFilePathsAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
         {
-            IList<MimePart> results = Array.Empty<MimePart>();
+            IList<MimeEntity> results = Array.Empty<MimeEntity>();
             if (filePaths?.Any() ?? false)
             {
-                var mimeEntityTasks = filePaths.Select(name => GetMimePartAsync(name, cancellationToken: cancellationToken));
+                var mimeEntityTasks = filePaths.Select(name => GetMimeEntityAsync(name, cancellationToken));
                 var mimeEntities = await Task.WhenAll(mimeEntityTasks).ConfigureAwait(false);
                 results = mimeEntities.Where(entity => entity != null).ToList();
                 _logger.LogDebug($"{results.Count} attachments loaded.");

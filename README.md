@@ -3,8 +3,15 @@
 Sending and receiving emails sounds simple, after all, electronic mail existed [decades](https://en.wikipedia.org/wiki/History_of_email) before the [Internet](https://en.wikipedia.org/wiki/History_of_the_Internet). If you're looking for an all-in-one .NET solution for email, you'll quickly discover [MailKit](https://github.com/jstedfast/MailKit) is recommended by even the likes of [Microsoft](https://learn.microsoft.com/en-us/dotnet/api/system.net.mail.smtpclient?view=net-6.0#remarks) due to how it implements the [RFC standard](https://www.rfc-editor.org/rfc/rfc2822). Unfortunately the downside of doing it all is that MailKit can be difficult to [set up](https://github.com/jstedfast/MailKit#using-mailkit) [and use](https://github.com/jstedfast/MimeKit/blob/master/FAQ.md#messages-1), especially the first time you go to try something like [checking attachments](https://github.com/jstedfast/MimeKit/blob/master/FAQ.md#q-how-do-i-tell-if-a-message-has-attachments) or [writing a reply](https://github.com/jstedfast/MimeKit/blob/master/FAQ.md#q-how-do-i-reply-to-a-message). The aim of this package is to make sending (and receiving) emails as simple as possible!
 
 Sending an email is now as easy as:
+
 ```csharp
 await writeEmail.To("test@localhost").SendAsync();
+```
+
+Receiving an email is now as easy as:
+
+```csharp
+var mimeMessages = await imapReceiver.ReadMail.GetMimeMessagesAsync();
 ```
 
 ## MailKitSimplified.Sender Usage
@@ -30,7 +37,7 @@ await smtpSender.WriteEmail
     .SendAsync();
 ```
 
-Any configuration issues will throw an exception, but you can also opt to just log any exceptions and continue with a `false` output:
+Using the method above will pass exceptions up to the next layer, but if you just want to log exceptions then continue with a "false" output that can also be done using the "try" prefix:
 
 ```csharp
 bool isSent = await smtpSender.WriteEmail
@@ -40,7 +47,7 @@ bool isSent = await smtpSender.WriteEmail
     .Bcc("admin@localhost")
     .Subject($"Hello at {DateTime.Now}!")
     .BodyText("Optional text/plain content.")
-    .BodyHtml("Optional text/html content.</br>")
+    .BodyHtml("Optional text/html content.<br/>")
     .TryAttach("C:/Temp/attachment1.txt", "C:/Temp/attachment2.pdf")
     .TrySendAsync();
 
@@ -110,21 +117,14 @@ An email receiver must have a IMAP host address, a network credential (unless yo
 
 ### Receiving Mail
 
-This hasn't been published yet, but here's what I'm building at the moment:
-
 ```csharp
-var mailboxReceiver = imapReceiver
-    .ReadFrom("INBOX")
-    .Skip(0)
-    .Take(10);
-
-var mimeMessages = await mailboxReceiver.GetMimeMessagesAsync();
+var mimeMessageQueue = await imapReceiver.ReadMail
+    .GetMimeMessagesAsync();
 ```
 
 ```csharp
-var mimeMessageQueue = await imapReceiver
-    .ReadFrom("INBOX")
-    .GetMimeMessagesAsync();
+var mimeMessages = await imapReceiver.ReadFrom("INBOX").Skip(0).Take(10)
+    .GetMessageSummariesAsync(MessageSummaryItems.UniqueId);
 ```
 
 Further examples (how to set up MailKit IMAP server logs etc.) can be found in the 'samples' and 'tests' folders on [GitHub](https://github.com/danzuep/MailKitSimplified).

@@ -1,24 +1,20 @@
-﻿using MimeKit;
-using MailKit;
-using MailKit.Search;
-using MailKit.Net.Imap;
-using MailKit.Security;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Logging;
-using System;
-using System.IO;
-using System.Net;
-using System.Net.Sockets;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Linq;
-using MimeKit.Tnef;
-using MimeKit.Text;
+using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
+using MimeKit;
 using MimeKit.IO;
+using MailKit;
+using MailKit.Search;
+using MailKit.Net.Imap;
 
 namespace MailKitSimplified.Receiver.Extensions
 {
+    [ExcludeFromCodeCoverage]
     public static class EmailReceiverExtensions
     {
         public static string ToEnumeratedString<T>(

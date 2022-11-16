@@ -18,11 +18,13 @@ namespace MailKitSimplified.Receiver.Services
 {
     public sealed class ImapReceiver : IImapReceiver
     {
+        public IMailReader ReadMail => new MailReader(this, _receiverOptions.MailFolderName);
+
         private readonly ILogger _logger;
         private readonly IImapClient _imapClient;
         private readonly EmailReceiverOptions _receiverOptions;
 
-        public ImapReceiver(IOptions<EmailReceiverOptions> receiverOptions, ILogger<ImapReceiver> logger = null, IImapClient imapClient = null, IProtocolLogger protocolLogger = null)
+        public ImapReceiver(IOptions<EmailReceiverOptions> receiverOptions, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null)
         {
             _logger = logger ?? NullLogger<ImapReceiver>.Instance;
             _receiverOptions = receiverOptions.Value;
@@ -30,45 +32,49 @@ namespace MailKitSimplified.Receiver.Services
                 throw new NullReferenceException(nameof(EmailReceiverOptions.ImapHost));
             if (_receiverOptions.ImapCredential == null)
                 _logger.LogWarning($"{nameof(EmailReceiverOptions.ImapCredential)} is null.");
-            var imapLogger = protocolLogger ?? new MailKitProtocolLogger(_receiverOptions.ProtocolLog);
-            _imapClient = imapClient ?? (imapLogger != null ? new ImapClient(imapLogger) : new ImapClient());
+            var imapLogger = protocolLogger ?? new MailKitProtocolLogger();
+            if (imapLogger is MailKitProtocolLogger imapLog)
+                imapLog.SetLogFilePath(_receiverOptions.ProtocolLog);
+            _imapClient = imapClient ?? new ImapClient(imapLogger);
+
         }
 
-        public static ImapReceiver Create(string imapHost, ushort imapPort = 0, string username = null, string password = null, string protocolLog = null)
+        public static ImapReceiver Create(string imapHost, ushort imapPort = 0, string username = null, string password = null, string protocolLog = null, string mailFolderName = null)
         {
-            var imapCredential = username == null && password == null ? null : new NetworkCredential(username ?? "", password ?? "");
+            var imapCredential = new NetworkCredential(username, password);
             var receiver = Create(imapHost, imapCredential, imapPort, protocolLog);
             return receiver;
         }
 
-        public static ImapReceiver Create(string imapHost, NetworkCredential imapCredential, ushort imapPort = 0, string protocolLog = null)
+        public static ImapReceiver Create(string imapHost, NetworkCredential imapCredential, ushort imapPort = 0, string protocolLog = null, string mailFolderName = null)
         {
-            var receiverOptions = new EmailReceiverOptions(imapHost, imapCredential, imapPort, protocolLog);
+            var receiverOptions = new EmailReceiverOptions(imapHost, imapCredential, imapPort, protocolLog, mailFolderName);
             var receiver = Create(receiverOptions);
             return receiver;
         }
 
-        public static ImapReceiver Create(EmailReceiverOptions emailReceiverOptions)
+        public static ImapReceiver Create(EmailReceiverOptions emailReceiverOptions, ILogger<ImapReceiver> logger = null)
         {
             var options = Options.Create(emailReceiverOptions);
-            var receiver = new ImapReceiver(options);
+            var receiver = new ImapReceiver(options, logger);
             return receiver;
         }
 
-        public MailFolderReader ReadFrom(string mailFolderName)
+        public IMailReader ReadFrom(string mailFolderName)
         {
-            var mailboxReceiver = MailFolderReader.Create(mailFolderName, this);
-            return mailboxReceiver;
+            var mailFolderReader = new MailReader(this, mailFolderName);
+            return mailFolderReader;
         }
 
         /// <exception cref="AuthenticationException">Failed to authenticate</exception>
-        public async ValueTask AuthenticateAsync(CancellationToken cancellationToken = default)
+        public async ValueTask<IImapClient> ConnectImapClientAsync(CancellationToken cancellationToken = default)
         {
             if (!_imapClient.IsConnected)
             {
                 await _imapClient.ConnectAsync(_receiverOptions.ImapHost, _receiverOptions.ImapPort, SecureSocketOptions.Auto, cancellationToken).ConfigureAwait(false);
                 if (_imapClient.Capabilities.HasFlag(ImapCapabilities.Compress))
                     await _imapClient.CompressAsync(cancellationToken).ConfigureAwait(false);
+                _logger.LogTrace($"IMAP client connected to {_receiverOptions.ImapHost}");
             }
             if (!_imapClient.IsAuthenticated)
             {
@@ -78,21 +84,23 @@ namespace MailKitSimplified.Receiver.Services
                     await _imapClient.AuthenticateAsync(ntlm, cancellationToken).ConfigureAwait(false);
                 else
                     await _imapClient.AuthenticateAsync(_receiverOptions.ImapCredential, cancellationToken).ConfigureAwait(false);
+                _logger.LogTrace($"IMAP client authenticated with {_receiverOptions.ImapHost}");
             }
+            return _imapClient;
         }
 
         public async ValueTask<IMailFolder> ConnectAsync(CancellationToken ct = default)
         {
-            await AuthenticateAsync(ct).ConfigureAwait(false);
+            _ = await ConnectImapClientAsync(ct).ConfigureAwait(false);
             var mailFolder = await GetFolderAsync(_receiverOptions.MailFolderName).ConfigureAwait(false);
             return mailFolder;
         }
 
-        /// <exception cref="AuthenticationException">Failed to authenticate</exception>
         /// <exception cref="FolderNotFoundException">No mail folder has the specified name</exception>
         public async ValueTask<IMailFolder> GetFolderAsync(string mailFolderName, CancellationToken ct = default)
         {
-            await AuthenticateAsync(ct).ConfigureAwait(false);
+            _ = await ConnectImapClientAsync(ct).ConfigureAwait(false);
+            _logger.LogTrace($"Target mail folder: {mailFolderName}");
             var mailFolder = string.IsNullOrWhiteSpace(mailFolderName) || mailFolderName.Equals("INBOX", StringComparison.OrdinalIgnoreCase) ?
                 _imapClient.Inbox : await _imapClient.GetFolderAsync(mailFolderName, ct).ConfigureAwait(false);
             return mailFolder;
@@ -100,8 +108,8 @@ namespace MailKitSimplified.Receiver.Services
 
         public async ValueTask<IList<string>> GetFolderListAsync(CancellationToken ct = default)
         {
+            _ = await ConnectImapClientAsync(ct).ConfigureAwait(false);
             IList<string> mailFolderNames = new List<string>();
-            await AuthenticateAsync(ct).ConfigureAwait(false);
             if (_imapClient.PersonalNamespaces.Count > 0)
             {
                 var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.PersonalNamespaces[0]);

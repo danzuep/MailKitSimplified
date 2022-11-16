@@ -12,7 +12,7 @@ namespace MailKitSimplified.Sender.Models
         public string SmtpHost { get; set; } // "localhost";
         public ushort SmtpPort { get; set; } = 0; // 25, or 587 for SSL
         public NetworkCredential SmtpCredential { get; set; } = null;
-        public string ProtocolLog { get; set; } = null; // "C:/Temp/EmailClientSmtp.log";
+        public string ProtocolLog { get; set; } = null; // @"C:/Temp/Email logs/SmtpClient.txt";
         //public string UploadPath { get; set; } = "C:/Temp/Emails/";
 
         public EmailSenderOptions() { }
@@ -21,10 +21,12 @@ namespace MailKitSimplified.Sender.Models
         {
             if (string.IsNullOrWhiteSpace(smtpHost))
                 throw new ArgumentNullException(nameof(smtpHost));
+            if (smtpCredential != null && smtpCredential.UserName == null && smtpCredential.Password == null)
+                smtpCredential = null;
 
             SmtpHost = smtpHost;
             SmtpPort = smtpPort;
-            SmtpCredential = smtpCredential;
+            SmtpCredential = smtpCredential; // ?? new NetworkCredential();
             ProtocolLog = protocolLog;
         }
     }

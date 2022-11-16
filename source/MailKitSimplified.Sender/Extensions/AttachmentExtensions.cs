@@ -2,9 +2,11 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace MailKitSimplified.Sender.Extensions
 {
+    [ExcludeFromCodeCoverage]
     public static class AttachmentExtensions
     {
         public static string ToEnumeratedString<T>(

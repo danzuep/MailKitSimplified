@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using MimeKit;
+using System.IO;
+using MailKit;
 
 namespace MailKitSimplified.Sender.Abstractions
 {
@@ -29,22 +31,24 @@ namespace MailKitSimplified.Sender.Abstractions
 
         IEmailWriter BodyText(string textPlain);
 
-        IEmailWriter Attach(MimeEntity mimeEntity, bool resource = false);
-
-        IEmailWriter Attach(IEnumerable<MimeEntity> mimeEntities, bool resource = false);
-
         IEmailWriter Attach(params string[] filePaths);
 
         IEmailWriter TryAttach(params string[] filePaths);
 
+        IEmailWriter Attach(Stream stream, string fileName, string contentType = "", string contentId = "", bool linkedResource = false);
+
+        IEmailWriter Attach(MimeEntity mimeEntity, bool linkedResource = false);
+
+        IEmailWriter Attach(IEnumerable<MimeEntity> mimeEntities, bool linkedResource = false);
+
         MimeMessage MimeMessage { get; }
 
-        void Send(CancellationToken cancellationToken = default);
+        void Send(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null);
 
-        bool TrySend(CancellationToken cancellationToken = default);
+        bool TrySend(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null);
 
-        Task SendAsync(CancellationToken cancellationToken = default);
+        Task SendAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null);
 
-        Task<bool> TrySendAsync(CancellationToken cancellationToken = default);
+        Task<bool> TrySendAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null);
     }
 }

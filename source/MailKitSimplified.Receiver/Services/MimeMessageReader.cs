@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Receiver.Extensions;
 using MimeKit.Text;
@@ -13,6 +14,7 @@ using MailKitSimplified.Receiver.Abstractions;
 
 namespace MailKitSimplified.Receiver.Services
 {
+    [ExcludeFromCodeCoverage]
     public class MimeMessageReader : IDisposable
     {
         private Lazy<MimeMessage> _mimeMessage = new Lazy<MimeMessage>(() => new MimeMessage());
