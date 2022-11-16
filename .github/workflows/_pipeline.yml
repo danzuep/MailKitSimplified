@@ -21,6 +21,14 @@ jobs:
   #     version: ${{ needs.version.outputs.version }}
   #   secrets: inherit
 
+  build_receiver:
+    needs: version
+    uses: ./.github/workflows/_build-test.yml
+    with:
+      project-name: 'MailKitSimplified.Receiver'
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
   build_sender:
     needs: version
     uses: ./.github/workflows/_build-test.yml
@@ -28,14 +36,6 @@ jobs:
       project-name: 'MailKitSimplified.Sender'
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
-
-  # build_receiver:
-  #   needs: version
-  #   uses: ./.github/workflows/_build-test.yml
-  #   with:
-  #     project-name: 'MailKitSimplified.Receiver'
-  #     version: ${{ needs.version.outputs.version }}
-  #   secrets: inherit
 
   # deploy_core:
   #   # if: ${{ inputs.environment == 'release' }}
@@ -57,12 +57,12 @@ jobs:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
-  # deploy_receiver:
-  #   if: ${{ inputs.environment == 'release' }} && {{ github.event_name != 'pull_request' }}
-  #   needs: [version,build_receiver]
-  #   uses: ./.github/workflows/_deploy-nuget.yml
-  #   with:
-  #     environment: ${{ inputs.environment }}
-  #     project-name: 'MailKitSimplified.Receiver'
-  #     version: ${{ needs.version.outputs.version }}
-  #   secrets: inherit
+  deploy_receiver:
+    # if: ${{ inputs.environment == 'release' }} && {{ github.event_name != 'pull_request' }}
+    needs: [version,build_receiver]
+    uses: ./.github/workflows/_deploy-nuget.yml
+    with:
+      environment: ${{ inputs.environment }}
+      project-name: 'MailKitSimplified.Receiver'
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
