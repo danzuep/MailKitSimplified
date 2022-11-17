@@ -14,17 +14,17 @@ namespace WebApiExample.Controllers
     public class EmailController : ControllerBase
     {
         private readonly ILogger<EmailController> _logger;
-        private readonly IMailFolderReader _imapReceiver;
+        private readonly IMailReader _mailReader;
 
-        public EmailController(IMailFolderReader emailReceiver, ILogger<EmailController> logger)
+        public EmailController(IMailReader mailReader, ILogger<EmailController> logger)
         {
             _logger = logger;
-            _imapReceiver = emailReceiver;
+            _mailReader = mailReader;
         }
 
         [HttpGet(Name = nameof(GetMessageSummariesAsync))]
         public async ValueTask<IEnumerable<IMessageSummary>> GetMessageSummariesAsync() =>
-            await _imapReceiver.GetMessageSummariesAsync(MessageSummaryItems.UniqueId);
+            await _mailReader.GetMessageSummariesAsync(MessageSummaryItems.UniqueId);
 
         /// <summary>
         /// Get MIME message detail from the server for the given unique ID.
@@ -41,7 +41,11 @@ namespace WebApiExample.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<MimeMessage>> GetMimeMessageAsync([FromRoute] MailKit.UniqueId uniqueId, CancellationToken cancellationToken = default)
         {
-            var result = await _imapReceiver.GetMimeMessageAsync(uniqueId, cancellationToken);
+            var ids = await GetMessageSummariesAsync();
+            var matches = ids.Where(m => m.UniqueId == uniqueId);
+            var skip = matches.Min(m => m.Index);
+            var take = matches.Max(m => m.Index);
+            var result = await _mailReader.Skip(skip).Take(take).GetMimeMessagesAsync(cancellationToken);
             if (result == null)
             {
                 return BadRequest($"Unique ID parameter ({uniqueId}) not found.");

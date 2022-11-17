@@ -1,28 +1,23 @@
+﻿using Microsoft.Extensions.Logging;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Sender.Abstractions;
 
 namespace ExampleNamespace;
 
-public class Worker : BackgroundService
+public class EmailService
 {
-    private readonly ILogger<Worker> _logger;
+    private readonly ILogger<EmailService> _logger;
     private readonly ISmtpSender _smtpSender;
     private readonly IImapReceiver _imapReceiver;
 
-    public Worker(ISmtpSender smtpSender, IImapReceiver imapReceiver, ILogger<Worker> logger)
+    public EmailService(ISmtpSender smtpSender, IImapReceiver imapReceiver, ILogger<EmailService> logger)
     {
         _logger = logger;
         _smtpSender = smtpSender;
         _imapReceiver = imapReceiver;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken = default)
-    {
-        await SendAsync(stoppingToken);
-        await ReceiveAsync(stoppingToken);
-    }
-
-    private async Task SendAsync(CancellationToken cancellationToken = default)
+    public async Task SendTestAsync(CancellationToken cancellationToken = default)
     {
         bool isSent = await _smtpSender.WriteEmail
             .From("me@localhost")
@@ -31,10 +26,10 @@ public class Worker : BackgroundService
         _logger.LogInformation("Email {result}.", isSent ? "sent" : "failed to send");
     }
 
-    private async Task ReceiveAsync(CancellationToken cancellationToken = default)
+    public async Task ReceiveTestAsync(CancellationToken cancellationToken = default)
     {
         var emails = await _imapReceiver.ReadMail
-            .Skip(0).Take(10)
+            .Skip(0).Take(2) //.ReadFrom("INBOX")
             .GetMessageSummariesAsync(cancellationToken);
         _logger.LogInformation("Email(s) received: {emails}.", emails.Select(m => m.UniqueId));
     }

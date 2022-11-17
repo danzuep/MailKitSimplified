@@ -3,8 +3,8 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.OpenApi.Models;
-using MailKitSimplified.Receiver.Extensions;
-using WebApiExample.Helpers;
+using MailKitSimplified.Sender;
+using MailKitSimplified.Receiver;
 
 namespace WebApiExample
 {
@@ -63,6 +63,7 @@ namespace WebApiExample
             services.AddMemoryCache();
 
             // Add custom services
+            services.AddMailKitSimplifiedEmailSender(configuration);
             services.AddMailKitSimplifiedEmailReceiver(configuration);
             //services.AddHttpClient<IJasperApiClient, JasperApiClient>()
             //    .AddPolicyHandler(HttpPolicies.ExponentialRetry)

@@ -18,7 +18,7 @@ namespace ExporterExample.Services
     {
         Task ExportToFileAsync(string mailFolderName, string folderPathExport, string csvFolderSuffix = "-csv", string jsonFolderSuffix = "-json");
     }
-        
+
     public sealed class Exporter : IExporter
     {
         private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
@@ -27,13 +27,13 @@ namespace ExporterExample.Services
             Converters = { new JsonStringEnumConverter(null, allowIntegerValues: false) }
         };
 
-        private readonly IMailFolderReader _mailFolderReader;
-        private readonly IFileSystem _fileSystem;
         private readonly ILogger _logger;
+        private readonly IMailReader _mailReader;
+        private readonly IFileSystem _fileSystem;
 
-        public Exporter(IMailFolderReader mailFolderReader, IFileSystem? fileSystem = null, ILogger<Exporter>? logger = null)
+        public Exporter(IMailReader mailReader, ILogger<Exporter>? logger = null, IFileSystem? fileSystem = null)
         {
-            _mailFolderReader = mailFolderReader;
+            _mailReader = mailReader;
             _fileSystem = fileSystem ?? new FileSystem();
             _logger = logger ?? NullLogger<Exporter>.Instance;
         }
@@ -44,15 +44,14 @@ namespace ExporterExample.Services
             {
                 var loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole());
                 using var imapReceiver = ImapReceiver.Create("imap.example.com", 0, "U5ern@me", "P@55w0rd");
-                using var folderReceiver = new MailFolderReader(imapReceiver, loggerFactory.CreateLogger<MailFolderReader>());
-                var exporter = new Exporter(folderReceiver, new FileSystem(), loggerFactory.CreateLogger<Exporter>());
+                var mailReader = new MailReader(imapReceiver, "INBOX");
+                var exporter = new Exporter(mailReader, loggerFactory.CreateLogger<Exporter>());
                 return exporter;
             }
             else
             {
                 var imapReceiver = ImapReceiver.Create("imap.example.com", 0, "U5ern@me", "P@55w0rd");
-                var folderReceiver = new MailFolderReader(imapReceiver);
-                var exporter = new Exporter(folderReceiver, new FileSystem());
+                var exporter = new Exporter(imapReceiver.ReadMail);
                 return exporter;
             }
         }
@@ -67,7 +66,7 @@ namespace ExporterExample.Services
         /// <param name="jsonFolderSuffix">JSON folder suffix, null to disable</param>
         public async Task ExportToFileAsync(string mailFolderName, string folderPathExport, string csvFolderSuffix = "-csv", string jsonFolderSuffix = "-json")
         {
-            IEnumerable<IMessageSummary> mimeMessageSummary = await _mailFolderReader.GetMessageSummariesAsync(MessageSummaryItems.Envelope);
+            IEnumerable<IMessageSummary> mimeMessageSummary = await _mailReader.GetMessageSummariesAsync(MessageSummaryItems.Envelope);
             var emailDtos = mimeMessageSummary.Select(m => m.ToDto());
             ExportFile(emailDtos, mailFolderName, folderPathExport, csvFolderSuffix, jsonFolderSuffix);
         }

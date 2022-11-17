@@ -19,6 +19,7 @@ namespace MailKitSimplified.Receiver.Services
 
         private readonly string _mailFolderName;
         private int _skip = 0;
+        private bool _continueSkip = false;
         private int _take = 250;
 
         private readonly IImapReceiver _imapReceiver;
@@ -36,12 +37,12 @@ namespace MailKitSimplified.Receiver.Services
             return emailReader;
         }
 
-        //[Range(0, int.MaxValue, ErrorMessage = "Value for {0} must be between {1} and {2}.")]
-        public IMailReader Skip(int skipCount)
+        public IMailReader Skip(int skipCount, bool continuous = false)
         {
             if (skipCount < 0)
                 throw new ArgumentOutOfRangeException(nameof(skipCount));
             _skip = skipCount;
+            _continueSkip = continuous;
             return this;
         }
         
@@ -53,12 +54,12 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
-        private async ValueTask<IList<IMessageSummary>> GetMessageSummariesAsync(IMailFolder mailFolder, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default, bool increment = false)
+        private async ValueTask<IList<IMessageSummary>> GetMessageSummariesAsync(IMailFolder mailFolder, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default)
         {
             int startIndex = _skip < mailFolder.Count ? _skip : mailFolder.Count;
             int endIndex = _take > 0 ? startIndex + _take > 0 ? _take - 1 + startIndex : mailFolder.Count : startIndex;
             var messageSummaries = await mailFolder.FetchAsync(startIndex, endIndex, filter, cancellationToken).ConfigureAwait(false);
-            if (increment == true)
+            if (_continueSkip)
                 _skip = endIndex + 1;
             return messageSummaries;
         }

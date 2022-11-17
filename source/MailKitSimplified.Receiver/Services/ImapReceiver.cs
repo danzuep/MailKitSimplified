@@ -18,8 +18,6 @@ namespace MailKitSimplified.Receiver.Services
 {
     public sealed class ImapReceiver : IImapReceiver
     {
-        public IMailReader ReadMail => new MailReader(this, _receiverOptions.MailFolderName);
-
         private readonly ILogger _logger;
         private readonly IImapClient _imapClient;
         private readonly EmailReceiverOptions _receiverOptions;
@@ -59,6 +57,8 @@ namespace MailKitSimplified.Receiver.Services
             var receiver = new ImapReceiver(options, logger);
             return receiver;
         }
+
+        public IMailReader ReadMail => new MailReader(this, _receiverOptions.MailFolderName);
 
         public IMailReader ReadFrom(string mailFolderName)
         {

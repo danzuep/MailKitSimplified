@@ -1,11 +1,13 @@
 ﻿using MailKit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MailKitSimplified.Sender;
 using MailKitSimplified.Sender.Models;
 using MailKitSimplified.Sender.Services;
+using MailKitSimplified.Receiver;
+using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Receiver.Extensions;
-using MailKitSimplified.Receiver.Models;
 
 using var loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Trace).AddDebug().AddConsole()); //.AddSimpleConsole(o => { o.IncludeScopes = true; o.TimestampFormat = "HH:mm:ss.f "; })
 var logger = loggerFactory.CreateLogger<Program>();
@@ -36,5 +38,4 @@ logger.LogDebug("Email(s) received: {ids}", messageSummaries.Select(m => m.Uniqu
 
 var mimeMessages = await imapReceiver.ReadMail.Skip(5).Take(2).GetMimeMessagesAsync();
 logger.LogDebug("Email(s) received: {ids}", mimeMessages.Select(m => m.MessageId).ToEnumeratedString());
-
 

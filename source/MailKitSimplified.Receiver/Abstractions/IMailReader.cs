@@ -8,7 +8,7 @@ namespace MailKitSimplified.Receiver.Abstractions
 {
     public interface IMailReader
     {
-        IMailReader Skip(int skipCount);
+        IMailReader Skip(int skipCount, bool continuous = false);
 
         IMailReader Take(int takeCount);
 

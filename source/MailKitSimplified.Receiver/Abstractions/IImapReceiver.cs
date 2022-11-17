@@ -9,6 +9,7 @@ namespace MailKitSimplified.Receiver.Abstractions
     public interface IImapReceiver : IDisposable
     {
         IMailReader ReadMail { get; }
+        IMailReader ReadFrom(string mailFolderName);
 
         ValueTask<IImapClient> ConnectImapClientAsync(CancellationToken cancellationToken = default);
 
