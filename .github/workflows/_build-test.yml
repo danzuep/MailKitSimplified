@@ -19,7 +19,7 @@ on:
     outputs:
       version:
         description: 'GitVersion suffix for NuGet package'
-        value: ${{ jobs.gitversion.outputs.version }}
+        value: ${{ jobs.test.outputs.version }}
 
 jobs:
   test:

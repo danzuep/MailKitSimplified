@@ -7,7 +7,6 @@ on:
       - main
   push:
     branches:
-      - main
       - feature/**
 
 # Cancel any other running workflows with the same ID
