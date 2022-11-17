@@ -10,6 +10,7 @@ using MailKit.Net.Smtp;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Services;
 using MailKitSimplified.Sender.Models;
+using MailKitSimplified.Sender.Extensions;
 
 namespace MailKitSimplified.Sender.Tests
 {
@@ -21,7 +22,6 @@ namespace MailKitSimplified.Sender.Tests
         private static readonly Task _completedTask = Task.CompletedTask;
 
         private readonly IFileSystem _fileSystem;
-        private readonly IAttachmentHandler _attachmentHandler;
         private readonly ISmtpSender _emailSender;
         private readonly IEmailWriter _emailWriter;
         private readonly ILoggerFactory _loggerFactory;
@@ -35,7 +35,6 @@ namespace MailKitSimplified.Sender.Tests
                 { _attachment2Path, new MockFileData("123") }
             });
             _loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Trace).AddDebug().AddConsole());
-            _attachmentHandler = new AttachmentHandler(_loggerFactory.CreateLogger<AttachmentHandler>(), _fileSystem);
             var protocolLoggerMock = new Mock<IProtocolLogger>();
             //var mailKitProtocolLogger = new MailKitProtocolLogger(null, _fileSystem, _loggerFactory.CreateLogger<MailKitProtocolLogger>());
             var smtpClientMock = new Mock<ISmtpClient>();
@@ -80,10 +79,12 @@ namespace MailKitSimplified.Sender.Tests
         [Fact]
         public async Task SendAsync_WithAttachments_ReturnsCompletedTask()
         {
-            using var stream = _fileSystem.File.OpenRead(_attachment1Path);
-            string fileName = _fileSystem.Path.GetFileName(_attachment1Path);
+            using var stream1 = _fileSystem.File.OpenRead(_attachment1Path);
+            string fileName1 = _fileSystem.Path.GetFileName(_attachment1Path);
+            string fileName2 = _fileSystem.Path.GetFileName(_attachment2Path);
             var attachment1 = EmailWriter.GetMimePart(_attachment1Path, _fileSystem);
             var attachment2 = EmailWriter.GetMimePart(_attachment2Path, _fileSystem);
+            var attachemnts = new MimeEntity[] { attachment1, attachment2 };
             await _emailWriter
                 .From("from@localhost")
                 .To("to@localhost")
@@ -95,10 +96,13 @@ namespace MailKitSimplified.Sender.Tests
                 .Subject(" friend", true)
                 .BodyText("Hello World")
                 .BodyHtml("<p>Hello<br/>World<br/></p>")
-                .Attach(stream, fileName)
-                .Attach(new MimeEntity[] { attachment1, attachment2 })
+                .Attach(stream1, fileName1)
+                .Attach(attachemnts)
                 .Attach(_attachment1Path, _attachment2Path)
                 .SendAsync();
+            var attachmentNames = attachemnts.GetAttachmentNames();
+            Assert.Contains(fileName1, attachmentNames);
+            Assert.Contains(fileName2, attachmentNames);
         }
 
         [Fact]
@@ -107,81 +111,6 @@ namespace MailKitSimplified.Sender.Tests
             var isSent = _emailWriter.TrySend();
             _emailWriter.Send();
             Assert.True(isSent);
-        }
-
-        private static async Task<Stream> GetTestStream(int capacity = 1)
-        {
-            var randomBytes = new byte[capacity];
-            new Random().NextBytes(randomBytes);
-            var streamStub = new MemoryStream(capacity);
-            await streamStub.WriteAsync(randomBytes);
-            streamStub.Position = 0;
-            return streamStub;
-        }
-
-        [Theory]
-        [InlineData("attachment1.txt|attachment2.pdf")]
-        public async Task LoadFilePathAsync_WithAnyAttachmentName_VerifyAttached(string filePaths)
-        {
-            // Arrange
-            var fileSystem = new MockFileSystem();
-            foreach (var filePath in filePaths.Split('|'))
-                fileSystem.AddFile(filePath, new MockFileData("~"));
-            IAttachmentHandler attachmentHandler = new AttachmentHandler(null, fileSystem);
-            // Act
-            var attachments = await attachmentHandler.LoadFilePathAsync(filePaths);
-            // Assert
-            Assert.NotNull(attachments);
-            Assert.True(attachments.Any());
-        }
-
-        [Theory]
-        [InlineData("./attachment1.txt", "./attachment2.pdf")]
-        public async Task LoadFilePathsAsync_WithAnyAttachmentName_VerifyAttached(params string[] filePaths)
-        {
-            // Arrange
-            var fileSystem = new MockFileSystem();
-            foreach (var filePath in filePaths)
-                fileSystem.AddFile(filePath, new MockFileData("~"));
-            IAttachmentHandler attachmentHandler = new AttachmentHandler(null, fileSystem);
-            // Act
-            var attachments = await attachmentHandler.LoadFilePathsAsync(filePaths);
-            // Assert
-            Assert.NotNull(attachments);
-            Assert.True(attachments.Any());
-        }
-
-        [Theory]
-        [InlineData(_attachment1Path)]
-        [InlineData(_attachment2Path)]
-        public async Task GetFileStreamAsync_WithIFileHandler_VerifyStreamContainsData(string filePath)
-        {
-            var stream = await _attachmentHandler.GetFileStreamAsync(filePath);
-            Assert.NotNull(stream);
-            Assert.True(stream.Length > 0);
-        }
-
-        [Theory]
-        [InlineData("testFileName.txt")]
-        public async Task GetMimePart_WithAnyFileName_VerifyMimePartFileName(string fileName)
-        {
-            var stream = await GetTestStream();
-            var attachment = AttachmentHandler.GetMimePart(stream, fileName);
-            Assert.NotNull(attachment);
-            Assert.Equal(fileName, attachment.FileName);
-        }
-
-        [Theory]
-        [InlineData(_attachment1Path, _attachment2Path)]
-        public async Task ConvertToMimeMessageAsync_WithAnyAttachmentName_VerifyAttached(params string[] filePaths)
-        {
-            // Arrange
-            var mimeMessage = new MimeMessage();
-            // Act
-            mimeMessage = await _attachmentHandler.AddAttachmentsAsync(mimeMessage, filePaths, CancellationToken.None).ConfigureAwait(false);
-            // Assert
-            Assert.NotNull(mimeMessage);
-            Assert.True(mimeMessage.Attachments.Any());
         }
 
         [Fact]

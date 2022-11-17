@@ -9,15 +9,8 @@ namespace MailKitSimplified.Sender.Extensions
     [ExcludeFromCodeCoverage]
     public static class AttachmentExtensions
     {
-        public static string ToEnumeratedString<T>(
-            this IEnumerable<T> data, string div = ", ")
-            => data is null ? "" : string.Join(div,
-                data.Select(o => o?.ToString() ?? ""));
-
-        public static IEnumerable<string> GetAttachmentNames(this IEnumerable<MimeEntity> mimeEntities)
-        {
-            return mimeEntities?.Select(a => a.GetAttachmentName()) ?? Array.Empty<string>();
-        }
+        public static string ToEnumeratedString<T>(this IEnumerable<T> data, string div = ", ") =>
+            data is null ? "" : string.Join(div, data.Select(o => o?.ToString() ?? ""));
 
         public static string GetAttachmentName(this MimeEntity mimeEntity)
         {
@@ -36,5 +29,8 @@ namespace MailKitSimplified.Sender.Extensions
                 fileName = mimeEntity?.ContentDisposition?.FileName ?? "";
             return fileName ?? "";
         }
+
+        public static IEnumerable<string> GetAttachmentNames(this IEnumerable<MimeEntity> mimeEntities) =>
+            mimeEntities?.Select(a => a.GetAttachmentName()) ?? Array.Empty<string>();
     }
 }
