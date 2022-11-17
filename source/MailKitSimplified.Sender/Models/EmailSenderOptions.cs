@@ -9,12 +9,12 @@ namespace MailKitSimplified.Sender.Models
         public const string SectionName = "EmailSender";
 
         [Required]
-        public string SmtpHost { get; set; } // "localhost";
-        public ushort SmtpPort { get; set; } = 0; // 25, or 587 for SSL
+        public string SmtpHost { get; set; }
+        public ushort SmtpPort { get; set; } = 0;
         public NetworkCredential SmtpCredential { get; set; } = null;
-        public string ProtocolLog { get; set; } = null; // @"C:/Temp/Email logs/SmtpClient.txt";
-        //public string UploadPath { get; set; } = "C:/Temp/Emails/";
+        public string ProtocolLog { get; set; } = null;
 
+        // Constructor required for Configuration mapping.
         public EmailSenderOptions() { }
 
         public EmailSenderOptions(string smtpHost, NetworkCredential smtpCredential = null, ushort smtpPort = 0, string protocolLog = null)
@@ -26,8 +26,10 @@ namespace MailKitSimplified.Sender.Models
 
             SmtpHost = smtpHost;
             SmtpPort = smtpPort;
-            SmtpCredential = smtpCredential; // ?? new NetworkCredential();
+            SmtpCredential = smtpCredential;
             ProtocolLog = protocolLog;
         }
+
+        public override string ToString() => $"{SmtpHost}:{SmtpPort}";
     }
 }

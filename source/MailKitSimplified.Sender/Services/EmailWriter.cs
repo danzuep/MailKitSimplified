@@ -301,20 +301,20 @@ namespace MailKitSimplified.Sender.Services
             {
                 text.WriteLine("Date: {0}", _mimeMessage.Date);
                 if (_mimeMessage.From.Count > 0)
-                    text.WriteLine("From: {0}", string.Join(";", _mimeMessage.From.Mailboxes));
+                    text.WriteLine("From: {0}", string.Join("; ", _mimeMessage.From.Mailboxes));
                 if (_mimeMessage.To.Count > 0)
-                    text.WriteLine("To: {0}", string.Join(";", _mimeMessage.To.Mailboxes));
+                    text.WriteLine("To: {0}", string.Join("; ", _mimeMessage.To.Mailboxes));
                 if (_mimeMessage.Cc.Count > 0)
-                    text.WriteLine("Cc: {0}", string.Join(";", _mimeMessage.Cc.Mailboxes));
+                    text.WriteLine("Cc: {0}", string.Join("; ", _mimeMessage.Cc.Mailboxes));
                 if (_mimeMessage.Bcc.Count > 0)
-                    text.WriteLine("Bcc: {0}", string.Join(";", _mimeMessage.Bcc.Mailboxes));
+                    text.WriteLine("Bcc: {0}", string.Join("; ", _mimeMessage.Bcc.Mailboxes));
                 text.WriteLine("Subject: {0}", _mimeMessage.Subject);
                 text.WriteLine("Message-Id: <{0}>", _mimeMessage.MessageId);
                 var attachmentCount = _mimeMessage.Attachments.Count();
                 if (attachmentCount > 0)
                     text.WriteLine("{0} Attachment{1}: {2}",
                         attachmentCount, attachmentCount == 1 ? "" : "s",
-                        string.Join(";", _mimeMessage.Attachments.GetAttachmentNames()));
+                        string.Join("; ", _mimeMessage.Attachments.GetAttachmentNames()));
                 envelope = text.ToString();
             }
             return envelope;

@@ -98,7 +98,7 @@ namespace MailKitSimplified.Receiver.Services
             if (uniqueIds != null)
             {
                 await ReconnectAsync(false, ct).ConfigureAwait(false);
-                foreach (var uniqueId in uniqueIds.OrderBy(id => id.Id))
+                foreach (var uniqueId in uniqueIds)
                 {
                     var mimeMessage = await GetMimeMessageAsync(uniqueId, ct).ConfigureAwait(false);
                     mimeMessages.Add(mimeMessage);

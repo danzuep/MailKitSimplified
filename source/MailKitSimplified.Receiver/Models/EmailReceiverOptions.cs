@@ -9,13 +9,13 @@ namespace MailKitSimplified.Receiver.Models
         public const string SectionName = "EmailReceiver";
 
         [Required]
-        public string ImapHost { get; set; } // "localhost";
+        public string ImapHost { get; set; }
         public ushort ImapPort { get; set; } = 0;
         public NetworkCredential ImapCredential { get; set; }
-        public string ProtocolLog { get; set; } = null; // @"C:/Temp/Email logs/ImapClient.txt";
+        public string ProtocolLog { get; set; } = null;
         public string MailFolderName { get; set; } = "INBOX";
-        // public string DownloadPath { get; set; } = "C:/Temp/Emails";
 
+        // Constructor required for Configuration mapping.
         public EmailReceiverOptions() { }
 
         public EmailReceiverOptions(string imapHost, NetworkCredential imapCredential = null, ushort imapPort = 0, string protocolLog = null, string mailFolderName = null)
@@ -30,5 +30,7 @@ namespace MailKitSimplified.Receiver.Models
             if (!string.IsNullOrWhiteSpace(mailFolderName))
                 MailFolderName = mailFolderName;
         }
+
+        public override string ToString() => $"{ImapHost}:{ImapPort}";
     }
 }

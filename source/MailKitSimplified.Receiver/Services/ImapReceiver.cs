@@ -58,11 +58,11 @@ namespace MailKitSimplified.Receiver.Services
             return receiver;
         }
 
-        public IMailReader ReadMail => new MailReader(this, _receiverOptions.MailFolderName);
+        public IMailReader ReadMail => MailReader.Create(this, _receiverOptions.MailFolderName);
 
         public IMailReader ReadFrom(string mailFolderName)
         {
-            var mailFolderReader = new MailReader(this, mailFolderName);
+            var mailFolderReader = MailReader.Create(this, mailFolderName);
             return mailFolderReader;
         }
 
@@ -89,30 +89,24 @@ namespace MailKitSimplified.Receiver.Services
             return _imapClient;
         }
 
-        public async ValueTask<IMailFolder> ConnectAsync(CancellationToken ct = default)
-        {
-            _ = await ConnectImapClientAsync(ct).ConfigureAwait(false);
-            var mailFolder = await GetFolderAsync(_receiverOptions.MailFolderName).ConfigureAwait(false);
-            return mailFolder;
-        }
-
         /// <exception cref="FolderNotFoundException">No mail folder has the specified name</exception>
-        public async ValueTask<IMailFolder> GetFolderAsync(string mailFolderName, CancellationToken ct = default)
+        public async ValueTask<IMailFolder> ConnectMailFolderAsync(string mailFolderName = null, CancellationToken cancellationToken = default)
         {
-            _ = await ConnectImapClientAsync(ct).ConfigureAwait(false);
-            _logger.LogTrace($"Target mail folder: {mailFolderName}");
-            var mailFolder = string.IsNullOrWhiteSpace(mailFolderName) || mailFolderName.Equals("INBOX", StringComparison.OrdinalIgnoreCase) ?
-                _imapClient.Inbox : await _imapClient.GetFolderAsync(mailFolderName, ct).ConfigureAwait(false);
+            _ = await ConnectImapClientAsync(cancellationToken).ConfigureAwait(false);
+            var targetMailFolder = mailFolderName ?? _receiverOptions.MailFolderName;
+            _logger.LogTrace($"Target mail folder: '{targetMailFolder}'");
+            var mailFolder = string.IsNullOrWhiteSpace(targetMailFolder) || targetMailFolder.Equals("INBOX", StringComparison.OrdinalIgnoreCase) ?
+                _imapClient.Inbox : await _imapClient.GetFolderAsync(targetMailFolder, cancellationToken).ConfigureAwait(false);
             return mailFolder;
         }
 
-        public async ValueTask<IList<string>> GetFolderListAsync(CancellationToken ct = default)
+        public async ValueTask<IList<string>> GetMailFolderNamesAsync(CancellationToken cancellationToken = default)
         {
-            _ = await ConnectImapClientAsync(ct).ConfigureAwait(false);
+            _ = await ConnectImapClientAsync(cancellationToken).ConfigureAwait(false);
             IList<string> mailFolderNames = new List<string>();
             if (_imapClient.PersonalNamespaces.Count > 0)
             {
-                var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.PersonalNamespaces[0]);
+                var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.PersonalNamespaces[0], cancellationToken: cancellationToken).ConfigureAwait(false);
                 var subfolders = rootFolder.SelectMany(rf => rf.GetSubfolders().Select(sf => sf.Name));
                 var inboxSubfolders = _imapClient.Inbox.GetSubfolders().Select(f => f.FullName);
                 mailFolderNames.AddRange(inboxSubfolders);
@@ -122,20 +116,22 @@ namespace MailKitSimplified.Receiver.Services
             }
             if (_imapClient.SharedNamespaces.Count > 0)
             {
-                var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.SharedNamespaces[0]);
+                var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.SharedNamespaces[0], cancellationToken: cancellationToken).ConfigureAwait(false);
                 var subfolders = rootFolder.SelectMany(rf => rf.GetSubfolders().Select(sf => sf.Name));
                 mailFolderNames.AddRange(subfolders);
                 _logger.LogDebug($"{subfolders.Count()} shared folders: {subfolders.ToEnumeratedString()}");
             }
             if (_imapClient.OtherNamespaces.Count > 0)
             {
-                var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.OtherNamespaces[0]);
+                var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.OtherNamespaces[0], cancellationToken: cancellationToken).ConfigureAwait(false);
                 var subfolders = rootFolder.SelectMany(rf => rf.GetSubfolders().Select(sf => sf.Name));
                 mailFolderNames.AddRange(subfolders);
                 _logger.LogDebug($"{subfolders.Count()} other folders: {subfolders.ToEnumeratedString()}");
             }
             return mailFolderNames;
         }
+
+        public override string ToString() => _receiverOptions.ToString();
 
         public void Disconnect()
         {
@@ -146,7 +142,7 @@ namespace MailKitSimplified.Receiver.Services
 
         public void Dispose()
         {
-            _logger.LogTrace("Disposing of the IMAP email receiver client...");
+            _logger.LogTrace("Disposing IMAP email client...");
             Disconnect();
             _imapClient?.Dispose();
         }

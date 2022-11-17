@@ -138,7 +138,7 @@ namespace MailKitSimplified.Sender.Services
                 await _smtpClient.ConnectAsync(_senderOptions.SmtpHost, _senderOptions.SmtpPort, cancellationToken: cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace($"SMTP client connected to {_senderOptions.SmtpHost}");
             }
-            if (_senderOptions.SmtpCredential != null && _senderOptions.SmtpCredential != default && !_smtpClient.IsAuthenticated)
+            if (_senderOptions.SmtpCredential != null && !_smtpClient.IsAuthenticated) // && _senderOptions.SmtpCredential != default
             {
                 await _smtpClient.AuthenticateAsync(_senderOptions.SmtpCredential, cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace($"SMTP client authenticated with {_senderOptions.SmtpHost}");
@@ -179,6 +179,8 @@ namespace MailKitSimplified.Sender.Services
             return isSent;
         }
 
+        public override string ToString() => _senderOptions.ToString();
+
         public void DisconnectSmtpClient()
         {
             if (_smtpClient?.IsConnected ?? false)
@@ -188,6 +190,7 @@ namespace MailKitSimplified.Sender.Services
 
         public void Dispose()
         {
+            _logger.LogTrace("Disposing SMTP email client...");
             DisconnectSmtpClient();
             _smtpClient?.Dispose();
         }

@@ -1,9 +1,9 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using MimeKit;
+﻿using MimeKit;
 using MailKit;
 using MailKit.Net.Smtp;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MailKitSimplified.Sender.Abstractions
 {
