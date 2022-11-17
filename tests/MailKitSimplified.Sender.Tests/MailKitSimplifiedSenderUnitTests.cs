@@ -106,6 +106,7 @@ namespace MailKitSimplified.Sender.Tests
                 .Attach(attachemnts)
                 .Attach(_attachment1Path, _attachment2Path)
                 .Header("X-CampaignId", "1234")
+                .Priority(MessagePriority.Normal)
                 .SendAsync();
             var attachmentNames = attachemnts.GetAttachmentNames();
             Assert.Contains(fileName1, attachmentNames);

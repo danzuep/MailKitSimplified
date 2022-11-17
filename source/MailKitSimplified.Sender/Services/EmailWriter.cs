@@ -269,6 +269,12 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
+        public IEmailWriter Priority(MessagePriority priority)
+        {
+            _mimeMessage.Priority = priority;
+            return this;
+        }
+
         public void Send(CancellationToken cancellationToken = default) =>
             SendAsync(cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult();
 

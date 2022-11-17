@@ -176,6 +176,13 @@ namespace MailKitSimplified.Sender.Abstractions
         IEmailWriter Header(string key, string value);
 
         /// <summary>
+        /// Override the priority assigned to the email.
+        /// </summary>
+        /// <param name="priority"><see cref="MessagePriority"/></param>
+        /// <returns><see cref="IEmailWriter"/> interface</returns>
+        IEmailWriter Priority(MessagePriority priority);
+
+        /// <summary>
         /// Get the email built as a <see cref="MimeKit.MimeMessage"/>.
         /// </summary>
         MimeMessage MimeMessage { get; }

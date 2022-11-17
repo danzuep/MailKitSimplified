@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Receiver.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleServiceExample", "ConsoleServiceExample\ConsoleServiceExample.csproj", "{D4E6836D-034D-419C-97A2-EA01BB3557B1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Core", "..\source\MailKitSimplified.Core\MailKitSimplified.Core.csproj", "{F58D05E4-9D5F-4E94-ACBA-3AE4388A472C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Core", "..\source\MailKitSimplified.Core\MailKitSimplified.Core.csproj", "{F72530CE-09B3-49A8-A9DB-B0F7B75B2532}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,10 +41,10 @@ Global
 		{D4E6836D-034D-419C-97A2-EA01BB3557B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4E6836D-034D-419C-97A2-EA01BB3557B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4E6836D-034D-419C-97A2-EA01BB3557B1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F58D05E4-9D5F-4E94-ACBA-3AE4388A472C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F58D05E4-9D5F-4E94-ACBA-3AE4388A472C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F58D05E4-9D5F-4E94-ACBA-3AE4388A472C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F58D05E4-9D5F-4E94-ACBA-3AE4388A472C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F72530CE-09B3-49A8-A9DB-B0F7B75B2532}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F72530CE-09B3-49A8-A9DB-B0F7B75B2532}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F72530CE-09B3-49A8-A9DB-B0F7B75B2532}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F72530CE-09B3-49A8-A9DB-B0F7B75B2532}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
