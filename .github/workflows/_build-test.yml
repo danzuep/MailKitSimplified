@@ -33,22 +33,13 @@ jobs:
       version: ${{ steps.gitversion.outputs.nuGetVersion }}
 
     steps:
+      # https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
       - name: Fetch all tags and branches for GitVersion
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#using-the-cache-action
-      - name: Check for cached GitVersion tool
-        if: ${{ inputs.environment == 'release' }}
-        uses: actions/cache@v3
-        env:
-          tool-name: dotnet-gitversion
-        with:
-          path: '~/.dotnet/tools/${{ env.tool-name }}.exe'
-          key: ${{ env.tool-name }}-${{ runner.os }}
-          restore-keys: ${{ env.tool-name }}-${{ runner.os }}
-
+      # https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/setup/usage-examples.md#example-1
       - name: Set up GitVersion
         if: ${{ inputs.environment == 'release' }}
         uses: gittools/actions/gitversion/setup@v0.9.15
@@ -61,6 +52,7 @@ jobs:
         id: gitversion # step id used as reference for output values
         uses: gittools/actions/gitversion/execute@v0.9.15
 
+      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary
       - name: Markdown workflow job summary
         if: ${{ inputs.environment == 'release' }}
         run: |
@@ -70,49 +62,35 @@ jobs:
         env:
           Workflow_Name: '${{ github.repository }} version ${{ steps.gitversion.outputs.fullSemVer }}'
 
+      # https://github.com/actions/setup-dotnet
       - name: Get .NET externals
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 6.0.x
           dotnet-quality: 'ga'
-
+    
+      # https://github.com/actions/cache/blob/main/examples.md#c---nuget
       - name: Get any cached NuGet packages from the last run
         uses: actions/cache@v3
         with:
           path: '~/.nuget/packages'
           key: nugetpackages-${{ runner.os }}-${{ hashFiles('source/**/*.csproj') }}
-          restore-keys: nugetpackages-${{ runner.os }}-
-
-      - name: Restore dependencies
-        run: dotnet restore $SOLUTION_FILE
-
-      - name: Build
-        run: dotnet build $SOLUTION_FILE --configuration $CONFIGURATION --no-restore
+          restore-keys: nugetpackages-${{ runner.os }}
 
       # The xUnit test project template already integrates with coverlet.collector by default
       # Don't use the '--logger trx' option as it causes duplicate folders and xml files to be created
-      - name: Test
-        run: dotnet test $SOLUTION_FILE -c $CONFIGURATION --verbosity minimal --collect:'XPlat Code Coverage' --results-directory './.coverage' --no-build
+      - name: Restore, build and test all projects in the solution
+        run: dotnet test $SOLUTION_FILE -c $CONFIGURATION --verbosity minimal --collect:'XPlat Code Coverage' --results-directory './.coverage'
         
-      # https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#using-the-cache-action
-      - name: Check for cached Report Generator tool
-        id: cached-dotnet-reportgenerator
-        uses: actions/cache@v3
-        env:
-          tool-name: reportgenerator
-        with:
-          path: '~/.dotnet/tools/${{ env.tool-name }}.exe'
-          key: dotnet-${{ env.tool-name }}-${{ runner.os }}
-          restore-keys: dotnet-${{ env.tool-name }}-${{ runner.os }}
-
       # https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-tool-install#description
-      - name: Install Report Generator global tool if not cached
-        if: steps.cached-dotnet-reportgenerator.outputs.cache-hit != 'true'
+      - name: Install Report Generator global tool
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
+      # https://github.com/danielpalme/ReportGenerator
       - name: Merge all test project Code Coverage results into one report
         run: reportgenerator -reports:'.coverage/**/coverage.cobertura.xml' -targetdir:'.coverage/report' -reporttypes:'Cobertura;HtmlSummary' # SonarQube
 
+      # https://github.com/actions/upload-artifact
       - name: Upload code coverage summary report artifact
         uses: actions/upload-artifact@v3
         with:
@@ -120,7 +98,7 @@ jobs:
           path: '.coverage/report/summary.html'
           retention-days: 1
 
-      # Based on https://github.com/irongut/CodeCoverageSummary#net-workflow-example
+      # https://github.com/irongut/CodeCoverageSummary#net-workflow-example
       - name: Code Coverage Summary
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
@@ -134,6 +112,7 @@ jobs:
           output: both
           thresholds: '60 80'
 
+      # https://github.com/marocchino/sticky-pull-request-comment
       - name: Add Coverage PR Comment
         uses: marocchino/sticky-pull-request-comment@v2.3.0
         with:
@@ -154,6 +133,7 @@ jobs:
         env:
           Package_Names: '${{ inputs.project-name }}.*.${{ steps.gitversion.outputs.nuGetVersion }}.nupkg'
 
+      # https://github.com/actions/upload-artifact
       - name: Upload artifacts for deployment job
         if: ${{ inputs.environment == 'release' }}
         uses: actions/upload-artifact@v3
