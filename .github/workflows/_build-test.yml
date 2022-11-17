@@ -107,10 +107,7 @@ jobs:
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
 
       - name: Merge all test project Code Coverage results into one report
-        run: reportgenerator -reports:'.coverage/**/coverage.cobertura.xml' -targetdir:'.coverage/report' -reporttypes:'Cobertura;SonarQube;HtmlSummary'
-
-      - name: Markdown code coverage job summary
-        run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+        run: reportgenerator -reports:'.coverage/**/coverage.cobertura.xml' -targetdir:'.coverage/report' -reporttypes:'Cobertura;HtmlSummary' # SonarQube
 
       - name: Upload code coverage summary report artifact
         uses: actions/upload-artifact@v3
