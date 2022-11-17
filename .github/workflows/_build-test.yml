@@ -39,24 +39,15 @@ jobs:
           fetch-depth: 0
 
       # https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#using-the-cache-action
-      - name: Check for cached DotNet tools
-        id: cached-dotnet-globaltools
+      - name: Check for cached GitVersion tool
+        if: ${{ inputs.environment == 'release' }}
         uses: actions/cache@v3
         env:
-          cache-name: dotnet-globaltools
+          tool-name: dotnet-gitversion
         with:
-          path: |
-            '~/.dotnet/tools/dotnet-gitversion.exe'
-            '~/.dotnet/tools/reportgenerator.exe'
-          key: ${{ env.cache-name }}-${{ runner.os }}
-          restore-keys: ${{ env.cache-name }}-${{ runner.os }}
-
-      # https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-tool-install#description
-      - name: Install global tools if not cached
-        if: steps.cached-dotnet-globaltools.outputs.cache-hit != 'true'
-        run: |
-          dotnet tool install --global GitVersion.Tool
-          dotnet tool install -g dotnet-reportgenerator-globaltool
+          path: '~/.dotnet/tools/${{ env.tool-name }}.exe'
+          key: ${{ env.tool-name }}-${{ runner.os }}
+          restore-keys: ${{ env.tool-name }}-${{ runner.os }}
 
       - name: Set up GitVersion
         if: ${{ inputs.environment == 'release' }}
@@ -103,6 +94,22 @@ jobs:
       - name: Test
         run: dotnet test $SOLUTION_FILE -c $CONFIGURATION --verbosity minimal --collect:'XPlat Code Coverage' --results-directory './.coverage' --no-build
         
+      # https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#using-the-cache-action
+      - name: Check for cached Report Generator tool
+        id: cached-dotnet-reportgenerator
+        uses: actions/cache@v3
+        env:
+          tool-name: reportgenerator
+        with:
+          path: '~/.dotnet/tools/${{ env.tool-name }}.exe'
+          key: dotnet-${{ env.tool-name }}-${{ runner.os }}
+          restore-keys: dotnet-${{ env.tool-name }}-${{ runner.os }}
+
+      # https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-tool-install#description
+      - name: Install Report Generator global tool if not cached
+        if: steps.cached-dotnet-reportgenerator.outputs.cache-hit != 'true'
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
       - name: Merge all test project Code Coverage results into one report
         run: reportgenerator -reports:'.coverage/**/coverage.cobertura.xml' -targetdir:'.coverage/report' -reporttypes:'Cobertura;HtmlSummary' # SonarQube
 
