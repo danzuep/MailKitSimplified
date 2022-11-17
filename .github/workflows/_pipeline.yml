@@ -14,7 +14,7 @@ on:
 
 # https://docs.github.com/en/actions/using-workflows/reusing-workflows
 jobs:
-  build_test:
+  build:
     uses: ./.github/workflows/_build-test.yml
     with:
       environment: ${{ inputs.environment }}
@@ -24,10 +24,10 @@ jobs:
 
   deploy:
     if: ${{ inputs.environment == 'release' }} # && {{ github.event_name != 'pull_request' }}
-    needs: build_test
+    needs: build
     uses: ./.github/workflows/_deploy-nuget.yml
     with:
       environment: ${{ inputs.environment }}
       project-name: ${{ inputs.project-name }}
-      version: ${{ needs.build_test.outputs.version }}
+      version: ${{ needs.build.outputs.version }}
     secrets: inherit

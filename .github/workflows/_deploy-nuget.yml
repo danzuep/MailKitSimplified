@@ -23,7 +23,7 @@ on:
 
 jobs:
   deploy:
-    name: 🚀 Deploy ${{ inputs.project-name }}
+    name: 🚀 ${{ inputs.project-name }}
     runs-on: ubuntu-latest
     permissions:
       packages: write
