@@ -135,7 +135,7 @@ jobs:
         
       - name: Markdown workflow job summary
         if: ${{ inputs.environment == 'release' }}
-        run: echo '### Packed $Package_Names' >> $GITHUB_STEP_SUMMARY
+        run: echo '### Packed ${{ env.Package_Names }}' >> $GITHUB_STEP_SUMMARY
         env:
           Package_Names: '${{ inputs.project-name }}.*.${{ steps.gitversion.outputs.nuGetVersion }}.nupkg'
 

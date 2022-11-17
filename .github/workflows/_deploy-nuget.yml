@@ -30,7 +30,7 @@ jobs:
       contents: read
     environment: ${{ inputs.environment }}
     env:
-      PACKAGE_NAME: '${{ inputs.project-name }}.${{ inputs.version }}.nupkg'
+      PACKAGE_NAME: '${{ inputs.project-name }}.*.${{ inputs.version }}.nupkg'
       VERSION: ${{ github.ref }} # ##*v
 
     steps:
