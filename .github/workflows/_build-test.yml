@@ -59,16 +59,7 @@ jobs:
         env:
           Workflow_Name: '${{ github.repository }} version ${{ steps.gitversion.outputs.fullSemVer }}'
 
-      - name: Get cached .NET externals if they exist
-        id: cached-dotnet
-        uses: actions/cache@v3
-        with:
-          path: '/usr/share/dotnet'
-          key: ${{ runner.os }}-dotnet
-          restore-keys: ${{ runner.os }}-dotnet
-
       - name: Get .NET externals
-        if: steps.cached-dotnet.outputs.cache-hit != 'true'
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 6.0.x
