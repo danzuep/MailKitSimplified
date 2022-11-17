@@ -123,8 +123,10 @@ namespace MailKitSimplified.Sender.Services
                     .Concat(mimeMessage.Cc.Mailboxes.Select(m => m.Address))
                     .Concat(mimeMessage.Bcc.Mailboxes.Select(m => m.Address));
                 isValid = ValidateEmailAddresses(from, toCcBcc, logger);
+                if (mimeMessage.ReplyTo.Count == 0 && mimeMessage.From.Count == 0)
+                    mimeMessage.ReplyTo.Add(new MailboxAddress("Unmonitored", $"noreply@localhost"));
                 if (mimeMessage.From.Count == 0)
-                    mimeMessage.From.Add(new MailboxAddress("localhost", $"{Guid.NewGuid():N}@localhost"));
+                    mimeMessage.From.Add(new MailboxAddress("LocalHost", $"{Guid.NewGuid():N}@localhost"));
             }
             return isValid;
         }

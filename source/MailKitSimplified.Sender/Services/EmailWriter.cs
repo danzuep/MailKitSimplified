@@ -21,6 +21,7 @@ namespace MailKitSimplified.Sender.Services
     {
         public MimeMessage MimeMessage => _mimeMessage;
         private MimeMessage _mimeMessage = new MimeMessage();
+
         private readonly ILogger _logger;
         private readonly ISmtpSender _emailClient;
         private readonly IFileSystem _fileSystem;
@@ -32,21 +33,30 @@ namespace MailKitSimplified.Sender.Services
             _fileSystem = fileSystem ?? new FileSystem();
         }
 
-        public IEmailWriter From(string name, string address, bool replyTo = true)
+        public IEmailWriter From(string name, string address)
         {
             var fromMailboxAddress = new MailboxAddress(name, address);
             _mimeMessage.From.Add(fromMailboxAddress);
-            if (replyTo)
-                _mimeMessage.ReplyTo.Add(fromMailboxAddress);
             return this;
         }
 
-        public IEmailWriter From(string addresses, bool replyTo = true)
+        public IEmailWriter From(string addresses)
         {
             var mailboxAddresses = MailboxAddressHelper.ParseEmailContacts(addresses);
             _mimeMessage.From.AddRange(mailboxAddresses);
-            if (replyTo)
-                _mimeMessage.ReplyTo.AddRange(mailboxAddresses);
+            return this;
+        }
+
+        public IEmailWriter ReplyTo(string name, string address)
+        {
+            _mimeMessage.ReplyTo.Add(new MailboxAddress(name, address));
+            return this;
+        }
+
+        public IEmailWriter ReplyTo(string addresses)
+        {
+            var mailboxAddresses = MailboxAddressHelper.ParseEmailContacts(addresses);
+            _mimeMessage.ReplyTo.AddRange(mailboxAddresses);
             return this;
         }
 
@@ -89,12 +99,16 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
-        public IEmailWriter Subject(string subject, bool append = false)
+        public IEmailWriter Subject(string subject)
         {
-            if (_mimeMessage.Subject == null || !append)
-                _mimeMessage.Subject = subject ?? string.Empty;
-            else
-                _mimeMessage.Subject = $"{_mimeMessage.Subject}{subject}";
+            _mimeMessage.Subject = subject ?? string.Empty;
+            return this;
+        }
+
+        public IEmailWriter Subject(string prefix, string suffix)
+        {
+            var original = _mimeMessage.Subject ?? string.Empty;
+            _mimeMessage.Subject = $"{prefix}{original}{suffix}";
             return this;
         }
 
@@ -249,8 +263,14 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
-        public void Send(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null) =>
-            SendAsync(cancellationToken, transferProgress).ConfigureAwait(false).GetAwaiter().GetResult();
+        public IEmailWriter Header(string field, string value)
+        {
+            _mimeMessage.Headers.Add(field, value);
+            return this;
+        }
+
+        public void Send(CancellationToken cancellationToken = default) =>
+            SendAsync(cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult();
 
         public async Task SendAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
         {
@@ -258,8 +278,8 @@ namespace MailKitSimplified.Sender.Services
             _mimeMessage = new MimeMessage();
         }
 
-        public bool TrySend(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null) =>
-            TrySendAsync(cancellationToken, transferProgress).ConfigureAwait(false).GetAwaiter().GetResult();
+        public bool TrySend(CancellationToken cancellationToken = default) =>
+            TrySendAsync(cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult();
 
         public async Task<bool> TrySendAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
         {

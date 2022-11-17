@@ -21,6 +21,8 @@ namespace MailKitSimplified.Sender.Tests
         private const string _attachment2Path = @"C:\Temp\attachment2.pdf";
         private static readonly Task _completedTask = Task.CompletedTask;
 
+        private readonly IEmailWriter _testEmail;
+
         private readonly IFileSystem _fileSystem;
         private readonly ISmtpSender _emailSender;
         private readonly IEmailWriter _emailWriter;
@@ -44,6 +46,12 @@ namespace MailKitSimplified.Sender.Tests
             var options = Options.Create(senderOptions);
             _emailSender = new SmtpSender(options, _loggerFactory.CreateLogger<SmtpSender>(), protocolLoggerMock.Object, smtpClientMock.Object);
             _emailWriter = new EmailWriter(_emailSender, _loggerFactory.CreateLogger<EmailWriter>(), _fileSystem);
+            _testEmail = _emailWriter
+                .From("My Name", "me@localhost")
+                .To("Your Name", "you@localhost")
+                .Subject("Hello World")
+                .BodyText("\r\ntext/plain\r\n")
+                .BodyHtml("<p>text/html</p><br/>");
         }
 
         [Theory]
@@ -68,9 +76,7 @@ namespace MailKitSimplified.Sender.Tests
         [Fact]
         public async Task TrySendAsync_WithAttachment_VerifySentAsync()
         {
-            var isSent = await _emailWriter
-                .From("me@localhost")
-                .To("you@localhost")
+            var isSent = await _testEmail
                 .TryAttach(_attachment1Path, _attachment2Path)
                 .TrySendAsync();
             Assert.True(isSent);
@@ -85,20 +91,21 @@ namespace MailKitSimplified.Sender.Tests
             var attachment1 = EmailWriter.GetMimePart(_attachment1Path, _fileSystem);
             var attachment2 = EmailWriter.GetMimePart(_attachment2Path, _fileSystem);
             var attachemnts = new MimeEntity[] { attachment1, attachment2 };
-            await _emailWriter
-                .From("from@localhost")
-                .To("to@localhost")
+            await _testEmail
+                .From("from@example.com")
+                .To("to@example.com")
                 .Cc("Carbon copy", "cc1@localhost")
                 .Cc("cc2@localhost")
                 .Bcc("Blind carbon copy", "bcc1@localhost")
                 .Bcc("bcc2@localhost")
                 .Subject("Hey")
-                .Subject(" friend", true)
+                .Subject("Re: ", " friend")
                 .BodyText("Hello World")
-                .BodyHtml("<p>Hello<br/>World<br/></p>")
+                .BodyHtml("<b>Hello World!</b>")
                 .Attach(stream1, fileName1)
                 .Attach(attachemnts)
                 .Attach(_attachment1Path, _attachment2Path)
+                .Header("X-CampaignId", "1234")
                 .SendAsync();
             var attachmentNames = attachemnts.GetAttachmentNames();
             Assert.Contains(fileName1, attachmentNames);
@@ -108,8 +115,8 @@ namespace MailKitSimplified.Sender.Tests
         [Fact]
         public void TrySend_VerifySent()
         {
-            var isSent = _emailWriter.TrySend();
-            _emailWriter.Send();
+            var isSent = _testEmail.TrySend();
+            _testEmail.Send();
             Assert.True(isSent);
         }
 
