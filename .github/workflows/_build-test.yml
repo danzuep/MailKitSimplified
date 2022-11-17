@@ -104,7 +104,7 @@ jobs:
 
       - name: Install Report Generator tool if not cached
         if: steps.cached-reportgenerator.outputs.cache-hit != 'true'
-        run: dotnet tool install --global dotnet-reportgenerator-globaltool --tool-path '~/.dotnet/tools'
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
 
       - name: Merge all test project Code Coverage results into one report
         run: reportgenerator -reports:'.coverage/**/coverage.cobertura.xml' -targetdir:'.coverage/report' -reporttypes:'Cobertura;SonarQube;HtmlSummary'
