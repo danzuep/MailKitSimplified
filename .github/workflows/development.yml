@@ -9,31 +9,16 @@ on:
     branches:
       - feature/**
 
+# Cancel any other running workflows with the same ID
+concurrency:
+  group: ci-development-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  version:
-    uses: ./.github/workflows/_gitversion.yml
-    secrets: inherit
-
-  test_core:
-    needs: version
-    uses: ./.github/workflows/_build-test.yml
+  pipeline:
+    name: 🪜 CI/CD
+    uses: ./.github/workflows/_pipeline.yml
     with:
-      project-name: 'MailKitSimplified.Core'
-      version: ${{ needs.version.outputs.version }}
-    secrets: inherit
-
-  test_sender:
-    needs: version
-    uses: ./.github/workflows/_build-test.yml
-    with:
-      project-name: 'MailKitSimplified.Sender'
-      version: ${{ needs.version.outputs.version }}
-    secrets: inherit
-
-  test_receiver:
-    needs: version
-    uses: ./.github/workflows/_build-test.yml
-    with:
-      project-name: 'MailKitSimplified.Receiver'
-      version: ${{ needs.version.outputs.version }}
+      environment: development
+      project-name: MailKitSimplified
     secrets: inherit

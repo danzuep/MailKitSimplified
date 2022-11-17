@@ -20,4 +20,5 @@ jobs:
     uses: ./.github/workflows/_pipeline.yml
     with:
       environment: release
+      project-name: MailKitSimplified
     secrets: inherit

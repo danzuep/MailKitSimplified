@@ -159,7 +159,7 @@ You'll also need the following in appsettings.json:
       "UserName": "",
       "Password": ""
     },
-    "ProtocolLog": "C:\\Temp\\Email logs\\ImapClient.txt"
+    "ProtocolLog": "Logs\\ImapClient.txt"
   },
 }
 ```

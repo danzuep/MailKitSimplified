@@ -4,65 +4,30 @@ on:
   workflow_call:
     inputs:
       environment:
+        description: 'GitHub environment'
         default: development
+        type: string
+      project-name:
+        description: 'Name of the project'
+        required: true
         type: string
 
 # https://docs.github.com/en/actions/using-workflows/reusing-workflows
 jobs:
-  version:
-    uses: ./.github/workflows/_gitversion.yml
-    secrets: inherit
-
-  # build_core:
-  #   needs: version
-  #   uses: ./.github/workflows/_build-test.yml
-  #   with:
-  #     project-name: 'MailKitSimplified.Core'
-  #     version: ${{ needs.version.outputs.version }}
-  #   secrets: inherit
-
-  build_receiver:
-    needs: version
+  build_test:
     uses: ./.github/workflows/_build-test.yml
     with:
-      project-name: 'MailKitSimplified.Receiver'
-      version: ${{ needs.version.outputs.version }}
+      environment: ${{ inputs.environment }}
+      project-name: ${{ inputs.project-name }}
+      configuration: Release
     secrets: inherit
 
-  build_sender:
-    needs: version
-    uses: ./.github/workflows/_build-test.yml
-    with:
-      project-name: 'MailKitSimplified.Sender'
-      version: ${{ needs.version.outputs.version }}
-    secrets: inherit
-
-  # deploy_core:
-  #   # if: ${{ inputs.environment == 'release' }}
-  #   needs: [version,build_core]
-  #   uses: ./.github/workflows/_deploy-nuget.yml
-  #   with:
-  #     environment: ${{ inputs.environment }}
-  #     project-name: 'MailKitSimplified.Core'
-  #     version: ${{ needs.version.outputs.version }}
-  #   secrets: inherit
-
-  deploy_sender:
-    # if: ${{ inputs.environment == 'release' }}
-    needs: [version,build_sender]
+  deploy:
+    if: ${{ inputs.environment == 'release' }} # && {{ github.event_name != 'pull_request' }}
+    needs: build_test
     uses: ./.github/workflows/_deploy-nuget.yml
     with:
       environment: ${{ inputs.environment }}
-      project-name: 'MailKitSimplified.Sender'
-      version: ${{ needs.version.outputs.version }}
-    secrets: inherit
-
-  deploy_receiver:
-    # if: ${{ inputs.environment == 'release' }} && {{ github.event_name != 'pull_request' }}
-    needs: [version,build_receiver]
-    uses: ./.github/workflows/_deploy-nuget.yml
-    with:
-      environment: ${{ inputs.environment }}
-      project-name: 'MailKitSimplified.Receiver'
-      version: ${{ needs.version.outputs.version }}
+      project-name: ${{ inputs.project-name }}
+      version: ${{ needs.build_test.outputs.version }}
     secrets: inherit
