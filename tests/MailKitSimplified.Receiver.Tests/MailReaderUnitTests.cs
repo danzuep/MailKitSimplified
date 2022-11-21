@@ -34,7 +34,8 @@ namespace MailKitSimplified.Receiver.Tests
             _mailFolderMock.Setup(_ => _.GetMessageAsync(It.IsAny<int>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
                 .ReturnsAsync(new MimeMessage()).Verifiable();
             // Act
-            var mimeMessages = await _mailReader.GetMimeMessagesAsync(It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>());
+            var mimeMessages = await _mailReader.Skip(0).Take(1)
+                .GetMimeMessagesAsync(It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>());
             // Assert
             Assert.NotNull(mimeMessages);
         }
