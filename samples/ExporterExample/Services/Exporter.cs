@@ -43,8 +43,8 @@ namespace ExporterExample.Services
             if (useDebugLogger)
             {
                 var loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole());
-                using var imapReceiver = ImapReceiver.Create("imap.example.com", 0, "U5ern@me", "P@55w0rd");
-                var mailReader = new MailReader(imapReceiver, "INBOX");
+                using var imapReceiver = ImapReceiver.Create("imap.example.com", 0, "U5ern@me", "P@55w0rd", null, "INBOX");
+                var mailReader = new MailReader(imapReceiver);
                 var exporter = new Exporter(mailReader, loggerFactory.CreateLogger<Exporter>());
                 return exporter;
             }

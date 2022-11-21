@@ -65,10 +65,6 @@ namespace WebApiExample
             // Add custom services
             services.AddMailKitSimplifiedEmailSender(configuration);
             services.AddMailKitSimplifiedEmailReceiver(configuration);
-            //services.AddHttpClient<IJasperApiClient, JasperApiClient>()
-            //    .AddPolicyHandler(HttpPolicies.ExponentialRetry)
-            //    .AddPolicyHandler(HttpPolicies.CircuitBreaker);
-            //services.AddScoped<IJasperApiClient, JasperApiClient>();
 
             services.AddControllers()
                 .AddJsonOptions(o =>
@@ -98,15 +94,6 @@ namespace WebApiExample
 
             app.UseRouting();
             app.MapControllers();
-
-            //if (app.Environment.IsDevelopment())
-            //{
-            //    using var scope = app.Services.CreateScope();
-            //    using var context = scope.ServiceProvider
-            //        .GetRequiredService<MyDbContext>();
-            //    context.Database.EnsureCreated();
-            //    await context.SeedAsync();
-            //}
 
             await app.RunAsync();
         }
