@@ -20,11 +20,11 @@ namespace MailKitSimplified.Receiver.Tests
         }
 
         [Fact]
-        public void ToString_VerifyContainsSkipTake()
+        public void ToString_ReturnsOverriddenToString()
         {
-            var mailReaderSerialised = _mailReader.ToString();
-            Assert.Contains("skip ", mailReaderSerialised);
-            Assert.Contains("take ", mailReaderSerialised);
+            var description = _mailReader.ToString();
+            Assert.False(string.IsNullOrWhiteSpace(description));
+            Assert.DoesNotContain(nameof(MailReader), description);
         }
 
         [Fact]
@@ -40,25 +40,31 @@ namespace MailKitSimplified.Receiver.Tests
         }
 
         [Fact]
-        public async Task GetMessageSummariesAsync_WithMessageSummaryItemFilter_ReturnsNull()
+        public async Task GetMessageSummariesAsync_WithMessageSummaryItemFilter_ReturnsMessageSummaries()
         {
             // Arrange
-            IList<IMessageSummary> stubMessageSummaries = Mock.Of<IList<IMessageSummary>>();
-            //_mailFolderMock.Setup(_ => _.FetchAsync(It.IsAny<int>(), It.IsAny<int>(), MessageSummaryItems.UniqueId, It.IsAny<CancellationToken>()))
-            //    .ReturnsAsync(stubMessageSummaries).Verifiable();
+            var stubMessageSummaries = new List<IMessageSummary>();
+            _mailFolderMock.Setup(_ => _.FetchAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<IFetchRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stubMessageSummaries);
             // Act
-            var mimeMessages = await _mailReader.GetMessageSummariesAsync(MessageSummaryItems.UniqueId, It.IsAny<CancellationToken>());
+            var messageSummaries = await _mailReader.GetMessageSummariesAsync(MessageSummaryItems.UniqueId, It.IsAny<CancellationToken>());
             // Assert
-            Assert.Null(mimeMessages);
+            Assert.NotNull(messageSummaries);
+            Assert.Equal(stubMessageSummaries, messageSummaries);
         }
 
         [Fact]
-        public async Task GetMessageSummariesAsync_ReturnsNull()
+        public async Task GetMessageSummariesAsync_ReturnsMessageSummaries()
         {
+            // Arrange
+            var stubMessageSummaries = new List<IMessageSummary>();
+            _mailFolderMock.Setup(_ => _.FetchAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<IFetchRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stubMessageSummaries);
             // Act
-            var mimeMessages = await _mailReader.GetMessageSummariesAsync(It.IsAny<CancellationToken>());
+            var messageSummaries = await _mailReader.GetMessageSummariesAsync(It.IsAny<CancellationToken>());
             // Assert
-            Assert.Null(mimeMessages);
+            Assert.NotNull(messageSummaries);
+            Assert.Equal(stubMessageSummaries, messageSummaries);
         }
     }
 }

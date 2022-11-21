@@ -56,5 +56,5 @@ jobs:
 
       - name: Markdown workflow job summary
         run: |
-          echo "### ${{ inputs.project-name }}.*.${{ inputs.version }}.nupkg package published to NuGet from ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
-          echo "${{ github.repository }} version ${{ env.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "### ${{ inputs.project-name }}.*.${{ inputs.version }}.nupkg packages published to NuGet from ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "${{ github.repository }} branch ${{ env.VERSION }}" >> $GITHUB_STEP_SUMMARY

@@ -100,6 +100,14 @@ namespace MailKitSimplified.Receiver.Services
             return mailFolder;
         }
 
+        public async ValueTask<IMailFolderClient> ConnectMailFolderClientAsync(string mailFolderName = null, bool enableWrite = false, CancellationToken cancellationToken = default)
+        {
+            var mailFolder = await ConnectMailFolderAsync(mailFolderName, cancellationToken).ConfigureAwait(false);
+            var mailFolderClient = new MailFolderClient(mailFolder);
+            await mailFolderClient.ConnectAsync(enableWrite, cancellationToken).ConfigureAwait(false);
+            return mailFolderClient;
+        }
+
         public async ValueTask<IList<string>> GetMailFolderNamesAsync(CancellationToken cancellationToken = default)
         {
             _ = await ConnectImapClientAsync(cancellationToken).ConfigureAwait(false);
@@ -133,11 +141,24 @@ namespace MailKitSimplified.Receiver.Services
 
         public override string ToString() => _receiverOptions.ToString();
 
-        public void Disconnect()
+        public async ValueTask DisconnectAsync(CancellationToken cancellationToken = default)
+        {
+            if (_imapClient?.IsConnected ?? false)
+                await _imapClient.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            _logger.LogTrace("Disposing IMAP email client...");
+            await DisconnectAsync().ConfigureAwait(false);
+            _imapClient?.Dispose();
+        }
+
+        public void Disconnect(CancellationToken cancellationToken = default)
         {
             if (_imapClient?.IsConnected ?? false)
                 lock (_imapClient.SyncRoot)
-                    _imapClient.Disconnect(true);
+                    _imapClient.Disconnect(true, cancellationToken);
         }
 
         public void Dispose()

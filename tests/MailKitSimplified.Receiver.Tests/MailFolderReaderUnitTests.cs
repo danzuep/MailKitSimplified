@@ -6,14 +6,63 @@ namespace MailKitSimplified.Receiver.Tests
     public class MailFolderReaderUnitTests
     {
         private readonly Mock<IMailFolder> _mailFolderMock = new Mock<IMailFolder>();
+        private readonly Mock<IMailFolderClient> _mailFolderClientMock = new Mock<IMailFolderClient>();
         private readonly IMailFolderReader _mailFolderReader;
 
         public MailFolderReaderUnitTests()
         {
             // Arrange
-            _mailFolderMock.Setup(_ => _.OpenAsync(It.IsAny<FolderAccess>(), It.IsAny<CancellationToken>())).Verifiable();
-            _mailFolderMock.Setup(_ => _.CloseAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).Verifiable();
-            _mailFolderReader = new MailFolderReader(_mailFolderMock.Object);
+            _mailFolderClientMock.Setup(_ => _.ConnectAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(_mailFolderMock.Object).Verifiable();
+            _mailFolderReader = new MailFolderReader(_mailFolderClientMock.Object);
+        }
+
+        [Fact]
+        public void ToString_VerifyMailFolderClientToStringCalled()
+        {
+            // Arrange
+            _mailFolderClientMock.Setup(_ => _.ToString());
+            // Act
+            _ = _mailFolderReader.ToString();
+            // Assert / Verify
+            _mailFolderClientMock.Verify(_ => _.ToString(), Times.Once);
+        }
+
+        [Fact]
+        public void Dispose_UsingMailFolderReader()
+        {
+            using var mailFolderReader = new MailFolderReader(_mailFolderClientMock.Object);
+            Assert.NotNull(mailFolderReader);
+        }
+
+        [Fact]
+        public async Task DisposeAsync_WithNewMailFolderReaderAsync()
+        {
+            var mailFolderReader = new MailFolderReader(_mailFolderClientMock.Object);
+            await mailFolderReader.DisposeAsync();
+        }
+
+        [Fact]
+        public async Task ReconnectAsync_WithReadOnlyAccess_ReturnsMailFolder()
+        {
+            // Act
+            var mailFolder = await _mailFolderReader.ReconnectAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>());
+            // Assert
+            Assert.NotNull(mailFolder);
+        }
+        
+        [Fact]
+        public async Task GetMessageSummariesAsync_WithAnyUniqueIds_ReturnsMimeMessage()
+        {
+            // Arrange
+            var stubMessageSummaries = new List<IMessageSummary>();
+            _mailFolderMock.Setup(_ => _.FetchAsync(It.IsAny<IList<UniqueId>>(), It.IsAny<IFetchRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stubMessageSummaries);
+            // Act
+            var messageSummaries = await _mailFolderReader.GetMessageSummariesAsync(new List<UniqueId>(), It.IsAny<MessageSummaryItems>(), It.IsAny<CancellationToken>());
+            // Assert
+            Assert.NotNull(messageSummaries);
+            Assert.Equal(stubMessageSummaries, messageSummaries);
         }
 
         [Fact]

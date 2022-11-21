@@ -117,14 +117,18 @@ An email receiver must have a IMAP host address, a network credential (unless yo
 
 ### Receiving Mail
 
+To download full emails with attachments and everything: 
+
 ```csharp
-var mimeMessageQueue = await imapReceiver.ReadMail
+var mimeMessages = await imapReceiver.ReadMail.Skip(0).Take(10)
     .GetMimeMessagesAsync();
 ```
 
+To just download email parts you want to use:
+
 ```csharp
-var mimeMessages = await imapReceiver.ReadFrom("INBOX/My Subfolder").Skip(0).Take(10)
-    .GetMessageSummariesAsync(MessageSummaryItems.UniqueId);
+var messageSummaries = await imapReceiver.ReadFrom("INBOX/My Subfolder")
+    .GetMessageSummariesAsync(MessageSummaryItems.InternalDate);
 ```
 
 Further examples (how to set up MailKit IMAP server logs etc.) can be found in the 'samples' and 'tests' folders on [GitHub](https://github.com/danzuep/MailKitSimplified).

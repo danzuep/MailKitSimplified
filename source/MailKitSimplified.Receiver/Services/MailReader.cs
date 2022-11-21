@@ -72,6 +72,7 @@ namespace MailKitSimplified.Receiver.Services
 
         public async ValueTask<IList<IMessageSummary>> GetMessageSummariesAsync(MessageSummaryItems filter, CancellationToken cancellationToken = default)
         {
+            filter |= MessageSummaryItems.UniqueId;
             var mailFolder = await _imapReceiver.ConnectMailFolderAsync(_mailFolderName, cancellationToken).ConfigureAwait(false);
             _ = await mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
             var messageSummaries = await GetMessageSummariesAsync(mailFolder, filter, cancellationToken).ConfigureAwait(false);

@@ -1,5 +1,5 @@
 ﻿using MimeKit;
-using MailKit;
+using MimeKit.Text;
 using System;
 using System.IO;
 using System.Linq;
@@ -7,10 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Receiver.Extensions;
-using MimeKit.Text;
-using MailKitSimplified.Receiver.Abstractions;
 
 namespace MailKitSimplified.Receiver.Services
 {
@@ -38,14 +35,7 @@ namespace MailKitSimplified.Receiver.Services
         public string Body { get => MimeMessage.HtmlBody ?? MimeMessage.TextBody ?? string.Empty; }
         public string BodyText { get => IsHtml ? DecodeHtmlBody(Body) : MimeMessage.TextBody ?? string.Empty; }
 
-        private IMailFolderReader _mailFolderReader;
-
         private MimeMessageReader() { }
-
-        public MimeMessageReader(IMailFolderReader mailFolderReader)
-        {
-            _mailFolderReader = mailFolderReader ?? throw new NullReferenceException(nameof(mailFolderReader));
-        }
 
         public static MimeMessageReader Create(MimeMessage mimeMessage, string mailFolderName = "", uint folderIndex = 0)
         {
@@ -56,17 +46,6 @@ namespace MailKitSimplified.Receiver.Services
                 FolderIndex = folderIndex
             };
             return mimeMessageReader;
-        }
-
-        public async Task GetMimeMessageAsync(IMessageSummary messageSummary, CancellationToken ct)
-        {
-            if (_mailFolderReader == null)
-                throw new NullReferenceException(nameof(_mailFolderReader));
-            var mailFolder = messageSummary.Folder;
-            FolderName = mailFolder?.FullName ?? string.Empty;
-            FolderIndex = messageSummary?.UniqueId.Id ?? 0;
-            var mimeMessage = await _mailFolderReader.GetMimeMessageAsync(messageSummary.UniqueId, ct).ConfigureAwait(false);
-            _mimeMessage = new Lazy<MimeMessage>(() => mimeMessage);
         }
 
         public static string DecodeHtmlBody(string html)
