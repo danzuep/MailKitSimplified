@@ -1,5 +1,7 @@
 ﻿using MimeKit;
 using MimeKit.Text;
+using MailKit;
+using MailKit.Net.Imap;
 using System;
 using System.IO;
 using System.Linq;
@@ -37,7 +39,7 @@ namespace MailKitSimplified.Receiver.Services
 
         private MimeMessageReader() { }
 
-        public static MimeMessageReader Create(MimeMessage mimeMessage, string mailFolderName = "", uint folderIndex = 0)
+        public static MimeMessageReader Create(MimeMessage mimeMessage, string mailFolderName = null, uint folderIndex = 0)
         {
             var mimeMessageReader = new MimeMessageReader
             {
@@ -45,6 +47,33 @@ namespace MailKitSimplified.Receiver.Services
                 FolderName = mailFolderName ?? string.Empty,
                 FolderIndex = folderIndex
             };
+            return mimeMessageReader;
+        }
+
+        /// <exception cref="MessageNotFoundException">Message was moved before it could be downloaded</exception>
+        /// <exception cref="ImapCommandException">Message was moved before it could be downloaded</exception>
+        /// <exception cref="FolderNotOpenException">Mail folder was closed</exception>
+        /// <exception cref="IOException">Message not downloaded</exception>
+        /// <exception cref="ImapProtocolException">Message not downloaded</exception>
+        /// <exception cref="InvalidOperationException">Message not downloaded</exception>
+        /// <exception cref="OperationCanceledException">Message download task was cancelled.</exception>
+        public static async Task<MimeMessageReader> CreateAsync(IMessageSummary messageSummary, CancellationToken cancellationToken = default)
+        {
+            if (messageSummary == null)
+                throw new ArgumentNullException(nameof(messageSummary));
+            var mailFolder = messageSummary.Folder;
+            if (mailFolder == null)
+                throw new NullReferenceException("Mail folder property not available.");
+            var uniqueId = messageSummary.UniqueId;
+            if (uniqueId == null)
+                throw new NullReferenceException("Unique ID property not available.");
+            MimeMessageReader mimeMessageReader;
+            using (var mailFolderClient = new MailFolderClient(mailFolder))
+            {
+                mailFolder = await mailFolderClient.ConnectAsync(false, cancellationToken).ConfigureAwait(false);
+                var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken).ConfigureAwait(false);
+                mimeMessageReader = Create(mimeMessage, mailFolder.FullName, uniqueId.Id);
+            }
             return mimeMessageReader;
         }
 
@@ -142,15 +171,15 @@ namespace MailKitSimplified.Receiver.Services
             }
         }
 
-        public static async Task<Stream> WriteToStreamAsync(MimeEntity entity, Stream stream, CancellationToken ct = default)
+        public static async Task<Stream> WriteToStreamAsync(MimeEntity entity, Stream stream, CancellationToken cancellationToken = default)
         {
             if (entity is MessagePart messagePart)
             {
-                await messagePart.Message.WriteToAsync(stream, ct);
+                await messagePart.Message.WriteToAsync(stream, cancellationToken);
             }
             else if (entity is MimePart mimePart && mimePart.Content != null)
             {
-                await mimePart.Content.DecodeToAsync(stream, ct);
+                await mimePart.Content.DecodeToAsync(stream, cancellationToken);
             }
             // rewind the stream so the next process can read it from the beginning
             stream.Position = 0;

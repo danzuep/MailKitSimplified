@@ -44,13 +44,6 @@ namespace MailKitSimplified.Receiver.Services
             return filteredResults;
         }
 
-        /// <exception cref="MessageNotFoundException">Message was moved before it could be downloaded</exception>
-        /// <exception cref="ImapCommandException">Message was moved before it could be downloaded</exception>
-        /// <exception cref="FolderNotOpenException">Mail folder was closed</exception>
-        /// <exception cref="IOException">Message not downloaded</exception>
-        /// <exception cref="ImapProtocolException">Message not downloaded</exception>
-        /// <exception cref="InvalidOperationException">Message not downloaded</exception>
-        /// <exception cref="OperationCanceledException">Message download task was cancelled.</exception>
         public async ValueTask<MimeMessage> GetMimeMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default)
         {
             MimeMessage mimeMessage;
