@@ -11,34 +11,37 @@ using MailKitSimplified.Receiver.Abstractions;
 
 namespace MailKitSimplified.Receiver.Services
 {
-    public class MailFolderReader : IMailFolderReader
+    public sealed class MailFolderReader : MailReader, IMailFolderReader
     {
-        private readonly IMailFolderClient _mailFolderClient;
+        public MailFolderReader(IImapReceiver imapReceiver) : base(imapReceiver) { }
 
-        public MailFolderReader(IMailFolderClient mailFolderClient) =>
-            _mailFolderClient = mailFolderClient ?? throw new ArgumentNullException(nameof(mailFolderClient));
+        public new static MailFolderReader Create(IImapReceiver imapReceiver, string mailFolderName)
+        {
+            var emailReader = new MailFolderReader(imapReceiver);
+            emailReader.ReadFrom(mailFolderName);
+            return emailReader;
+        }
 
-        public ValueTask<IMailFolder> ReconnectAsync(CancellationToken cancellationToken = default) =>
-            ReconnectAsync(false, cancellationToken);
-
-        public ValueTask<IMailFolder> ReconnectAsync(bool enableWrite, CancellationToken cancellationToken = default) =>
-            _mailFolderClient.ConnectAsync(enableWrite, cancellationToken);
+        private MailFolderReader ReadFrom(string mailFolderName)
+        {
+            if (string.IsNullOrWhiteSpace(mailFolderName))
+                throw new ArgumentNullException(nameof(mailFolderName));
+            _mailFolderName = mailFolderName;
+            return this;
+        }
 
         public async ValueTask<IEnumerable<IMessageSummary>> GetMessageSummariesAsync(IEnumerable<UniqueId> uniqueIds, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default)
         {
-            var mailFolder = await ReconnectAsync(cancellationToken).ConfigureAwait(false);
+            IEnumerable<IMessageSummary> filteredResults = Array.Empty<IMessageSummary>();
             filter |= MessageSummaryItems.UniqueId;
             var orderedIds = uniqueIds.OrderBy(m => m.Id).ToList();
-            var messageSummaries = await mailFolder.FetchAsync(orderedIds, filter, cancellationToken).ConfigureAwait(false);
-            var filteredResults = messageSummaries.Where(m => uniqueIds.Contains(m.UniqueId));
+            using (var mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(_mailFolderName, cancellationToken).ConfigureAwait(false))
+            {
+                var mailFolder = await mailFolderClient.ConnectAsync(false, cancellationToken).ConfigureAwait(false);
+                var messageSummaries = await mailFolder.FetchAsync(orderedIds, filter, cancellationToken).ConfigureAwait(false);
+                filteredResults = messageSummaries.Where(m => uniqueIds.Contains(m.UniqueId));
+            }
             return filteredResults;
-        }
-
-        public async ValueTask<MimeMessage> GetMimeMessageAsync(ushort index = 0, CancellationToken cancellationToken = default)
-        {
-            var mailFolder = await ReconnectAsync(cancellationToken).ConfigureAwait(false);
-            var mimeMessage = await mailFolder.GetMessageAsync(index, cancellationToken).ConfigureAwait(false);
-            return mimeMessage;
         }
 
         /// <exception cref="MessageNotFoundException">Message was moved before it could be downloaded</exception>
@@ -50,8 +53,12 @@ namespace MailKitSimplified.Receiver.Services
         /// <exception cref="OperationCanceledException">Message download task was cancelled.</exception>
         public async ValueTask<MimeMessage> GetMimeMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default)
         {
-            var mailFolder = await ReconnectAsync(cancellationToken).ConfigureAwait(false);
-            var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken).ConfigureAwait(false);
+            MimeMessage mimeMessage;
+            using (var mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(_mailFolderName, cancellationToken).ConfigureAwait(false))
+            {
+                var mailFolder = await mailFolderClient.ConnectAsync(false, cancellationToken).ConfigureAwait(false);
+                mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken).ConfigureAwait(false);
+            }
             return mimeMessage;
         }
 
@@ -60,29 +67,21 @@ namespace MailKitSimplified.Receiver.Services
             IList<MimeMessage> mimeMessages = new List<MimeMessage>();
             if (uniqueIds != null)
             {
-                await ReconnectAsync(false, cancellationToken).ConfigureAwait(false);
-                foreach (var uniqueId in uniqueIds)
+                using (var mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(_mailFolderName, cancellationToken).ConfigureAwait(false))
                 {
-                    var mimeMessage = await GetMimeMessageAsync(uniqueId, cancellationToken).ConfigureAwait(false);
-                    mimeMessages.Add(mimeMessage);
-                    if (cancellationToken.IsCancellationRequested)
-                        break;
+                    var mailFolder = await mailFolderClient.ConnectAsync(false, cancellationToken).ConfigureAwait(false);
+                    foreach (var uniqueId in uniqueIds)
+                    {
+                        var mimeMessage = await GetMimeMessageAsync(uniqueId, cancellationToken).ConfigureAwait(false);
+                        mimeMessages.Add(mimeMessage);
+                        if (cancellationToken.IsCancellationRequested)
+                            break;
+                    }
                 }
             }
             return mimeMessages;
         }
 
-        public async ValueTask<IList<MimeMessage>> GetMimeMessagesAsync(IEnumerable<IMessageSummary> messageSummaries, CancellationToken cancellationToken = default)
-        {
-            var uniqueIds = messageSummaries?.Select(m => m.UniqueId);
-            var mimeMessages = await GetMimeMessagesAsync(uniqueIds, cancellationToken).ConfigureAwait(false);
-            return mimeMessages;
-        }
-
-        public override string ToString() => _mailFolderClient.ToString();
-
-        public ValueTask DisposeAsync() => _mailFolderClient.DisposeAsync();
-
-        public void Dispose() => _mailFolderClient.Dispose();
+        public override string ToString() => _imapReceiver.ToString();
     }
 }

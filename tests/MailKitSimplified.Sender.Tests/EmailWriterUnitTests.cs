@@ -13,7 +13,7 @@ namespace MailKitSimplified.Sender.Tests
 
         private readonly IFileSystem _fileSystem;
         private readonly ILoggerFactory _loggerFactory;
-        private readonly Mock<ISmtpSender> _smtpSenderMock;
+        private readonly Mock<ISmtpSender> _smtpSenderMock = new();
         private readonly IEmailWriter _testEmail;
 
         public EmailWriterUnitTests()
@@ -25,7 +25,6 @@ namespace MailKitSimplified.Sender.Tests
                 { _attachment2Path, new MockFileData("123") }
             });
             _loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug());
-            _smtpSenderMock = new Mock<ISmtpSender>();
             _smtpSenderMock.Setup(_ => _.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>())).Verifiable();
             _smtpSenderMock.Setup(_ => _.TrySendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
                 .ReturnsAsync(true).Verifiable();

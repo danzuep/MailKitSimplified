@@ -20,6 +20,13 @@ namespace MailKitSimplified.Receiver.Tests
         }
 
         [Fact]
+        public void CreateMailReader_WithValidMailFolderName()
+        {
+            var mailReader = MailReader.Create(_imapReceiverMock.Object, "INBOX");
+            Assert.NotNull(mailReader);
+        }
+
+        [Fact]
         public void ToString_ReturnsOverriddenToString()
         {
             var description = _mailReader.ToString();

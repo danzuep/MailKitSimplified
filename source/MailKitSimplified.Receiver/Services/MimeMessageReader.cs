@@ -12,15 +12,15 @@ using MailKitSimplified.Receiver.Extensions;
 namespace MailKitSimplified.Receiver.Services
 {
     [ExcludeFromCodeCoverage]
-    public class MimeMessageReader : IDisposable
+    public class MimeMessageReader
     {
-        private Lazy<MimeMessage> _mimeMessage = new Lazy<MimeMessage>(() => new MimeMessage());
-        protected MimeMessage MimeMessage { get => _mimeMessage.Value; }
+        private MimeMessage _mimeMessage = new MimeMessage();
+        protected MimeMessage MimeMessage { get => _mimeMessage; }
         public string FolderName { get; private set; }
         public uint FolderIndex { get; private set; }
 
         public string MessageId { get => MimeMessage.MessageId ?? string.Empty; }
-        public DateTimeOffset Date { get => MimeMessage.Date; }
+        public DateTimeOffset Sent { get => MimeMessage.Date; }
         public IEnumerable<MailboxAddress> From { get => MimeMessage.From.Mailboxes; }
         public IEnumerable<MailboxAddress> To { get => MimeMessage.To.Mailboxes; }
         public IEnumerable<MailboxAddress> Cc { get => MimeMessage.Cc.Mailboxes; }
@@ -41,7 +41,7 @@ namespace MailKitSimplified.Receiver.Services
         {
             var mimeMessageReader = new MimeMessageReader
             {
-                _mimeMessage = new Lazy<MimeMessage>(() => mimeMessage),
+                _mimeMessage = mimeMessage ?? throw new ArgumentNullException(nameof(mimeMessage)),
                 FolderName = mailFolderName ?? string.Empty,
                 FolderIndex = folderIndex
             };
@@ -108,11 +108,11 @@ namespace MailKitSimplified.Receiver.Services
 
         internal string GetOnDateSenderWrote()
         {
-            var sender = _mimeMessage.Value.Sender ?? From.FirstOrDefault();
+            var sender = _mimeMessage.Sender ?? From.FirstOrDefault();
             var name = sender != null ? !string.IsNullOrEmpty(sender.Name) ?
                 sender.Name : sender.Address : "someone";
 
-            return string.Format("On {0}, {1} wrote:", Date.ToString("f"), name);
+            return string.Format("On {0}, {1} wrote:", Sent.ToString("f"), name);
         }
 
         internal static string QuoteText(string text, string prefix = "")
@@ -159,21 +159,29 @@ namespace MailKitSimplified.Receiver.Services
 
         public override string ToString()
         {
-            string output = string.Empty;
+            string envelope = string.Empty;
             using (var text = new StringWriter())
             {
-                text.Write("'{0}' {1}. ", FolderName, FolderIndex);
-                //text.Write("{0} Attachment(s){1}. ", AttachmentCount, AttachmentNamesEnumerated);
-                text.Write("Sent: {0}. Received: {1}. Subject: '{2}'.", Date, DateTime.Now, Subject);
-                output = text.ToString();
+                text.WriteLine("'{0}' {1}. ", FolderName, FolderIndex);
+                text.WriteLine("Sent: {0}.", Sent);
+                text.WriteLine("Received: {0}.", DateTime.Now);
+                if (MimeMessage.From.Count > 0)
+                    text.WriteLine("From: {0}", string.Join("; ", From));
+                if (MimeMessage.To.Count > 0)
+                    text.WriteLine("To: {0}", string.Join("; ", To));
+                if (MimeMessage.Cc.Count > 0)
+                    text.WriteLine("Cc: {0}", string.Join("; ", Cc));
+                if (MimeMessage.Bcc.Count > 0)
+                    text.WriteLine("Bcc: {0}", string.Join("; ", Bcc));
+                text.WriteLine("Subject: {0}", Subject);
+                text.WriteLine("Message-Id: <{0}>", MessageId);
+                if (AttachmentCount > 0)
+                    text.WriteLine("{0} Attachment{1}: {2}",
+                        AttachmentCount, AttachmentCount == 1 ? "" : "s",
+                        string.Join("; ", AttachmentNames));
+                envelope = text.ToString();
             }
-            return output;
-        }
-
-        public void Dispose()
-        {
-            if (_mimeMessage?.IsValueCreated ?? false)
-                _mimeMessage = null;
+            return envelope;
         }
     }
 }

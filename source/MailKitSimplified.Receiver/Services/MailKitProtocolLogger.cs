@@ -14,12 +14,8 @@ namespace MailKitSimplified.Receiver.Services
     {
         public IAuthenticationSecretDetector AuthenticationSecretDetector
         {
-            get => _protocolLogger?.AuthenticationSecretDetector;
-            set
-            {
-                if (_protocolLogger != null)
-                    _protocolLogger.AuthenticationSecretDetector = value;
-            }
+            get => _protocolLogger.AuthenticationSecretDetector;
+            set => _protocolLogger.AuthenticationSecretDetector = value;
         }
 
         private bool _clientMidline;
@@ -30,37 +26,37 @@ namespace MailKitSimplified.Receiver.Services
         private static readonly string _clientPrefix = "C: ";
 
         private readonly ILogger _logger;
+        private readonly IFileSystem _fileSystem;
         private IProtocolLogger _protocolLogger;
         private bool _redactSecrets;
         private bool _useTimestamp;
 
-        public MailKitProtocolLogger(ILogger<MailKitProtocolLogger> logger = null)
+        public MailKitProtocolLogger(ILogger<MailKitProtocolLogger> logger = null, IProtocolLogger protocolLogger = null, IFileSystem fileSystem = null)
         {
             _logger = logger ?? NullLogger<MailKitProtocolLogger>.Instance;
-            _protocolLogger = logger == null ?
-                new ProtocolLogger(Console.OpenStandardError()) :
-                new ProtocolLogger(Stream.Null);
+            _protocolLogger = protocolLogger == null || protocolLogger is MailKitProtocolLogger ?
+                new ProtocolLogger(Stream.Null) : protocolLogger;
+            _fileSystem = fileSystem ?? new FileSystem();
         }
 
-        public IProtocolLogger SetLogFilePath(string logFilePath, bool appendFile = false, bool useTimestamp = false, bool redactSecrets = true, IFileSystem fileSystem = null)
+        public IProtocolLogger SetLogFilePath(string logFilePath = null, bool appendFile = false, bool useTimestamp = false, bool redactSecrets = true)
         {
             _useTimestamp = useTimestamp;
             _redactSecrets = redactSecrets;
-            if (string.IsNullOrEmpty(logFilePath))
+            bool isMockFileSystem = _fileSystem.GetType().Name == "MockFileSystem";
+            if (!string.IsNullOrEmpty(logFilePath))
             {
-                _protocolLogger = logFilePath == null ?
-                    new ProtocolLogger(Stream.Null) :
-                    new ProtocolLogger(Console.OpenStandardError());
-            }
-            else
-            {
-                var _fileSystem = fileSystem ?? new FileSystem();
                 var directoryName = _fileSystem.Path.GetDirectoryName(logFilePath);
                 _fileSystem.Directory.CreateDirectory(directoryName);
                 var mode = appendFile ? FileMode.Append : FileMode.Create;
                 var stream = _fileSystem.File.Open(logFilePath, mode, FileAccess.Write, FileShare.Read);
-                _protocolLogger = new ProtocolLogger(stream);
+                if (isMockFileSystem)
+                    _protocolLogger = new ProtocolLogger(stream);
                 _logger.LogDebug($"Saving logs to file: {logFilePath}");
+            }
+            else if (logFilePath != null)
+            {
+                _protocolLogger = new ProtocolLogger(Console.OpenStandardError());
             }
             return this;
         }
@@ -129,6 +125,11 @@ namespace MailKitSimplified.Receiver.Services
 
             using (_logger.BeginScope(nameof(MailKitProtocolLogger)))
                 _logger.LogTrace(sb.ToString());
+
+            if (isClient)
+                _protocolLogger?.LogClient(buffer, offset, count);
+            else
+                _protocolLogger?.LogServer(buffer, offset, count);
         }
 
         public void LogConnect(Uri uri)
@@ -151,21 +152,10 @@ namespace MailKitSimplified.Receiver.Services
             _protocolLogger?.LogConnect(uri);
         }
 
-        public void LogServer(byte[] buffer, int offset, int count)
-        {
-            Log(buffer, offset, count, isClient: false);
-            _protocolLogger?.LogServer(buffer, offset, count);
-        }
+        public void LogServer(byte[] buffer, int offset, int count) => Log(buffer, offset, count, isClient: false);
 
-        public void LogClient(byte[] buffer, int offset, int count)
-        {
-            Log(buffer, offset, count, isClient: true);
-            _protocolLogger?.LogClient(buffer, offset, count);
-        }
+        public void LogClient(byte[] buffer, int offset, int count) => Log(buffer, offset, count, isClient: true);
 
-        public void Dispose()
-        {
-            _protocolLogger?.Dispose();
-        }
+        public void Dispose() => _protocolLogger?.Dispose();
     }
 }

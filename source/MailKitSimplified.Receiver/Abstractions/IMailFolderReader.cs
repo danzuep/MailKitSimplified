@@ -1,22 +1,13 @@
 ﻿using MailKit;
 using MimeKit;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace MailKitSimplified.Receiver.Abstractions
 {
-    public interface IMailFolderReader : IAsyncDisposable, IDisposable
+    public interface IMailFolderReader : IMailReader
     {
-        /// <summary>
-        /// Connect or reconnect to the given mail folder.
-        /// </summary>
-        /// <param name="enableWrite">Optionally enable ReadWrite access.</param>
-        /// <param name="cancellationToken">Request cancellation token.</param>
-        /// <returns>Connected <see cref="IMailFolder"/>.</returns>
-        ValueTask<IMailFolder> ReconnectAsync(bool enableWrite = false, CancellationToken cancellationToken = default);
-
         /// <summary>
         /// Get message summaries with just the requested items filled in for the specified unique IDs.
         /// </summary>
@@ -31,7 +22,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// </summary>
         /// <param name="uniqueId">Message to download by <see cref="UniqueId">ID</see>.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
-        /// <returns>List of <see cref="IMessageSummary"/> items.</returns>
+        /// <returns>Downloaded <see cref="MimeMessage"/>.</returns>
         ValueTask<MimeMessage> GetMimeMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default);
 
         /// <summary>

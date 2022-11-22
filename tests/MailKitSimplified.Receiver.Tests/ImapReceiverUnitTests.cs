@@ -17,7 +17,7 @@ namespace MailKitSimplified.Receiver.Tests
     {
         private const string _localhost = "localhost";
         private static readonly string _inbox = "INBOX";
-        private readonly Mock<IImapClient> _imapClientMock = new Mock<IImapClient>();
+        private readonly Mock<IImapClient> _imapClientMock = new();
         private readonly IImapReceiver _imapReceiver;
 
         public ImapReceiverUnitTests()
@@ -46,6 +46,7 @@ namespace MailKitSimplified.Receiver.Tests
         {
             using var imapReceiver = ImapReceiver.Create(imapHost, imapPort);
             Assert.NotNull(imapReceiver);
+            Assert.IsAssignableFrom<IImapReceiver>(imapReceiver);
         }
 
         [Fact]
@@ -53,47 +54,55 @@ namespace MailKitSimplified.Receiver.Tests
         {
             using var imapReceiver = ImapReceiver.Create(_localhost, It.IsAny<NetworkCredential>());
             Assert.NotNull(imapReceiver);
+            Assert.IsAssignableFrom<IImapReceiver>(imapReceiver);
         }
 
         [Fact]
-        public async Task ConnectImapClientAsync_VerifyNotNull()
+        public async Task ConnectImapClientAsync_VerifyType()
         {
             // Act
             var imapReceiver = await _imapReceiver.ConnectImapClientAsync(It.IsAny<CancellationToken>());
             // Assert
             Assert.NotNull(imapReceiver);
+            Assert.IsAssignableFrom<IImapClient>(imapReceiver);
             _imapClientMock.Verify(_ => _.ConnectAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<SecureSocketOptions>(), It.IsAny<CancellationToken>()), Times.Once);
             _imapClientMock.Verify(_ => _.AuthenticateAsync(It.IsAny<ICredentials>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
-        public async Task ConnectMailFolderAsync_VerifyNotNull()
+        public async Task ConnectMailFolderAsync_VerifyType()
         {
             // Act
             var mailFolder = await _imapReceiver.ConnectMailFolderAsync(_inbox, It.IsAny<CancellationToken>());
             // Assert
             Assert.NotNull(mailFolder);
+            Assert.IsAssignableFrom<IMailFolder>(mailFolder);
         }
 
         [Fact]
-        public async Task ConnectMailFolderClientAsync_VerifyNotNull()
+        public async Task ConnectMailFolderClientAsync_VerifyType()
         {
             // Act
-            var mailFolder = await _imapReceiver.ConnectMailFolderClientAsync(_inbox, It.IsAny<bool>(), It.IsAny<CancellationToken>());
+            var mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(_inbox, It.IsAny<CancellationToken>());
             // Assert
-            Assert.NotNull(mailFolder);
+            Assert.NotNull(mailFolderClient);
+            Assert.IsAssignableFrom<IMailFolderClient>(mailFolderClient);
         }
 
         [Fact]
-        public void ReadMail_WithImapReceiver_VerifyNotNull()
+        public void ReadMail_WithImapReceiver_VerifyType()
         {
-            Assert.NotNull(_imapReceiver.ReadMail);
+            var mailFolderReader = _imapReceiver.ReadMail;
+            Assert.NotNull(mailFolderReader);
+            Assert.IsAssignableFrom<IMailFolderReader>(mailFolderReader);
         }
 
         [Fact]
-        public void ReadFrom_WithAnyMailFolderName_VerifyNotNull()
+        public void ReadFrom_WithAnyMailFolderName_VerifyType()
         {
-            Assert.NotNull(_imapReceiver.ReadFrom("INBOX"));
+            var mailFolderReader = _imapReceiver.ReadFrom("INBOX");
+            Assert.NotNull(mailFolderReader);
+            Assert.IsAssignableFrom<IMailFolderReader>(mailFolderReader);
         }
 
         [Fact]
@@ -110,14 +119,15 @@ namespace MailKitSimplified.Receiver.Tests
             var mailFolderNames = await _imapReceiver.GetMailFolderNamesAsync(It.IsAny<CancellationToken>());
             // Assert
             Assert.NotNull(mailFolderNames);
+            Assert.IsAssignableFrom<IList<string>>(mailFolderNames);
             _imapClientMock.Verify(_ => _.GetFoldersAsync(It.IsAny<FolderNamespace>(), It.IsAny<StatusItems>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
 
         [Fact]
         public void ToString_Verify()
         {
-            var serialised = _imapReceiver.ToString();
-            Assert.Contains(_localhost, serialised);
+            var description = _imapReceiver.ToString();
+            Assert.Contains(_localhost, description);
         }
 
         //[Theory]

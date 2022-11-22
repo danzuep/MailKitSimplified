@@ -17,14 +17,13 @@ namespace MailKitSimplified.Sender.Tests
     public class SmtpSenderUnitTests
     {
         private const string _localhost = "localhost";
-        private readonly Mock<ISmtpClient> _smtpSenderMock;
+        private readonly Mock<ISmtpClient> _smtpSenderMock = new();
         private readonly ISmtpSender _smtpSender;
 
         public SmtpSenderUnitTests()
         {
             var loggerMock = new Mock<ILogger<SmtpSender>>();
             var protocolLoggerMock = new Mock<IProtocolLogger>();
-            _smtpSenderMock = new Mock<ISmtpClient>();
             _smtpSenderMock.Setup(_ => _.ConnectAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<SecureSocketOptions>(), It.IsAny<CancellationToken>())).Verifiable();
             _smtpSenderMock.Setup(_ => _.AuthenticateAsync(It.IsAny<ICredentials>(), It.IsAny<CancellationToken>())).Verifiable();
             _smtpSenderMock.Setup(_ => _.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))

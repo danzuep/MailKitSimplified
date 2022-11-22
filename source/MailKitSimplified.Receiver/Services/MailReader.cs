@@ -1,7 +1,6 @@
 ﻿using MimeKit;
 using MailKit;
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -11,17 +10,17 @@ namespace MailKitSimplified.Receiver.Services
 {
     public class MailReader : IMailReader
     {
-        public static readonly MessageSummaryItems ItemFilter =
+        public static readonly MessageSummaryItems CoreMessageItems =
             MessageSummaryItems.Envelope |
             MessageSummaryItems.BodyStructure |
             MessageSummaryItems.UniqueId;
 
-        private string _mailFolderName = null;
+        protected string _mailFolderName = null;
         private int _skip = 0;
         private bool _continueSkip = false;
         private int _take = 250;
 
-        private readonly IImapReceiver _imapReceiver;
+        protected readonly IImapReceiver _imapReceiver;
 
         public MailReader(IImapReceiver imapReceiver)
         {
@@ -35,7 +34,7 @@ namespace MailKitSimplified.Receiver.Services
             return emailReader;
         }
 
-        public MailReader ReadFrom(string mailFolderName)
+        private MailReader ReadFrom(string mailFolderName)
         {
             if (string.IsNullOrWhiteSpace(mailFolderName))
                 throw new ArgumentNullException(nameof(mailFolderName));
@@ -81,7 +80,7 @@ namespace MailKitSimplified.Receiver.Services
         }
 
         public async ValueTask<IList<IMessageSummary>> GetMessageSummariesAsync(CancellationToken cancellationToken = default) =>
-            await GetMessageSummariesAsync(ItemFilter, cancellationToken).ConfigureAwait(false);
+            await GetMessageSummariesAsync(CoreMessageItems, cancellationToken).ConfigureAwait(false);
 
         public async ValueTask<IList<MimeMessage>> GetMimeMessagesAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
         {

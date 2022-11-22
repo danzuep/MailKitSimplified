@@ -12,14 +12,14 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <summary>
         /// Read emails fluently from the default mail folder.
         /// </summary>
-        IMailReader ReadMail { get; }
+        IMailFolderReader ReadMail { get; }
 
         /// <summary>
         /// Connect to a mail folder and read emails fluently.
         /// </summary>
         /// <param name="mailFolderName">Mail folder to read from.</param>
         /// <returns><see cref="IMailReader"/>.</returns>
-        IMailReader ReadFrom(string mailFolderName);
+        IMailFolderReader ReadFrom(string mailFolderName);
 
         /// <summary>
         /// Get a list of the names of all the folders connected to this account.
@@ -47,9 +47,8 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// Connect an <see cref="IMailFolderClient"/> to the mail folder.
         /// </summary>
         /// <param name="mailFolderName">Mail folder name.</param>
-        /// <param name="enableWrite">Optionally enable ReadWrite access.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <returns><see cref="IMailFolderClient"/>.</returns>
-        ValueTask<IMailFolderClient> ConnectMailFolderClientAsync(string mailFolderName = null, bool enableWrite = false, CancellationToken cancellationToken = default);
+        ValueTask<IMailFolderClient> ConnectMailFolderClientAsync(string mailFolderName = null, CancellationToken cancellationToken = default);
     }
 }

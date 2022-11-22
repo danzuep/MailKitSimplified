@@ -17,6 +17,8 @@ namespace MailKitSimplified.Receiver
             var configSection = configuration.GetRequiredSection(sectionName);
             services.Configure<EmailReceiverOptions>(configSection);
             services.AddTransient<IMailReader, MailReader>();
+            services.AddTransient<IMailFolderClient, MailFolderClient>();
+            services.AddTransient<IMailFolderReader, MailFolderReader>();
             services.AddTransient<IProtocolLogger, MailKitProtocolLogger>();
             services.AddTransient<IImapReceiver, ImapReceiver>();
             return services;

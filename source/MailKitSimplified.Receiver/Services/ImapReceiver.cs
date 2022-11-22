@@ -58,11 +58,11 @@ namespace MailKitSimplified.Receiver.Services
             return receiver;
         }
 
-        public IMailReader ReadMail => MailReader.Create(this, _receiverOptions.MailFolderName);
+        public IMailFolderReader ReadMail => MailFolderReader.Create(this, _receiverOptions.MailFolderName);
 
-        public IMailReader ReadFrom(string mailFolderName)
+        public IMailFolderReader ReadFrom(string mailFolderName)
         {
-            var mailFolderReader = MailReader.Create(this, mailFolderName);
+            var mailFolderReader = MailFolderReader.Create(this, mailFolderName);
             return mailFolderReader;
         }
 
@@ -100,11 +100,10 @@ namespace MailKitSimplified.Receiver.Services
             return mailFolder;
         }
 
-        public async ValueTask<IMailFolderClient> ConnectMailFolderClientAsync(string mailFolderName = null, bool enableWrite = false, CancellationToken cancellationToken = default)
+        public async ValueTask<IMailFolderClient> ConnectMailFolderClientAsync(string mailFolderName = null, CancellationToken cancellationToken = default)
         {
             var mailFolder = await ConnectMailFolderAsync(mailFolderName, cancellationToken).ConfigureAwait(false);
             var mailFolderClient = new MailFolderClient(mailFolder);
-            await mailFolderClient.ConnectAsync(enableWrite, cancellationToken).ConfigureAwait(false);
             return mailFolderClient;
         }
 

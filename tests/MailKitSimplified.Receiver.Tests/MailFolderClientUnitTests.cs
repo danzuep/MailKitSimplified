@@ -5,7 +5,7 @@ namespace MailKitSimplified.Receiver.Tests
 {
     public class MailFolderClientUnitTests
     {
-        private readonly Mock<IMailFolder> _mailFolderMock = new Mock<IMailFolder>();
+        private readonly Mock<IMailFolder> _mailFolderMock = new();
         private readonly IMailFolderClient _mailFolderClient;
 
         public MailFolderClientUnitTests()
@@ -17,20 +17,27 @@ namespace MailKitSimplified.Receiver.Tests
         }
 
         [Fact]
-        public void UsingMailFolderClient_ReturnsDisposableMailFolderClient()
+        public void Dispose_UsingMailFolderClient()
         {
             using var mailFolderClient = new MailFolderClient(_mailFolderMock.Object);
+            mailFolderClient.Dispose();
             Assert.NotNull(mailFolderClient);
+            Assert.IsAssignableFrom<IMailFolderClient>(mailFolderClient);
         }
 
         [Fact]
-        public async Task ToStringDisposeAsync_ReturnsValidDescriptionAsync()
+        public async Task DisposeAsync_WithMailFolderClient()
         {
-            // Arrange
-            var mailFolderClient = new MailFolderClient(_mailFolderMock.Object);
-            // Act
-            var description = mailFolderClient.ToString();
+            using var mailFolderClient = new MailFolderClient(_mailFolderMock.Object);
             await mailFolderClient.DisposeAsync();
+            Assert.IsAssignableFrom<IMailFolderClient>(mailFolderClient);
+        }
+
+        [Fact]
+        public void ToString_VerifyMailFolderClientToStringCalled()
+        {
+            // Act
+            var description = _mailFolderClient.ToString();
             // Assert
             Assert.False(string.IsNullOrWhiteSpace(description));
             Assert.DoesNotContain(nameof(MailFolderClient), description);
@@ -43,6 +50,7 @@ namespace MailKitSimplified.Receiver.Tests
             var mailFolder = await _mailFolderClient.ConnectAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>());
             // Assert
             Assert.NotNull(mailFolder);
+            Assert.IsAssignableFrom<IMailFolder>(mailFolder);
         }
 
         [Fact]
@@ -54,6 +62,7 @@ namespace MailKitSimplified.Receiver.Tests
             var mailFolder = await _mailFolderClient.ConnectAsync(false, CancellationToken.None);
             // Assert
             Assert.NotNull(mailFolder);
+            Assert.IsAssignableFrom<IMailFolder>(mailFolder);
         }
 
         [Fact]
@@ -65,6 +74,7 @@ namespace MailKitSimplified.Receiver.Tests
             var mailFolder = await _mailFolderClient.ConnectAsync(true, CancellationToken.None);
             // Assert
             Assert.NotNull(mailFolder);
+            Assert.IsAssignableFrom<IMailFolder>(mailFolder);
         }
     }
 }

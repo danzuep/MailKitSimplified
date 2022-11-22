@@ -36,6 +36,6 @@ var messageSummaries = await mailFolderReader.GetMessageSummariesAsync(MessageSu
 //logger.LogDebug("Email(s) received: {fields}", messageSummaries.FirstOrDefault()?.Fields);
 logger.LogDebug("Email(s) received: {ids}", messageSummaries.Select(m => m.UniqueId).ToEnumeratedString());
 
-var mimeMessages = await imapReceiver.ReadMail.Skip(5).Take(2).GetMimeMessagesAsync();
+var mimeMessages = await imapReceiver.ReadMail.Skip(0).Take(1).GetMimeMessagesAsync();
 logger.LogDebug("Email(s) received: {ids}", mimeMessages.Select(m => m.MessageId).ToEnumeratedString());
 

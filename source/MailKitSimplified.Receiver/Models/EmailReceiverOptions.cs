@@ -31,6 +31,6 @@ namespace MailKitSimplified.Receiver.Models
                 MailFolderName = mailFolderName;
         }
 
-        public override string ToString() => $"{ImapHost}:{ImapPort}";
+        public override string ToString() => $"{ImapHost}:{ImapPort} {MailFolderName}";
     }
 }
