@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.OpenApi.Models;
 using MailKitSimplified.Sender;
 using MailKitSimplified.Receiver;
+using WebApiExample.Helpers;
 
 namespace WebApiExample
 {
@@ -65,6 +66,9 @@ namespace WebApiExample
             // Add custom services
             services.AddMailKitSimplifiedEmailSender(configuration);
             services.AddMailKitSimplifiedEmailReceiver(configuration);
+            services.AddHttpClient("MyApiService")
+                .AddPolicyHandler(HttpPolicies.ExponentialRetry)
+                .AddPolicyHandler(HttpPolicies.CircuitBreaker);
 
             services.AddControllers()
                 .AddJsonOptions(o =>
