@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace MailKitSimplified.Sender.Abstractions
 {
+    /// <summary>
+    /// Sends MailKit <see cref="MimeMessage"/> emails.
+    /// </summary>
     public interface ISmtpSender : IDisposable
     {
         /// <summary>

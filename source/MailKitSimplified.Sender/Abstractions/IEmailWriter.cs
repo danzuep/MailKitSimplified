@@ -8,10 +8,11 @@ using System.Collections.Generic;
 namespace MailKitSimplified.Sender.Abstractions
 {
     /// <summary>
-    /// <see href="https://www.rfc-editor.org/rfc/rfc8621">RFC 8621 (2019) JSON Meta Application Protocol</see>
-    /// <seealso href="https://www.rfc-editor.org/rfc/rfc5322">RFC 5322 (2008) Internet Message Format</seealso>
-    /// <seealso href="https://www.rfc-editor.org/rfc/rfc2822">RFC 2822 (2001) Internet Message Format</seealso>
-    /// <seealso href="https://www.rfc-editor.org/rfc/rfc822">RFC 822 (1982) ARPA Internet Text Messages</seealso>
+    /// Writes MailKit <see cref="MimeKit.MimeMessage"/> emails based on the RFC standards:
+    /// <seealso href="https://www.rfc-editor.org/rfc/rfc8621">RFC 8621 (2019) JSON Meta Application Protocol</seealso>,
+    /// <seealso href="https://www.rfc-editor.org/rfc/rfc5322">RFC 5322 (2008) Internet Message Format</seealso>,
+    /// <seealso href="https://www.rfc-editor.org/rfc/rfc2822">RFC 2822 (2001) Internet Message Format</seealso>,
+    /// <seealso href="https://www.rfc-editor.org/rfc/rfc822">RFC 822 (1982) ARPA Internet Text Messages</seealso>.
     /// </summary>
     public interface IEmailWriter
     {

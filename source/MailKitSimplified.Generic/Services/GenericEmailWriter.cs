@@ -12,6 +12,8 @@ namespace MailKitSimplified.Core.Services
 
         private IGenericEmail _email = new GenericEmail();
 
+        private IEmailContact _defaultFrom = null;
+
 
         private readonly IGenericEmailSender _emailSender;
 
@@ -26,25 +28,32 @@ namespace MailKitSimplified.Core.Services
             return this;
         }
 
-        public IGenericEmailWriter From(string emailAddress, string name = "")
+        public IGenericEmailWriter DefaultFrom(string emailAddress, string name = null)
+        {
+            _defaultFrom = EmailContact.Create(emailAddress, name);
+            _email.From.Add(_defaultFrom);
+            return this;
+        }
+
+        public IGenericEmailWriter From(string emailAddress, string name = null)
         {
             _email.From.Add(EmailContact.Create(emailAddress, name));
             return this;
         }
 
-        public IGenericEmailWriter To(string emailAddress, string name = "")
+        public IGenericEmailWriter To(string emailAddress, string name = null)
         {
             _email.To.Add(EmailContact.Create(emailAddress, name));
             return this;
         }
 
-        public IGenericEmailWriter Cc(string emailAddress, string name = "")
+        public IGenericEmailWriter Cc(string emailAddress, string name = null)
         {
             _email.Cc.Add(EmailContact.Create(emailAddress, name));
             return this;
         }
 
-        public IGenericEmailWriter Bcc(string emailAddress, string name = "")
+        public IGenericEmailWriter Bcc(string emailAddress, string name = null)
         {
             _email.Bcc.Add(EmailContact.Create(emailAddress, name));
             return this;
@@ -96,12 +105,16 @@ namespace MailKitSimplified.Core.Services
         {
             await _emailSender.SendAsync(_email, cancellationToken).ConfigureAwait(false);
             _email = new GenericEmail();
+            if (_defaultFrom != null)
+                _email.From.Add(_defaultFrom);
         }
 
         public async Task<bool> TrySendAsync(CancellationToken cancellationToken = default)
         {
             bool isSent = await _emailSender.TrySendAsync(_email, cancellationToken).ConfigureAwait(false);
             _email = new GenericEmail();
+            if (_defaultFrom != null)
+                _email.From.Add(_defaultFrom);
             return isSent;
         }
     }

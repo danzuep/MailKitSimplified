@@ -1,4 +1,5 @@
 ﻿using MimeKit;
+using MimeKit.IO;
 using MimeKit.Text;
 using MimeKit.Utils;
 using MailKit;
@@ -14,13 +15,13 @@ using Microsoft.Extensions.Logging;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Helpers;
 using MailKitSimplified.Sender.Extensions;
-
 namespace MailKitSimplified.Sender.Services
 {
     public class EmailWriter : IEmailWriter
     {
         public MimeMessage MimeMessage => _mimeMessage;
         private MimeMessage _mimeMessage = new MimeMessage();
+        private MailboxAddress _defaultFrom;
 
         private readonly ILogger _logger;
         private readonly ISmtpSender _emailClient;
@@ -31,6 +32,13 @@ namespace MailKitSimplified.Sender.Services
             _logger = logger ?? NullLogger<EmailWriter>.Instance;
             _emailClient = emailClient ?? throw new ArgumentNullException(nameof(emailClient));
             _fileSystem = fileSystem ?? new FileSystem();
+        }
+
+        public IEmailWriter DefaultFrom(string name, string address)
+        {
+            _defaultFrom = new MailboxAddress(name, address);
+            _mimeMessage.From.Add(_defaultFrom);
+            return this;
         }
 
         public IEmailWriter From(string name, string address)
@@ -177,7 +185,7 @@ namespace MailKitSimplified.Sender.Services
         {
             if (fileSystem == null)
                 fileSystem = new FileSystem();
-            var memoryStream = new MemoryStream();
+            var memoryStream = new MemoryBlockStream();
             using (var stream = fileSystem.File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 stream.CopyTo(memoryStream);
             string fileName = fileSystem.Path.GetFileName(filePath);
@@ -286,6 +294,8 @@ namespace MailKitSimplified.Sender.Services
         {
             await _emailClient.SendAsync(_mimeMessage, cancellationToken, transferProgress).ConfigureAwait(false);
             _mimeMessage = new MimeMessage();
+            if (_defaultFrom != null)
+                _mimeMessage.From.Add(_defaultFrom);
         }
 
         public bool TrySend(CancellationToken cancellationToken = default) =>
@@ -295,6 +305,8 @@ namespace MailKitSimplified.Sender.Services
         {
             bool isSent = await _emailClient.TrySendAsync(_mimeMessage, cancellationToken, transferProgress).ConfigureAwait(false);
             _mimeMessage = new MimeMessage();
+            if (_defaultFrom != null)
+                _mimeMessage.From.Add(_defaultFrom);
             return isSent;
         }
 

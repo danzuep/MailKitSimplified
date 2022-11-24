@@ -15,7 +15,7 @@ var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").B
 
 var emailSenderOptions = configuration.GetRequiredSection(EmailSenderOptions.SectionName).Get<EmailSenderOptions>();
 using var smtpSender = SmtpSender.Create(emailSenderOptions, loggerFactory.CreateLogger<SmtpSender>()); //SmtpSender.Create("localhost");
-var emailWriter = new EmailWriter(smtpSender, loggerFactory.CreateLogger<EmailWriter>())
+var writtenEmail = new EmailWriter(smtpSender, loggerFactory.CreateLogger<EmailWriter>())
     .From("my.name@example.com")
     .To("YourName@example.com")
     .Subject("Hello World")
@@ -23,11 +23,10 @@ var emailWriter = new EmailWriter(smtpSender, loggerFactory.CreateLogger<EmailWr
     .BodyHtml("Optional text/html content.<br/>")
     .Attach("appsettings.json")
     .TryAttach(@"Logs\ImapClient.txt");
-var copy = emailWriter.Copy();
-bool isSent = await emailWriter.TrySendAsync();
+bool isSent = await writtenEmail.Copy().TrySendAsync();
 logger.LogInformation("Email 1 {result}.", isSent ? "sent" : "failed to send");
 
-isSent = await copy.To("new@io").TrySendAsync();
+isSent = await writtenEmail.Copy().To("new@io").TrySendAsync();
 logger.LogInformation("Email 2 {result}.", isSent ? "sent" : "failed to send");
 
 var emailReceiverOptions = Options.Create(configuration.GetRequiredSection(EmailReceiverOptions.SectionName).Get<EmailReceiverOptions>()!);
