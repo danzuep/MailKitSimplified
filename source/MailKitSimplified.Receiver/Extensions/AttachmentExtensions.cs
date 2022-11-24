@@ -13,11 +13,6 @@ namespace MailKitSimplified.Receiver.Extensions
     [ExcludeFromCodeCoverage]
     public static class AttachmentExtensions
     {
-        public static IEnumerable<string> GetAttachmentNames(this IEnumerable<MimeEntity> mimeEntities)
-        {
-            return mimeEntities?.Select(a => a.GetAttachmentName()) ?? Array.Empty<string>();
-        }
-
         public static string GetAttachmentName(this MimeEntity mimeEntity)
         {
             string fileName = string.Empty;
@@ -35,6 +30,9 @@ namespace MailKitSimplified.Receiver.Extensions
                 fileName = mimeEntity?.ContentDisposition?.FileName ?? "";
             return fileName ?? "";
         }
+
+        public static IEnumerable<string> GetAttachmentNames(this IEnumerable<MimeEntity> mimeEntities) =>
+            mimeEntities?.Select(a => a.GetAttachmentName()) ?? Array.Empty<string>();
 
         public static IEnumerable<BodyPartBasic> GetMailAttachmentDetails(this IMessageSummary message, IList<string> suffix, bool getAllNonText = false)
         {

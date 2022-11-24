@@ -143,7 +143,10 @@ namespace MailKitSimplified.Sender.Services
                 HtmlBody = mimeMessage.HtmlBody
             };
             var linkedResources = mimeMessage.BodyParts
-                .Where(attachment => !attachment.IsAttachment);
+                .Where(part => !part.IsAttachment &&
+                    part.ContentId != null &&
+                    mimeMessage.HtmlBody != null &&
+                    mimeMessage.HtmlBody.Contains(part.ContentId));
             foreach (var resource in linkedResources)
                 builder.LinkedResources.Add(resource);
             foreach (var attachment in mimeMessage.Attachments)
@@ -153,24 +156,20 @@ namespace MailKitSimplified.Sender.Services
 
         public static MimePart GetMimePart(Stream stream, string fileName, string contentType = null, string contentId = null)
         {
-            MimePart mimePart = null;
-            if (stream != null && stream.Length > 0)
+            stream.Position = 0; // reset stream position ready to read
+            if (string.IsNullOrWhiteSpace(contentType))
+                contentType = MimeTypes.GetMimeType(fileName);
+            if (string.IsNullOrWhiteSpace(contentId))
+                contentId = MimeUtils.GenerateMessageId();
+            var attachment = ContentDisposition.Attachment;
+            var mimePart = new MimePart(contentType)
             {
-                stream.Position = 0; // reset stream position ready to read
-                if (string.IsNullOrWhiteSpace(contentType))
-                    contentType = MimeTypes.GetMimeType(fileName);
-                if (string.IsNullOrWhiteSpace(contentId))
-                    contentId = MimeUtils.GenerateMessageId();
-                var attachment = ContentDisposition.Attachment;
-                mimePart = new MimePart(contentType)
-                {
-                    Content = new MimeContent(stream),
-                    ContentTransferEncoding = ContentEncoding.Base64,
-                    ContentDisposition = new ContentDisposition(attachment),
-                    ContentId = contentId,
-                    FileName = fileName ?? string.Empty,
-                };
-            }
+                Content = new MimeContent(stream),
+                ContentTransferEncoding = ContentEncoding.Base64,
+                ContentDisposition = new ContentDisposition(attachment),
+                ContentId = contentId,
+                FileName = fileName ?? string.Empty,
+            };
             return mimePart;
         }
 
@@ -178,15 +177,11 @@ namespace MailKitSimplified.Sender.Services
         {
             if (fileSystem == null)
                 fileSystem = new FileSystem();
-            MimePart mimePart = null;
-            if (!string.IsNullOrWhiteSpace(filePath) && fileSystem.File.Exists(filePath))
-            {
-                using (var stream = fileSystem.File.OpenRead(filePath))
-                {
-                    string fileName = fileSystem.Path.GetFileName(filePath);
-                    mimePart = GetMimePart(stream, fileName);
-                }
-            }
+            var memoryStream = new MemoryStream();
+            using (var stream = fileSystem.File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                stream.CopyTo(memoryStream);
+            string fileName = fileSystem.Path.GetFileName(filePath);
+            var mimePart = GetMimePart(memoryStream, fileName);
             return mimePart;
         }
 
@@ -198,8 +193,7 @@ namespace MailKitSimplified.Sender.Services
                 foreach (var filePath in filePaths)
                 {
                     var mimeEntity = GetMimePart(filePath, _fileSystem);
-                    if (mimeEntity != null)
-                        mimeEntities.Add(mimeEntity);
+                    mimeEntities.Add(mimeEntity);
                 }
                 Attach(mimeEntities);
             }
@@ -251,7 +245,11 @@ namespace MailKitSimplified.Sender.Services
                 {
                     try
                     {
-                        builder.Attachments.Add(filePath);
+                        if (!string.IsNullOrWhiteSpace(filePath) &&
+                            _fileSystem.File.Exists(filePath))
+                            builder.Attachments.Add(filePath);
+                        else
+                            _logger.LogWarning($"Failed to load attachment: {filePath}");
                     }
                     catch (Exception ex)
                     {
@@ -273,6 +271,12 @@ namespace MailKitSimplified.Sender.Services
         {
             _mimeMessage.Priority = priority;
             return this;
+        }
+
+        public IEmailWriter Copy()
+        {
+            var clone = MemberwiseClone() as IEmailWriter;
+            return clone;
         }
 
         public void Send(CancellationToken cancellationToken = default) =>
@@ -299,6 +303,7 @@ namespace MailKitSimplified.Sender.Services
             string envelope = string.Empty;
             using (var text = new StringWriter())
             {
+                text.WriteLine("Message-Id: <{0}>", _mimeMessage.MessageId);
                 text.WriteLine("Date: {0}", _mimeMessage.Date);
                 if (_mimeMessage.From.Count > 0)
                     text.WriteLine("From: {0}", string.Join("; ", _mimeMessage.From.Mailboxes));
@@ -309,12 +314,11 @@ namespace MailKitSimplified.Sender.Services
                 if (_mimeMessage.Bcc.Count > 0)
                     text.WriteLine("Bcc: {0}", string.Join("; ", _mimeMessage.Bcc.Mailboxes));
                 text.WriteLine("Subject: {0}", _mimeMessage.Subject);
-                text.WriteLine("Message-Id: <{0}>", _mimeMessage.MessageId);
                 var attachmentCount = _mimeMessage.Attachments.Count();
                 if (attachmentCount > 0)
-                    text.WriteLine("{0} Attachment{1}: {2}",
+                    text.WriteLine("{0} Attachment{1}: '{2}'",
                         attachmentCount, attachmentCount == 1 ? "" : "s",
-                        string.Join("; ", _mimeMessage.Attachments.GetAttachmentNames()));
+                        string.Join("', '", _mimeMessage.Attachments.GetAttachmentNames()));
                 envelope = text.ToString();
             }
             return envelope;

@@ -62,19 +62,20 @@ namespace MailKitSimplified.Core.Services
             string envelope = string.Empty;
             using (var text = new StringWriter())
             {
-                text.WriteLine("From: {0}", string.Join(";", From));
+                text.WriteLine("Date: {0}", DateTimeOffset.Now);
+                if (From.Count > 0)
+                    text.WriteLine("From: {0}", string.Join("; ", From));
                 if (To.Count > 0)
-                    text.WriteLine("To: {0}", string.Join(";", To));
+                    text.WriteLine("To: {0}", string.Join("; ", To));
                 if (Cc.Count > 0)
-                    text.WriteLine("Cc: {0}", string.Join(";", Cc));
+                    text.WriteLine("Cc: {0}", string.Join("; ", Cc));
                 if (Bcc.Count > 0)
-                    text.WriteLine("Bcc: {0}", string.Join(";", Bcc));
-                if (AttachmentCount > 0)
-                    text.WriteLine("{0} Attachment{1}: {2}",
-                        AttachmentCount,
-                        AttachmentCount == 1 ? "" : "s",
-                        string.Join(";", AttachmentFileNames));
+                    text.WriteLine("Bcc: {0}", string.Join("; ", Bcc));
                 text.WriteLine("Subject: {0}", Subject);
+                if (AttachmentCount > 0)
+                    text.WriteLine("{0} Attachment{1}: '{2}'",
+                        AttachmentCount, AttachmentCount == 1 ? "" : "s",
+                        string.Join("', '", AttachmentFileNames));
                 envelope = text.ToString();
             }
             return envelope;

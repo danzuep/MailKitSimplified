@@ -191,9 +191,10 @@ namespace MailKitSimplified.Receiver.Services
             string envelope = string.Empty;
             using (var text = new StringWriter())
             {
-                text.WriteLine("'{0}' {1}. ", FolderName, FolderIndex);
-                text.WriteLine("Sent: {0}.", Sent);
-                text.WriteLine("Received: {0}.", DateTime.Now);
+                text.WriteLine("'{0}' {1}", FolderName, FolderIndex);
+                text.WriteLine("Message-Id: <{0}>", MessageId);
+                text.WriteLine("Sent: {0}", Sent);
+                text.WriteLine("Received: {0}", DateTime.Now);
                 if (MimeMessage.From.Count > 0)
                     text.WriteLine("From: {0}", string.Join("; ", From));
                 if (MimeMessage.To.Count > 0)
@@ -203,11 +204,10 @@ namespace MailKitSimplified.Receiver.Services
                 if (MimeMessage.Bcc.Count > 0)
                     text.WriteLine("Bcc: {0}", string.Join("; ", Bcc));
                 text.WriteLine("Subject: {0}", Subject);
-                text.WriteLine("Message-Id: <{0}>", MessageId);
                 if (AttachmentCount > 0)
-                    text.WriteLine("{0} Attachment{1}: {2}",
+                    text.WriteLine("{0} Attachment{1}: '{2}'",
                         AttachmentCount, AttachmentCount == 1 ? "" : "s",
-                        string.Join("; ", AttachmentNames));
+                        string.Join("', '", AttachmentNames));
                 envelope = text.ToString();
             }
             return envelope;

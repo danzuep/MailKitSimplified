@@ -27,9 +27,9 @@ namespace MailKitSimplified.Receiver.Services
             _logger = logger ?? NullLogger<ImapReceiver>.Instance;
             _receiverOptions = receiverOptions.Value;
             if (string.IsNullOrWhiteSpace(_receiverOptions.ImapHost))
-                throw new NullReferenceException(nameof(EmailReceiverOptions.ImapHost));
+                throw new NullReferenceException($"{nameof(EmailReceiverOptions.ImapHost)} is null.");
             if (_receiverOptions.ImapCredential == null)
-                _logger.LogWarning($"{nameof(EmailReceiverOptions.ImapCredential)} is null.");
+                throw new NullReferenceException($"{nameof(EmailReceiverOptions.ImapCredential)} is null.");
             var imapLogger = protocolLogger ?? new MailKitProtocolLogger();
             if (imapLogger is MailKitProtocolLogger imapLog)
                 imapLog.SetLogFilePath(_receiverOptions.ProtocolLog);
@@ -74,7 +74,7 @@ namespace MailKitSimplified.Receiver.Services
                 await _imapClient.ConnectAsync(_receiverOptions.ImapHost, _receiverOptions.ImapPort, SecureSocketOptions.Auto, cancellationToken).ConfigureAwait(false);
                 if (_imapClient.Capabilities.HasFlag(ImapCapabilities.Compress))
                     await _imapClient.CompressAsync(cancellationToken).ConfigureAwait(false);
-                _logger.LogTrace($"IMAP client connected to {_receiverOptions.ImapHost}");
+                _logger.LogTrace($"IMAP client connected to {_receiverOptions.ImapHost}.");
             }
             if (!_imapClient.IsAuthenticated)
             {
@@ -84,7 +84,7 @@ namespace MailKitSimplified.Receiver.Services
                     await _imapClient.AuthenticateAsync(ntlm, cancellationToken).ConfigureAwait(false);
                 else
                     await _imapClient.AuthenticateAsync(_receiverOptions.ImapCredential, cancellationToken).ConfigureAwait(false);
-                _logger.LogTrace($"IMAP client authenticated with {_receiverOptions.ImapHost}");
+                _logger.LogTrace($"IMAP client authenticated with {_receiverOptions.ImapHost}.");
             }
             return _imapClient;
         }
@@ -94,7 +94,7 @@ namespace MailKitSimplified.Receiver.Services
         {
             _ = await ConnectImapClientAsync(cancellationToken).ConfigureAwait(false);
             var targetMailFolder = mailFolderName ?? _receiverOptions.MailFolderName;
-            _logger.LogTrace($"Target mail folder: '{targetMailFolder}'");
+            _logger.LogTrace($"Target mail folder: '{targetMailFolder}'.");
             var mailFolder = string.IsNullOrWhiteSpace(targetMailFolder) || targetMailFolder.Equals("INBOX", StringComparison.OrdinalIgnoreCase) ?
                 _imapClient.Inbox : await _imapClient.GetFolderAsync(targetMailFolder, cancellationToken).ConfigureAwait(false);
             return mailFolder;
@@ -118,22 +118,22 @@ namespace MailKitSimplified.Receiver.Services
                 var inboxSubfolders = _imapClient.Inbox.GetSubfolders().Select(f => f.FullName);
                 mailFolderNames.AddRange(inboxSubfolders);
                 mailFolderNames.AddRange(subfolders);
-                _logger.LogDebug($"{inboxSubfolders.Count()} Inbox folders: {inboxSubfolders.ToEnumeratedString()}");
-                _logger.LogDebug($"{subfolders.Count()} personal folders: {subfolders.ToEnumeratedString()}");
+                _logger.LogDebug($"{inboxSubfolders.Count()} Inbox folders: {inboxSubfolders.ToEnumeratedString()}.");
+                _logger.LogDebug($"{subfolders.Count()} personal folders: {subfolders.ToEnumeratedString()}.");
             }
             if (_imapClient.SharedNamespaces.Count > 0)
             {
                 var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.SharedNamespaces[0], cancellationToken: cancellationToken).ConfigureAwait(false);
                 var subfolders = rootFolder.SelectMany(rf => rf.GetSubfolders().Select(sf => sf.Name));
                 mailFolderNames.AddRange(subfolders);
-                _logger.LogDebug($"{subfolders.Count()} shared folders: {subfolders.ToEnumeratedString()}");
+                _logger.LogDebug($"{subfolders.Count()} shared folders: {subfolders.ToEnumeratedString()}.");
             }
             if (_imapClient.OtherNamespaces.Count > 0)
             {
                 var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.OtherNamespaces[0], cancellationToken: cancellationToken).ConfigureAwait(false);
                 var subfolders = rootFolder.SelectMany(rf => rf.GetSubfolders().Select(sf => sf.Name));
                 mailFolderNames.AddRange(subfolders);
-                _logger.LogDebug($"{subfolders.Count()} other folders: {subfolders.ToEnumeratedString()}");
+                _logger.LogDebug($"{subfolders.Count()} other folders: {subfolders.ToEnumeratedString()}.");
             }
             return mailFolderNames;
         }

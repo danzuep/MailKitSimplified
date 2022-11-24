@@ -2,6 +2,7 @@
 using MailKit;
 using MailKit.Net.Smtp;
 using System;
+using System.IO;
 using System.Net;
 using System.Linq;
 using System.Threading;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Sender.Abstractions;
+using MailKitSimplified.Sender.Extensions;
 using MailKitSimplified.Sender.Models;
 
 namespace MailKitSimplified.Sender.Services
@@ -136,27 +138,54 @@ namespace MailKitSimplified.Sender.Services
             if (!_smtpClient.IsConnected && !string.IsNullOrEmpty(_senderOptions.SmtpHost))
             {
                 await _smtpClient.ConnectAsync(_senderOptions.SmtpHost, _senderOptions.SmtpPort, cancellationToken: cancellationToken).ConfigureAwait(false);
-                _logger.LogTrace($"SMTP client connected to {_senderOptions.SmtpHost}");
+                _logger.LogTrace($"SMTP client connected to {_senderOptions.SmtpHost}.");
             }
             if (_senderOptions.SmtpCredential != null && !_smtpClient.IsAuthenticated) // && _senderOptions.SmtpCredential != default
             {
                 await _smtpClient.AuthenticateAsync(_senderOptions.SmtpCredential, cancellationToken).ConfigureAwait(false);
-                _logger.LogTrace($"SMTP client authenticated with {_senderOptions.SmtpHost}");
+                _logger.LogTrace($"SMTP client authenticated with {_senderOptions.SmtpHost}.");
             }
             return _smtpClient;
+        }
+
+        public static string GetEnvelope(MimeMessage mimeMessage, bool includeTextBody = false)
+        {
+            string envelope = string.Empty;
+            using (var text = new StringWriter())
+            {
+                text.Write("Message-Id: {0}. ", mimeMessage.MessageId);
+                text.Write("Date: {0}. ", mimeMessage.Date);
+                if (mimeMessage.From.Count > 0)
+                    text.Write("From: {0}. ", string.Join("; ", mimeMessage.From));
+                if (mimeMessage.To.Count > 0)
+                    text.Write("To: {0}. ", string.Join("; ", mimeMessage.To));
+                if (mimeMessage.Cc.Count > 0)
+                    text.Write("Cc: {0}. ", string.Join("; ", mimeMessage.Cc));
+                if (mimeMessage.Bcc.Count > 0)
+                    text.Write("Bcc: {0}. ", string.Join("; ", mimeMessage.Bcc));
+                text.Write("Subject: \"{0}\". ", mimeMessage.Subject);
+                var attachmentCount = mimeMessage.Attachments.Count();
+                if (attachmentCount > 0)
+                    text.Write("{0} Attachment{1}: '{2}'. ",
+                        attachmentCount, attachmentCount == 1 ? "" : "s",
+                        string.Join("', '", mimeMessage.Attachments.GetAttachmentNames()));
+                if (includeTextBody && mimeMessage.TextBody?.Length > 0)
+                    text.Write($"TextBody: \"{mimeMessage.TextBody}\". ");
+                envelope = text.ToString();
+            }
+            return envelope;
         }
 
         public async Task SendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
         {
             _ = ValidateMimeMessage(mimeMessage, _logger);
             _ = await ConnectSmtpClientAsync(cancellationToken).ConfigureAwait(false);
-            _logger.LogTrace("Sending From: {0}; To: {1}; Cc: {2}; Bcc: {3}; Subject: '{4}'",
-                mimeMessage.From, mimeMessage.To, mimeMessage.Cc, mimeMessage.Bcc, mimeMessage.Subject);
+            _logger.LogTrace($"Sending {GetEnvelope(mimeMessage, includeTextBody: true)}");
             string serverResponse = await _smtpClient.SendAsync(mimeMessage, cancellationToken, transferProgress).ConfigureAwait(false);
-            _logger.LogTrace(serverResponse);
+            _logger.LogTrace($"Server response: \"{serverResponse}\".");
         }
 
-        public async Task<bool> TrySendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken, ITransferProgress transferProgress = null)
+        public async Task<bool> TrySendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
         {
             bool isSent = false;
             try

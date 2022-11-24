@@ -1,10 +1,9 @@
 ﻿using MailKit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MailKitSimplified.Sender;
+using Microsoft.Extensions.Configuration;
 using MailKitSimplified.Sender.Models;
 using MailKitSimplified.Sender.Services;
-using MailKitSimplified.Receiver;
 using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Receiver.Extensions;
@@ -12,30 +11,33 @@ using MailKitSimplified.Receiver.Extensions;
 using var loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Trace).AddDebug().AddConsole()); //.AddSimpleConsole(o => { o.IncludeScopes = true; o.TimestampFormat = "HH:mm:ss.f "; })
 var logger = loggerFactory.CreateLogger<Program>();
 
+var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
 
-
-var senderOptions = Options.Create(new EmailSenderOptions(smtpHost: "localhost", smtpPort: 25));
-using var smtpSender = new SmtpSender(senderOptions, loggerFactory.CreateLogger<SmtpSender>());
-bool isSent = await smtpSender.WriteEmail
+var emailSenderOptions = configuration.GetRequiredSection(EmailSenderOptions.SectionName).Get<EmailSenderOptions>();
+using var smtpSender = SmtpSender.Create(emailSenderOptions, loggerFactory.CreateLogger<SmtpSender>()); //SmtpSender.Create("localhost");
+var emailWriter = new EmailWriter(smtpSender, loggerFactory.CreateLogger<EmailWriter>())
     .From("my.name@example.com")
     .To("YourName@example.com")
     .Subject("Hello World")
     .BodyText("Optional text/plain content.")
     .BodyHtml("Optional text/html content.<br/>")
-    //.TryAttach(@"C:\Temp\EmailImapClientLog.txt")
-    .TrySendAsync();
-logger.LogInformation("Email {result}.", isSent ? "sent" : "failed to send");
+    .Attach("appsettings.json")
+    .TryAttach(@"Logs\ImapClient.txt");
+var copy = emailWriter.Copy();
+bool isSent = await emailWriter.TrySendAsync();
+logger.LogInformation("Email 1 {result}.", isSent ? "sent" : "failed to send");
 
+isSent = await copy.To("new@io").TrySendAsync();
+logger.LogInformation("Email 2 {result}.", isSent ? "sent" : "failed to send");
 
-
-var receiverOptions = Options.Create(new EmailReceiverOptions(imapHost: "localhost", imapPort: 143, protocolLog: @"C:/Temp/Email logs/ImapClient.txt", mailFolderName: "INBOX"));
-var imapReceiver = new ImapReceiver(receiverOptions, loggerFactory.CreateLogger<ImapReceiver>(), new MailKitProtocolLogger(loggerFactory.CreateLogger<MailKitProtocolLogger>()));
+var emailReceiverOptions = Options.Create(configuration.GetRequiredSection(EmailReceiverOptions.SectionName).Get<EmailReceiverOptions>()!);
+//var imapLogger = new MailKitProtocolLogger(loggerFactory.CreateLogger<MailKitProtocolLogger>());
+using var imapReceiver = new ImapReceiver(emailReceiverOptions, loggerFactory.CreateLogger<ImapReceiver>()); //ImapReceiver.Create("localhost");
 
 var mailFolderReader = imapReceiver.ReadFrom("INBOX").Skip(5).Take(2);
 var messageSummaries = await mailFolderReader.GetMessageSummariesAsync(MessageSummaryItems.UniqueId);
 //logger.LogDebug("Email(s) received: {fields}", messageSummaries.FirstOrDefault()?.Fields);
-logger.LogDebug("Email(s) received: {ids}", messageSummaries.Select(m => m.UniqueId).ToEnumeratedString());
+logger.LogDebug("Email(s) received: {ids}.", messageSummaries.Select(m => m.UniqueId).ToEnumeratedString());
 
 var mimeMessages = await imapReceiver.ReadMail.Skip(0).Take(1).GetMimeMessagesAsync();
-logger.LogDebug("Email(s) received: {ids}", mimeMessages.Select(m => m.MessageId).ToEnumeratedString());
-
+logger.LogDebug("Email(s) received: {ids}.", mimeMessages.Select(m => m.MessageId).ToEnumeratedString());

@@ -11,7 +11,7 @@ namespace MailKitSimplified.Receiver.Models
         [Required]
         public string ImapHost { get; set; }
         public ushort ImapPort { get; set; } = 0;
-        public NetworkCredential ImapCredential { get; set; }
+        public NetworkCredential ImapCredential { get; set; } = new NetworkCredential();
         public string ProtocolLog { get; set; } = null;
         public string MailFolderName { get; set; } = "INBOX";
 
@@ -25,7 +25,8 @@ namespace MailKitSimplified.Receiver.Models
 
             ImapHost = imapHost;
             ImapPort = imapPort;
-            ImapCredential = imapCredential ?? new NetworkCredential();
+            if (imapCredential != null)
+                ImapCredential = imapCredential;
             ProtocolLog = protocolLog;
             if (!string.IsNullOrWhiteSpace(mailFolderName))
                 MailFolderName = mailFolderName;

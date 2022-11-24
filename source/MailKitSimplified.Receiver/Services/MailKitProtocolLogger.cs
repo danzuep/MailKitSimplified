@@ -43,15 +43,15 @@ namespace MailKitSimplified.Receiver.Services
         {
             _useTimestamp = useTimestamp;
             _redactSecrets = redactSecrets;
-            bool isMockFileSystem = _fileSystem.GetType().Name == "MockFileSystem";
+            //bool isMockFileSystem = _fileSystem.GetType().Name == "MockFileSystem";
             if (!string.IsNullOrEmpty(logFilePath))
             {
                 var directoryName = _fileSystem.Path.GetDirectoryName(logFilePath);
-                _fileSystem.Directory.CreateDirectory(directoryName);
+                if (!string.IsNullOrWhiteSpace(directoryName))
+                    _fileSystem.Directory.CreateDirectory(directoryName);
                 var mode = appendFile ? FileMode.Append : FileMode.Create;
                 var stream = _fileSystem.File.Open(logFilePath, mode, FileAccess.Write, FileShare.Read);
-                if (isMockFileSystem)
-                    _protocolLogger = new ProtocolLogger(stream);
+                _protocolLogger = new ProtocolLogger(stream);
                 _logger.LogDebug($"Saving logs to file: {logFilePath}");
             }
             else if (logFilePath != null)

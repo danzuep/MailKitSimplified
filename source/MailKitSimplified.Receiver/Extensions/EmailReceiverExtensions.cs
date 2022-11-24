@@ -17,13 +17,10 @@ namespace MailKitSimplified.Receiver.Extensions
     [ExcludeFromCodeCoverage]
     public static class EmailReceiverExtensions
     {
-        public static string ToEnumeratedString<T>(
-            this IEnumerable<T> data, string div = ", ")
-            => data is null ? "" : string.Join(div,
-                data.Select(o => o?.ToString() ?? ""));
+        public static string ToEnumeratedString<T>(this IEnumerable<T> data, string div = ", ") =>
+            data is null ? "" : string.Join(div, data.Select(o => o?.ToString() ?? ""));
 
-        public static void AddRange<T>( //[NotNull]
-            this IList<T> list, IEnumerable<T> items)
+        public static void AddRange<T>(this IList<T> list, IEnumerable<T> items)
         {
             if (list is null)
                 list = new List<T>();

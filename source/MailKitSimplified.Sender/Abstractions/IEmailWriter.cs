@@ -183,6 +183,12 @@ namespace MailKitSimplified.Sender.Abstractions
         IEmailWriter Priority(MessagePriority priority);
 
         /// <summary>
+        /// Copy this email writer to re-use it as a template.
+        /// </summary>
+        /// <returns>Shallow copy of this email writer.</returns>
+        IEmailWriter Copy();
+
+        /// <summary>
         /// Get the email built as a <see cref="MimeKit.MimeMessage"/>.
         /// </summary>
         MimeMessage MimeMessage { get; }

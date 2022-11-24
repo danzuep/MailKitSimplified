@@ -78,7 +78,7 @@ namespace MailKitSimplified.Sender.Tests
             var attachment1 = EmailWriter.GetMimePart(stream1, fileName1);
             var attachment2 = EmailWriter.GetMimePart(_attachment2Path, _fileSystem);
             var attachemnts = new MimeEntity[] { attachment1, attachment2 };
-            var mimeMessage = _testEmail
+            var mimeMessage = _testEmail.Copy()
                 .From("from@example.com")
                 .To("to@example.com")
                 .Cc("Carbon copy", "cc1@localhost")
