@@ -27,7 +27,6 @@ namespace MailKitSimplified.Sender.Abstractions
         /// <param name="mimeMessage"><see cref="MimeMessage"/> to send.</param>
         /// <param name="cancellationToken">Stop the email from sending.</param>
         /// <param name="transferProgress">Current email sending progress.</param>
-        /// <returns>True if the email sent successfully.</returns>
         Task SendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default, ITransferProgress transferProgress = null);
 
         /// <summary>

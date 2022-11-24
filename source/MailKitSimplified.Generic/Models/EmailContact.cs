@@ -14,23 +14,14 @@ namespace MailKitSimplified.Core.Models
 
         [Required(ErrorMessage = "Email address is required")]
         [DataType(DataType.EmailAddress)]
-        public string Email { get; set; }
-
-        [Obsolete("Replace with the RFC 5322-compliant 'Email' property.")]
-        [Required(ErrorMessage = "Email address is required")]
-        [DataType(DataType.EmailAddress)]
-        public string Address
-        {
-            get => Email;
-            set => Email = value;
-        }
+        public string EmailAddress { get; set; }
 
         private static readonly char[] _emailReplace = new char[] { '_', '.', '-' };
         private static readonly char[] _emailSeparator = new char[] { ';', ',', ' ', '&', '|' };
 
         private EmailContact(string emailAddress, string name = null)
         {
-            Email = emailAddress ?? throw new ArgumentNullException(nameof(emailAddress));
+            EmailAddress = emailAddress ?? throw new ArgumentNullException(nameof(emailAddress));
             bool hasNoName = string.IsNullOrWhiteSpace(name) ||
                 name.Equals(emailAddress, StringComparison.OrdinalIgnoreCase);
             Name = hasNoName ? GetNameFromEmailAddress(emailAddress) : name;
@@ -152,6 +143,6 @@ namespace MailKitSimplified.Core.Models
             return isValid;
         }
 
-        public override string ToString() => $"{Name} <{Email}>";
+        public override string ToString() => $"\"{Name}\" <{EmailAddress}>";
     }
 }

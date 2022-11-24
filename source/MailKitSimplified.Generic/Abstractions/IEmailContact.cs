@@ -1,29 +1,28 @@
 ﻿namespace MailKitSimplified.Core.Abstractions
 {
     /// <summary>
-    /// <see href="https://www.rfc-editor.org/rfc/rfc8621#section-4.1.2.3">RFC 8621</see>
-    /// <seealso href="https://www.rfc-editor.org/rfc/rfc822#section-6">RFC 822</seealso>
+    /// Simple email contact based on the RFC standard.
     /// </summary>
     public interface IEmailContact
     {
         /// <summary>
-        /// The "name" or "display-name" of the "mailbox".
-        /// <see href="https://www.rfc-editor.org/rfc/rfc5322#section-3.4">RFC 5322 name-addr and display-name</see>
+        /// The "name" or "display-name" of the mailbox. See
+        /// <see href="https://www.rfc-editor.org/rfc/rfc5322#section-3.4">RFC 5322 name-addr and display-name</see>.
         /// </summary>
         string Name { get; set; }
 
         /// <summary>
-        /// The "email" address or "addr-spec" of the "mailbox".
-        /// <see href="https://www.rfc-editor.org/rfc/rfc5322#section-3.4.1">RFC 5322 addr-spec</see>
+        /// The "email" address or "addr-spec" of the mailbox. See
+        /// <see href="https://www.rfc-editor.org/rfc/rfc5322#section-3.4.1">RFC 5322 addr-spec</see>.
         /// </summary>
-        string Email { get; set; }
+        string EmailAddress { get; set; }
 
 #if NET5_0_OR_GREATER
         /// <summary>
         /// Email contact name and address as a string.
         /// </summary>
         /// <returns></returns>
-        string ToString() => $"\"{Name}\" <{Email}>";
+        string ToString() => $"\"{Name}\" <{EmailAddress}>";
 #endif
     }
 }
