@@ -8,10 +8,10 @@ using System.Collections.Generic;
 namespace MailKitSimplified.Sender.Abstractions
 {
     /// <summary>
-    /// <see href="https://datatracker.ietf.org/doc/html/rfc8621">RFC 8621 (2019) JSON Meta Application Protocol</see>
-    /// <seealso href="https://datatracker.ietf.org/doc/html/rfc5322">RFC 5322 (2008) Internet Message Format</seealso>
-    /// <seealso href="https://datatracker.ietf.org/doc/html/rfc2822">RFC 2822 (2001) Internet Message Format</seealso>
-    /// <seealso href="https://datatracker.ietf.org/doc/html/rfc822">RFC 822 (1982) ARPA Internet Text Messages</seealso>
+    /// <see href="https://www.rfc-editor.org/rfc/rfc8621">RFC 8621 (2019) JSON Meta Application Protocol</see>
+    /// <seealso href="https://www.rfc-editor.org/rfc/rfc5322">RFC 5322 (2008) Internet Message Format</seealso>
+    /// <seealso href="https://www.rfc-editor.org/rfc/rfc2822">RFC 2822 (2001) Internet Message Format</seealso>
+    /// <seealso href="https://www.rfc-editor.org/rfc/rfc822">RFC 822 (1982) ARPA Internet Text Messages</seealso>
     /// </summary>
     public interface IEmailWriter
     {
@@ -31,7 +31,7 @@ namespace MailKitSimplified.Sender.Abstractions
         IEmailWriter From(string emailAddress);
 
         /// <summary>
-        /// Override From contact(s) with a reply contact.
+        /// Specify a reply contact other than the sender(s).
         /// </summary>
         /// <param name="name">Name of reply contact.</param>
         /// <param name="emailAddress">Reply email address.</param>
@@ -39,7 +39,7 @@ namespace MailKitSimplified.Sender.Abstractions
         IEmailWriter ReplyTo(string name, string emailAddress);
 
         /// <summary>
-        /// Override From address(es) with a reply address.
+        /// Specify reply contact(s) other than the sender(s).
         /// </summary>
         /// <param name="emailAddress">Reply email address.</param>
         /// <returns><see cref="IEmailWriter"/> interface.</returns>
@@ -114,7 +114,7 @@ namespace MailKitSimplified.Sender.Abstractions
         /// <summary>
         /// Add a plain-text body to the email.
         /// </summary>
-        /// <param name="textHtml">Body content as text/plain.</param>
+        /// <param name="textPlain">Body content as text/plain.</param>
         /// <returns><see cref="IEmailWriter"/> interface.</returns>
         IEmailWriter BodyText(string textPlain);
 
@@ -168,7 +168,7 @@ namespace MailKitSimplified.Sender.Abstractions
 
         /// <summary>
         /// Add a custom header to the email, prefixed with "X-".
-        /// <see href="https://datatracker.ietf.org/doc/html/rfc822#section-4.7.4"/>
+        /// <see href="https://www.rfc-editor.org/rfc/rfc822#section-4.7.4"/>
         /// </summary>
         /// <param name="key">Header key ("X-FieldName").</param>
         /// <param name="value">Header value.</param>

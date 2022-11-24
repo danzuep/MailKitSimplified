@@ -6,6 +6,8 @@ namespace MailKitSimplified.Core.Services
 {
     public class BasicEmail : IBasicEmail
     {
+        public IDictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
+
         public IList<IEmailContact> From { get; set; } = new List<IEmailContact>();
 
         public IList<IEmailContact> To { get; set; } = new List<IEmailContact>();
@@ -14,13 +16,15 @@ namespace MailKitSimplified.Core.Services
 
         public IList<IEmailContact> Bcc { get; set; } = new List<IEmailContact>();
 
+        public IDictionary<string, object> Attachments { get; set; } = new Dictionary<string, object>();
+
         public string Subject { get; set; } = string.Empty;
 
-        public string Body { get; set; } = string.Empty;
+        public string BodyText { get; set; } = string.Empty;
 
-        public bool IsHtml { get; set; } = false;
+        public string BodyHtml { get; set; } = string.Empty;
 
-        public static IEmailWriter Write => new EmailWriter();
+        public static IBasicEmailWriter Write => new EmailWriter();
 
         public override string ToString()
         {

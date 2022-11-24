@@ -12,6 +12,8 @@ namespace MailKitSimplified.Core.Services
 {
     public class SendableEmail : BasicEmail, ISendableEmail
     {
+        public IList<IEmailContact> ReplyTo { get; set; } = new List<IEmailContact>();
+
         public IList<string> AttachmentFilePaths { get; set; } = new List<string>();
 
         public IEnumerable<string> AttachmentFileNames =>
@@ -30,17 +32,22 @@ namespace MailKitSimplified.Core.Services
 
         public static SendableEmailWriter Create(ISmtpSender emailSender) => SendableEmailWriter.CreateWith(emailSender);
 
-        public async Task SendAsync(CancellationToken cancellationToken = default)
+        public void Reset()
         {
-            await _sender.SendAsync(this, cancellationToken).ConfigureAwait(false);
             From.Clear();
             To.Clear();
             Cc.Clear();
             Bcc.Clear();
             AttachmentFilePaths.Clear();
             Subject = string.Empty;
-            Body = string.Empty;
-            IsHtml = false;
+            BodyText = null;
+            BodyHtml = null;
+        }
+
+        public async Task SendAsync(CancellationToken cancellationToken = default)
+        {
+            await _sender.SendAsync(this, cancellationToken).ConfigureAwait(false);
+            Reset();
         }
 
         public async Task<bool> TrySendAsync(CancellationToken cancellationToken = default)

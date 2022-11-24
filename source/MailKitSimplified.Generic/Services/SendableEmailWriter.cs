@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using MailKitSimplified.Core.Abstractions;
 using MailKitSimplified.Core.Models;
@@ -15,9 +16,21 @@ namespace MailKitSimplified.Core.Services
 
         public static SendableEmailWriter CreateWith(ISmtpSender emailSender) => new SendableEmailWriter(new SendableEmail(emailSender));
 
+        public ISendableEmailWriter Header(string key, string value)
+        {
+            _email.Headers.Add(key, value);
+            return this;
+        }
+
         public ISendableEmailWriter From(string emailAddress, string name = "")
         {
             _email.From.Add(EmailContact.Create(emailAddress, name));
+            return this;
+        }
+
+        public ISendableEmailWriter ReplyTo(string emailAddress, string name = "")
+        {
+            _email.ReplyTo.Add(EmailContact.Create(emailAddress, name));
             return this;
         }
 
@@ -45,26 +58,43 @@ namespace MailKitSimplified.Core.Services
             return this;
         }
 
-        public ISendableEmailWriter Body(string body, bool isHtml = true)
+        public ISendableEmailWriter Subject(string prefix, string suffix)
         {
-            _email.Body = body ?? string.Empty;
-            _email.IsHtml = isHtml;
+            _email.Subject = $"{prefix}{_email.Subject}{suffix}";
             return this;
         }
 
-        public ISendableEmailWriter Attach(params string[] filePaths)
+        public ISendableEmailWriter Attach(string filePath)
         {
-            if (filePaths != null)
+            if (!string.IsNullOrWhiteSpace(filePath))
             {
-                foreach (var filePath in filePaths)
-                {
-                    if (!string.IsNullOrWhiteSpace(filePath))
-                    {
-                        _email.AttachmentFilePaths.Add(filePath);
-                    }
-                }
+                _email.AttachmentFilePaths.Add(filePath);
             }
             return this;
+        }
+
+        public ISendableEmailWriter Attach(Stream stream, string contentId)
+        {
+            _email.Attachments.Add(contentId, stream);
+            return this;
+        }
+
+        public ISendableEmailWriter BodyText(string plainText)
+        {
+            _email.BodyText = plainText ?? string.Empty;
+            return this;
+        }
+
+        public ISendableEmailWriter BodyHtml(string htmlText)
+        {
+            _email.BodyText = htmlText ?? string.Empty;
+            return this;
+        }
+
+        public ISendableEmailWriter Copy()
+        {
+            var copy = MemberwiseClone() as ISendableEmailWriter;
+            return copy;
         }
 
         public async Task SendAsync(CancellationToken cancellationToken = default) =>
