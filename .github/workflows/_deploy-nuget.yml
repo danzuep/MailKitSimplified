@@ -51,10 +51,12 @@ jobs:
       # https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-nuget-registry#authenticating-with-github_token-in-github-actions
       # https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions#publishing-a-package-using-an-action
       - name: Publish to NuGet
-        run: dotnet nuget push $PACKAGE_NAMES --api-key ${{ secrets.GITHUB_TOKEN }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: |
+          dotnet nuget push $PACKAGE_NAMES --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ inputs.owner }}/index.json --skip-duplicate
         # dotnet nuget add source --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github 'https://nuget.pkg.github.com/${{ inputs.owner }}/index.json'
+        # dotnet nuget push $PACKAGE_NAMES --api-key ${{ secrets.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --skip-duplicate
 
       - name: Markdown workflow job summary
         run: |
           echo "### ${{ inputs.project-name }}.*.${{ inputs.version }}.nupkg packages published to NuGet from ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
-          echo "${{ github.repository }} branch ${{ env.VERSION }}##*v" >> $GITHUB_STEP_SUMMARY
+          echo "${{ github.repository }} ${{ env.VERSION }}" >> $GITHUB_STEP_SUMMARY
