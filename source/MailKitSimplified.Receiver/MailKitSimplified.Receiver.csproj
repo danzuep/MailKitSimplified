@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net6.0;net7.0</TargetFrameworks>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -11,7 +11,7 @@
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
     <Authors>danzuep</Authors>
     <Title>Simple MailKit IMAP Receiver</Title>
-    <PackageTags>IMAP; email; MailKit; simple; easy; fluent; receiver</PackageTags>
+    <PackageTags>IMAP; email; MailKit; simple; easy; fluent; receiver; C#; .NET; ASP.NET</PackageTags>
     <Description>Easy, fluent way to receive emails with MailKit.</Description>
   </PropertyGroup>
 

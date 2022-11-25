@@ -158,13 +158,5 @@ namespace MailKitSimplified.Receiver.Tests
             var description = _imapReceiver.ToString();
             Assert.Contains(_localhost, description);
         }
-
-        //[Theory]
-        //[InlineData(_localhost)]
-        //public async Task MonitorAsync_WithAnyHost_ReturnsMimeMessages(string imapHost)
-        //{
-        //    using var imapClient = ImapMonitorService.Create(imapHost, input, output);
-        //    await imapClient.Inbox.MonitorAsync();
-        //}
     }
 }
