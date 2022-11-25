@@ -65,8 +65,6 @@ namespace MailKitSimplified.Receiver.Services
             if (mailFolder == null)
                 throw new NullReferenceException("Mail folder property not available.");
             var uniqueId = messageSummary.UniqueId;
-            if (uniqueId == null)
-                throw new NullReferenceException("Unique ID property not available.");
             MimeMessageReader mimeMessageReader;
             using (var mailFolderClient = new MailFolderClient(mailFolder))
             {

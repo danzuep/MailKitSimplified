@@ -57,9 +57,9 @@ jobs:
         if: ${{ inputs.environment == 'release' }}
         run: |
           echo '### ${{ env.Workflow_Name }} build summary' >> $GITHUB_STEP_SUMMARY
+          echo "${{ github.repository }} ${{ github.ref }} ${{ github.event.ref }}" >> $GITHUB_STEP_SUMMARY
           echo 'Label: ${{ inputs.project-name }},${{ steps.gitversion.outputs.preReleaseLabel }}' >> $GITHUB_STEP_SUMMARY
           echo 'Version: ${{ steps.gitversion.outputs.majorMinorPatch }},${{ steps.gitversion.outputs.commitDate }}' >> $GITHUB_STEP_SUMMARY
-          echo '${{ github.repository }} ${{ env.VERSION }}##*v' >> $GITHUB_STEP_SUMMARY
         env:
           Workflow_Name: '${{ inputs.project-name }} version ${{ steps.gitversion.outputs.fullSemVer }}'
 
