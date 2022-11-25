@@ -52,12 +52,13 @@ jobs:
         id: gitversion # step id used as reference for output values
         uses: gittools/actions/gitversion/execute@v0.9.15
 
+      # pwsh> dotnet-gitversion | ConvertFrom-Json
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary
       - name: Markdown workflow job summary
         if: ${{ inputs.environment == 'release' }}
         run: |
           echo '### ${{ env.Workflow_Name }} build summary' >> $GITHUB_STEP_SUMMARY
-          echo "${{ github.repository }} ${{ github.ref }} ${{ github.event.ref }}" >> $GITHUB_STEP_SUMMARY
+          echo "${{ github.repository }} ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
           echo 'Label: ${{ inputs.project-name }},${{ steps.gitversion.outputs.preReleaseLabel }}' >> $GITHUB_STEP_SUMMARY
           echo 'Version: ${{ steps.gitversion.outputs.majorMinorPatch }},${{ steps.gitversion.outputs.commitDate }}' >> $GITHUB_STEP_SUMMARY
         env:

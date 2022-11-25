@@ -56,6 +56,4 @@ jobs:
         # dotnet nuget push $PACKAGE_NAMES --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ inputs.owner }}/index.json --skip-duplicate
 
       - name: Markdown workflow job summary
-        run: |
-          echo "### ${{ inputs.project-name }}.*.${{ inputs.version }}.nupkg packages published" >> $GITHUB_STEP_SUMMARY
-          echo "${{ github.repository }} ${{ github.ref }} ${{ github.event.ref }}" >> $GITHUB_STEP_SUMMARY
+        run: echo "### ${{ inputs.project-name }}.*.${{ inputs.version }}.nupkg packages published" >> $GITHUB_STEP_SUMMARY
