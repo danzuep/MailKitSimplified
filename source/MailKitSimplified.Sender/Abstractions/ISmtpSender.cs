@@ -1,6 +1,7 @@
 ﻿using MimeKit;
 using MailKit;
 using MailKit.Net.Smtp;
+using MailKit.Security;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ namespace MailKitSimplified.Sender.Abstractions
     /// <summary>
     /// Sends MailKit <see cref="MimeMessage"/> emails.
     /// </summary>
-    public interface ISmtpSender : IDisposable
+    public interface ISmtpSender : IAsyncDisposable, IDisposable
     {
         /// <summary>
         /// Write an email fluently with an <see cref="IEmailWriter"/>.
@@ -22,6 +23,8 @@ namespace MailKitSimplified.Sender.Abstractions
         /// </summary>
         /// <param name="cancellationToken">Stop connecting the client.</param>
         /// <returns>Connected <see cref="ISmtpClient">SMTP client</see>.</returns>
+        /// <exception cref="SmtpProtocolException">Connection failed</exception>
+        /// <exception cref="AuthenticationException">Failed to authenticate</exception>
         ValueTask<ISmtpClient> ConnectSmtpClientAsync(CancellationToken cancellationToken = default);
 
         /// <summary>

@@ -8,8 +8,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging.Abstractions;
 using MailKit;
-using MailKit.Security;
 using MailKit.Net.Imap;
+using MailKit.Security;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Receiver.Extensions;
@@ -34,7 +34,6 @@ namespace MailKitSimplified.Receiver.Services
             if (imapLogger is MailKitProtocolLogger imapLog)
                 imapLog.SetLogFilePath(_receiverOptions.ProtocolLog);
             _imapClient = imapClient ?? new ImapClient(imapLogger);
-
         }
 
         public static ImapReceiver Create(string imapHost, ushort imapPort = 0, string username = null, string password = null, string protocolLog = null, string mailFolderName = null)
@@ -58,6 +57,24 @@ namespace MailKitSimplified.Receiver.Services
             return receiver;
         }
 
+        public ImapReceiver SetPort(ushort imapPort)
+        {
+            _receiverOptions.ImapPort = imapPort;
+            return this;
+        }
+
+        public ImapReceiver SetCredential(string username, string password)
+        {
+            _receiverOptions.ImapCredential = new NetworkCredential(username, password);
+            return this;
+        }
+
+        public ImapReceiver SetProtocolLog(string logFilePath)
+        {
+            _receiverOptions.ProtocolLog = logFilePath;
+            return this;
+        }
+
         public IMailFolderReader ReadMail => MailFolderReader.Create(this, _receiverOptions.MailFolderName);
 
         public IMailFolderReader ReadFrom(string mailFolderName)
@@ -66,7 +83,6 @@ namespace MailKitSimplified.Receiver.Services
             return mailFolderReader;
         }
 
-        /// <exception cref="AuthenticationException">Failed to authenticate</exception>
         public async ValueTask<IImapClient> ConnectImapClientAsync(CancellationToken cancellationToken = default)
         {
             if (!_imapClient.IsConnected)
@@ -144,29 +160,21 @@ namespace MailKitSimplified.Receiver.Services
 
         public async ValueTask DisconnectAsync(CancellationToken cancellationToken = default)
         {
-            if (_imapClient?.IsConnected ?? false)
+            _logger.LogTrace("Disconnecting IMAP email client...");
+            if (_imapClient.IsConnected)
                 await _imapClient.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);
         }
 
         public async ValueTask DisposeAsync()
         {
-            _logger.LogTrace("Disposing IMAP email client...");
             await DisconnectAsync().ConfigureAwait(false);
-            _imapClient?.Dispose();
-        }
-
-        public void Disconnect(CancellationToken cancellationToken = default)
-        {
-            if (_imapClient?.IsConnected ?? false)
-                lock (_imapClient.SyncRoot)
-                    _imapClient.Disconnect(true, cancellationToken);
+            _imapClient.Dispose();
         }
 
         public void Dispose()
         {
-            _logger.LogTrace("Disposing IMAP email client...");
-            Disconnect();
-            _imapClient?.Dispose();
+            DisconnectAsync().GetAwaiter().GetResult();
+            _imapClient.Dispose();
         }
     }
 }

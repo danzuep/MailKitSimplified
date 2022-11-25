@@ -1,5 +1,6 @@
 ﻿using MailKit;
 using MailKit.Net.Imap;
+using MailKit.Security;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,6 +34,8 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// </summary>
         /// <param name="cancellationToken">Stop connecting the client.</param>
         /// <returns>Connected <see cref="IImapClient">IMAP client</see>.</returns>
+        /// <exception cref="ImapProtocolException">Connection failed</exception>
+        /// <exception cref="AuthenticationException">Failed to authenticate</exception>
         ValueTask<IImapClient> ConnectImapClientAsync(CancellationToken cancellationToken = default);
 
         /// <summary>

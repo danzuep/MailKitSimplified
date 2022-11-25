@@ -17,6 +17,7 @@ namespace MailKitSimplified.Sender.Tests
     public class SmtpSenderUnitTests
     {
         private const string _localhost = "localhost";
+        private const int _defaultPort = 25;
         private readonly Mock<ISmtpClient> _smtpSenderMock = new();
         private readonly ISmtpSender _smtpSender;
 
@@ -32,8 +33,17 @@ namespace MailKitSimplified.Sender.Tests
             _smtpSender = new SmtpSender(smtpSenderOptions, loggerMock.Object, protocolLoggerMock.Object, _smtpSenderMock.Object);
         }
 
+        [Fact]
+        public void CreateEmailSenderOptions_WithInlineHostPort_ReturnsSplitHostPort()
+        {
+            var emailSenderOptions = new EmailSenderOptions($"{_localhost}:{_defaultPort}");
+            Assert.NotNull(emailSenderOptions);
+            Assert.Equal(_localhost, emailSenderOptions.SmtpHost);
+            Assert.Equal(_defaultPort, emailSenderOptions.SmtpPort);
+        }
+
         [Theory]
-        [InlineData(_localhost, 25)]
+        [InlineData(_localhost, _defaultPort)]
         [InlineData("smtp.example.com", 0)]
         [InlineData("smtp.google.com", 465)]
         [InlineData("smtp.sendgrid.com", 2525)]
@@ -44,6 +54,7 @@ namespace MailKitSimplified.Sender.Tests
         {
             using var smtpSender = SmtpSender.Create(smtpHost, smtpPort);
             Assert.NotNull(smtpSender);
+            Assert.IsAssignableFrom<ISmtpSender>(smtpSender);
         }
 
         [Fact]
@@ -51,23 +62,46 @@ namespace MailKitSimplified.Sender.Tests
         {
             using var smtpSender = SmtpSender.Create(_localhost, It.IsAny<NetworkCredential>());
             Assert.NotNull(smtpSender);
+            Assert.IsAssignableFrom<ISmtpSender>(smtpSender);
         }
 
         [Fact]
-        public void WriteEmail_WithSmtpSender_VerifyNotNull()
+        public void CreateSmtpSender_WithFluentMethods_ReturnsSmtpSender()
         {
-            Assert.NotNull(_smtpSender.WriteEmail);
+            using var smtpSender = SmtpSender.Create(_localhost)
+                .SetPort(It.IsAny<ushort>())
+                .SetCredential(It.IsAny<string>(), It.IsAny<string>())
+                .SetProtocolLog(It.IsAny<string>());
+            Assert.NotNull(smtpSender);
+            Assert.IsAssignableFrom<ISmtpSender>(smtpSender);
+        }
+
+        [Fact]
+        public async Task DisposeAsync_WithSmtpSender()
+        {
+            var smtpSender = SmtpSender.Create(_localhost);
+            await smtpSender.DisposeAsync();
+            Assert.IsAssignableFrom<ISmtpSender>(smtpSender);
         }
 
         [Fact]
         public async Task ConnectSmtpClientAsync_VerifyCalls()
         {
             // Act
-            var imapClient = await _smtpSender.ConnectSmtpClientAsync(It.IsAny<CancellationToken>());
+            var smtpClient = await _smtpSender.ConnectSmtpClientAsync(It.IsAny<CancellationToken>());
             // Assert
-            Assert.NotNull(imapClient);
+            Assert.NotNull(smtpClient);
+            Assert.IsAssignableFrom<ISmtpClient>(smtpClient);
             _smtpSenderMock.Verify(_ => _.ConnectAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<SecureSocketOptions>(), It.IsAny<CancellationToken>()), Times.Once);
             _smtpSenderMock.Verify(_ => _.AuthenticateAsync(It.IsAny<ICredentials>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public void WriteEmail_WithSmtpSender_VerifyNotNull()
+        {
+            var emailWriter = _smtpSender.WriteEmail;
+            Assert.NotNull(emailWriter);
+            Assert.IsAssignableFrom<IEmailWriter>(emailWriter);
         }
 
         [Fact]

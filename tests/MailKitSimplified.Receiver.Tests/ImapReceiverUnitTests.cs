@@ -16,6 +16,7 @@ namespace MailKitSimplified.Receiver.Tests
     public class ImapReceiverUnitTests
     {
         private const string _localhost = "localhost";
+        private const int _defaultPort = 143;
         private static readonly string _inbox = "INBOX";
         private readonly Mock<IImapClient> _imapClientMock = new();
         private readonly IImapReceiver _imapReceiver;
@@ -34,8 +35,17 @@ namespace MailKitSimplified.Receiver.Tests
             _imapReceiver = new ImapReceiver(imapReceiverOptions, loggerMock.Object, protocolLoggerMock.Object, _imapClientMock.Object);
         }
 
+        [Fact]
+        public void CreateEmailReceiverOptions_WithInlineHostPort_ReturnsSplitHostPort()
+        {
+            var emailReceiverOptions = new EmailReceiverOptions($"{_localhost}:{_defaultPort}");
+            Assert.NotNull(emailReceiverOptions);
+            Assert.Equal(_localhost, emailReceiverOptions.ImapHost);
+            Assert.Equal(_defaultPort, emailReceiverOptions.ImapPort);
+        }
+
         [Theory]
-        [InlineData(_localhost, 143)]
+        [InlineData(_localhost, _defaultPort)]
         [InlineData("imap.example.com", 0)]
         [InlineData("imap.google.com", 993)]
         [InlineData("imap.sendgrid.com", 995)]
@@ -54,6 +64,25 @@ namespace MailKitSimplified.Receiver.Tests
         {
             using var imapReceiver = ImapReceiver.Create(_localhost, It.IsAny<NetworkCredential>());
             Assert.NotNull(imapReceiver);
+            Assert.IsAssignableFrom<IImapReceiver>(imapReceiver);
+        }
+
+        [Fact]
+        public void CreateImapReceiver_WithFluentMethods_ReturnsImapReceiver()
+        {
+            using var imapReceiver = ImapReceiver.Create(_localhost)
+                .SetPort(It.IsAny<ushort>())
+                .SetCredential(It.IsAny<string>(), It.IsAny<string>())
+                .SetProtocolLog(It.IsAny<string>());
+            Assert.NotNull(imapReceiver);
+            Assert.IsAssignableFrom<IImapReceiver>(imapReceiver);
+        }
+
+        [Fact]
+        public async Task DisposeAsync_WithImapReceiver()
+        {
+            var imapReceiver = ImapReceiver.Create(_localhost);
+            await imapReceiver.DisposeAsync();
             Assert.IsAssignableFrom<IImapReceiver>(imapReceiver);
         }
 

@@ -55,6 +55,24 @@ namespace MailKitSimplified.Sender.Services
             return sender;
         }
 
+        public SmtpSender SetPort(ushort smtpPort)
+        {
+            _senderOptions.SmtpPort = smtpPort;
+            return this;
+        }
+
+        public SmtpSender SetCredential(string username, string password)
+        {
+            _senderOptions.SmtpCredential = new NetworkCredential(username, password);
+            return this;
+        }
+
+        public SmtpSender SetProtocolLog(string logFilePath)
+        {
+            _senderOptions.ProtocolLog = logFilePath;
+            return this;
+        }
+
         public IEmailWriter WriteEmail => new EmailWriter(this);
 
         public static IProtocolLogger GetProtocolLogger(string logFilePath = null, IFileSystem fileSystem = null)
@@ -70,6 +88,21 @@ namespace MailKitSimplified.Sender.Services
                     new ProtocolLogger(Console.OpenStandardError()) :
                         new ProtocolLogger(logFilePath);
             return protocolLogger;
+        }
+
+        public async ValueTask<ISmtpClient> ConnectSmtpClientAsync(CancellationToken cancellationToken = default)
+        {
+            if (!_smtpClient.IsConnected && !string.IsNullOrEmpty(_senderOptions.SmtpHost))
+            {
+                await _smtpClient.ConnectAsync(_senderOptions.SmtpHost, _senderOptions.SmtpPort, cancellationToken: cancellationToken).ConfigureAwait(false);
+                _logger.LogTrace($"SMTP client connected to {_senderOptions.SmtpHost}.");
+            }
+            if (_senderOptions.SmtpCredential != null && !_smtpClient.IsAuthenticated)
+            {
+                await _smtpClient.AuthenticateAsync(_senderOptions.SmtpCredential, cancellationToken).ConfigureAwait(false);
+                _logger.LogTrace($"SMTP client authenticated with {_senderOptions.SmtpHost}.");
+            }
+            return _smtpClient;
         }
 
         public static bool ValidateEmailAddresses(IEnumerable<string> sourceEmailAddresses, IEnumerable<string> destinationEmailAddresses, ILogger logger)
@@ -131,21 +164,6 @@ namespace MailKitSimplified.Sender.Services
                     mimeMessage.From.Add(new MailboxAddress("LocalHost", $"{Guid.NewGuid():N}@localhost"));
             }
             return isValid;
-        }
-
-        public async ValueTask<ISmtpClient> ConnectSmtpClientAsync(CancellationToken cancellationToken = default)
-        {
-            if (!_smtpClient.IsConnected && !string.IsNullOrEmpty(_senderOptions.SmtpHost))
-            {
-                await _smtpClient.ConnectAsync(_senderOptions.SmtpHost, _senderOptions.SmtpPort, cancellationToken: cancellationToken).ConfigureAwait(false);
-                _logger.LogTrace($"SMTP client connected to {_senderOptions.SmtpHost}.");
-            }
-            if (_senderOptions.SmtpCredential != null && !_smtpClient.IsAuthenticated) // && _senderOptions.SmtpCredential != default
-            {
-                await _smtpClient.AuthenticateAsync(_senderOptions.SmtpCredential, cancellationToken).ConfigureAwait(false);
-                _logger.LogTrace($"SMTP client authenticated with {_senderOptions.SmtpHost}.");
-            }
-            return _smtpClient;
         }
 
         public static string GetEnvelope(MimeMessage mimeMessage, bool includeTextBody = false)
@@ -210,18 +228,23 @@ namespace MailKitSimplified.Sender.Services
 
         public override string ToString() => _senderOptions.ToString();
 
-        public void DisconnectSmtpClient()
+        public async ValueTask DisconnectAsync(CancellationToken cancellationToken = default)
         {
-            if (_smtpClient?.IsConnected ?? false)
-                lock (_smtpClient.SyncRoot)
-                    _smtpClient.Disconnect(true);
+            _logger.LogTrace("Disconnecting SMTP email client...");
+            if (_smtpClient.IsConnected)
+                await _smtpClient.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await DisconnectAsync().ConfigureAwait(false);
+            _smtpClient.Dispose();
         }
 
         public void Dispose()
         {
-            _logger.LogTrace("Disposing SMTP email client...");
-            DisconnectSmtpClient();
-            _smtpClient?.Dispose();
+            DisconnectAsync().GetAwaiter().GetResult();
+            _smtpClient.Dispose();
         }
     }
 }
