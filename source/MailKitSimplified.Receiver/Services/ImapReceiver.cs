@@ -75,12 +75,25 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
-        public IMailFolderReader ReadMail => MailFolderReader.Create(this, _receiverOptions.MailFolderName);
+        public ImapReceiver SetFolder(string mailFolderName)
+        {
+            _receiverOptions.MailFolderName = mailFolderName;
+            return this;
+        }
 
         public IMailFolderReader ReadFrom(string mailFolderName)
         {
-            var mailFolderReader = MailFolderReader.Create(this, mailFolderName);
-            return mailFolderReader;
+            _receiverOptions.MailFolderName = mailFolderName;
+            return ReadMail;
+        }
+
+        public IMailFolderReader ReadMail => new MailFolderReader(this);
+
+        public IIdleClientReceiver Folder(string mailFolderName)
+        {
+            _receiverOptions.MailFolderName = mailFolderName;
+            var idleClient = new IdleClientReceiver(this);
+            return idleClient;
         }
 
         public async ValueTask<IImapClient> ConnectImapClientAsync(CancellationToken cancellationToken = default)

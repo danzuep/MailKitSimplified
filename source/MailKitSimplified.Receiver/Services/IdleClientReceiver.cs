@@ -4,16 +4,14 @@ using MailKit.Net.Imap;
 using System;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using MailKitSimplified.Receiver.Abstractions;
 using Microsoft.Extensions.Logging.Abstractions;
-using System.Net.Sockets;
-using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Receiver.Extensions;
-using System.Net;
 
 namespace MailKitSimplified.Receiver
 {
@@ -23,8 +21,8 @@ namespace MailKitSimplified.Receiver
 	/// Email idle client receiver. See also:
     /// <seealso href="https://github.com/jstedfast/MailKit/blob/master/Documentation/Examples/ImapIdleExample.cs">IdleClient.cs by Jeffrey Stedfast</seealso>.
     /// </summary>
-    public sealed class IdleClientReceiver
-	{
+    public sealed class IdleClientReceiver : IIdleClientReceiver
+    {
 		#region Private Fields
 		const int _maxRetries = 3;
 		private bool _messagesArrived;
@@ -49,25 +47,16 @@ namespace MailKitSimplified.Receiver
 			_imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
         }
 
-		public static IdleClientReceiver Create(string imapHost, NetworkCredential credential = null, ushort imapPort = 0, string protocolLog = null, string mailFolderName = null)
-		{
-			var imapReceiver = ImapReceiver.Create(imapHost, credential, imapPort, protocolLog, mailFolderName);
-			var idleClientReceiver = new IdleClientReceiver(imapReceiver);
-            return idleClientReceiver;
-		}
-
-        private async ValueTask ReconnectAsync() => _ = await _mailFolderClient.ConnectAsync(true, _cancel.Token).ConfigureAwait(false);
-
-        public async Task MonitorAsync(MessagesArrived messagesArrivedMethod, string mailFolderName = null, CancellationToken cancellationToken = default)
+        public async Task MonitorAsync(MessagesArrived messagesArrivedMethod, CancellationToken cancellationToken = default)
 		{
 			try
             {
-                ProcessMessageSummariesAsync = messagesArrivedMethod;
+				ProcessMessageSummariesAsync = messagesArrivedMethod;
 				using (_imapClient = await _imapReceiver.ConnectImapClientAsync(cancellationToken))
-				using (_mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(mailFolderName, cancellationToken))
+				using (_mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(null, cancellationToken))
 				{
 					_canIdle = _imapClient.Capabilities.HasFlag(ImapCapabilities.Idle);
-					_mailFolder = await _mailFolderClient.ConnectAsync(true, cancellationToken);
+					_mailFolder = await _mailFolderClient.ConnectAsync(false, cancellationToken);
 
 					_mailFolder.CountChanged += OnCountChanged;
 					_mailFolder.MessageExpunged += OnMessageExpunged;
@@ -100,7 +89,9 @@ namespace MailKitSimplified.Receiver
 			}
 		}
 
-		async Task<int> ProcessMessagesAsync()
+        private async ValueTask ReconnectAsync() => _ = await _mailFolderClient.ConnectAsync(true, _cancel.Token).ConfigureAwait(false);
+
+        async Task<int> ProcessMessagesAsync()
 		{
 			IList<IMessageSummary> fetched = new List<IMessageSummary>();
 			int retryCount = 0;
@@ -283,7 +274,7 @@ namespace MailKitSimplified.Receiver
 
 		async Task IdleAsync(CancellationToken cancellationToken = default)
         {
-            if (cancellationToken != null && cancellationToken != default)
+            if (cancellationToken != default)
                 _cancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             do
             {

@@ -13,21 +13,6 @@ namespace MailKitSimplified.Receiver.Services
     {
         public MailFolderReader(IImapReceiver imapReceiver) : base(imapReceiver) { }
 
-        public new static MailFolderReader Create(IImapReceiver imapReceiver, string mailFolderName)
-        {
-            var emailReader = new MailFolderReader(imapReceiver);
-            emailReader.ReadFrom(mailFolderName);
-            return emailReader;
-        }
-
-        private MailFolderReader ReadFrom(string mailFolderName)
-        {
-            if (string.IsNullOrWhiteSpace(mailFolderName))
-                throw new ArgumentNullException(nameof(mailFolderName));
-            _mailFolderName = mailFolderName;
-            return this;
-        }
-
         public async ValueTask<IEnumerable<IMessageSummary>> GetMessageSummariesAsync(IEnumerable<UniqueId> uniqueIds, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default)
         {
             IEnumerable<IMessageSummary> filteredResults = Array.Empty<IMessageSummary>();

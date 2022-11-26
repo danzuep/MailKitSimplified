@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Logging;
 using MailKitSimplified.Receiver.Abstractions;
+using MailKitSimplified.Receiver.Services;
 
 namespace MailKitSimplified.Receiver.Tests
 {
     public class IdleClientReceiverUnitTests
     {
+        private const string _localhost = "localhost";
         private readonly Mock<IImapClient> _imapClientMock = new();
         private readonly Mock<IMailFolder> _mailFolderMock = new();
         private readonly Mock<IMailFolderClient> _mailFolderClientMock = new();
@@ -26,26 +28,16 @@ namespace MailKitSimplified.Receiver.Tests
             _imapIdleClient = new IdleClientReceiver(_imapReceiverMock.Object, Mock.Of<ILogger<IdleClientReceiver>>());
         }
 
-        [Fact]
-        public void CreateIdleClientReceiver_WithImapReceiver()
-        {
-            var imapIdleClient = new IdleClientReceiver(_imapReceiverMock.Object);
-            Assert.NotNull(imapIdleClient);
-        }
-
-        [Fact]
-        public void CreateIdleClientReceiver_WithHostName()
-        {
-            var imapIdleClient = IdleClientReceiver.Create("localhost");
-            Assert.NotNull(imapIdleClient);
-        }
+        //[Fact]
+        //public async Task MonitoryAsync_ThrowsException()
+        //{
+        //    await Assert.ThrowsAsync<NotImplementedException>(() => _imapIdleClient.MonitorAsync(MessageArrival));
+        //}
 
         //[Fact]
         //public async Task MonitoryAsync_FromImapReceiver()
         //{
-        //    using var imapReceiver = ImapReceiver.Create("localhost");
-        //    await imapReceiver.Folder("INBOX").MonitorAsync();
-        //    Assert.NotNull(imapReceiver);
+        //    await _imapIdleClient.MonitorAsync(MessageArrival);
         //}
 
         //[Fact]
@@ -57,7 +49,7 @@ namespace MailKitSimplified.Receiver.Tests
         //    _imapReceiverMock.Verify(_ => _.ConnectMailFolderAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         //}
 
-        private ValueTask MessageArrival(IList<IMessageSummary> messages) => ValueTask.CompletedTask;
+        private ValueTask MessageArrival(IList<IMessageSummary> messages) => throw new NotImplementedException();//ValueTask.CompletedTask;
 
         //[Fact]
         //public void ToString_Verify()

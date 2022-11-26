@@ -135,6 +135,14 @@ namespace MailKitSimplified.Receiver.Tests
         }
 
         [Fact]
+        public void Folder_WithAnyMailFolderName_VerifyType()
+        {
+            var idleClient = _imapReceiver.Folder("INBOX");
+            Assert.NotNull(idleClient);
+            Assert.IsAssignableFrom<IIdleClientReceiver>(idleClient);
+        }
+
+        [Fact]
         public async Task GetMailFolderNamesAsync_VerifyCalls()
         {
             // Arrange

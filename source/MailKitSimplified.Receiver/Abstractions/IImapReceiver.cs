@@ -23,6 +23,13 @@ namespace MailKitSimplified.Receiver.Abstractions
         IMailFolderReader ReadFrom(string mailFolderName);
 
         /// <summary>
+        /// Connect to a mail folder ready to monitor with an idle client.
+        /// </summary>
+        /// <param name="mailFolderName">Mail folder to connect to.</param>
+        /// <returns><see cref="IIdleClientReceiver"/>.</returns>
+        IIdleClientReceiver Folder(string mailFolderName);
+
+        /// <summary>
         /// Get a list of the names of all the folders connected to this account.
         /// </summary>
         /// <param name="cancellationToken">Request cancellation token.</param>
