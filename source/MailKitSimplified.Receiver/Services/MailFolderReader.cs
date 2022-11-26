@@ -18,7 +18,7 @@ namespace MailKitSimplified.Receiver.Services
             IEnumerable<IMessageSummary> filteredResults = Array.Empty<IMessageSummary>();
             filter |= MessageSummaryItems.UniqueId;
             var orderedIds = uniqueIds.OrderBy(m => m.Id).ToList();
-            using (var mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(_mailFolderName, cancellationToken).ConfigureAwait(false))
+            using (var mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(cancellationToken).ConfigureAwait(false))
             {
                 var mailFolder = await mailFolderClient.ConnectAsync(false, cancellationToken).ConfigureAwait(false);
                 var messageSummaries = await mailFolder.FetchAsync(orderedIds, filter, cancellationToken).ConfigureAwait(false);
@@ -30,7 +30,7 @@ namespace MailKitSimplified.Receiver.Services
         public async ValueTask<MimeMessage> GetMimeMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default)
         {
             MimeMessage mimeMessage;
-            using (var mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(_mailFolderName, cancellationToken).ConfigureAwait(false))
+            using (var mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(cancellationToken).ConfigureAwait(false))
             {
                 var mailFolder = await mailFolderClient.ConnectAsync(false, cancellationToken).ConfigureAwait(false);
                 mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken).ConfigureAwait(false);
@@ -43,7 +43,7 @@ namespace MailKitSimplified.Receiver.Services
             IList<MimeMessage> mimeMessages = new List<MimeMessage>();
             if (uniqueIds != null)
             {
-                using (var mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(_mailFolderName, cancellationToken).ConfigureAwait(false))
+                using (var mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(cancellationToken).ConfigureAwait(false))
                 {
                     var mailFolder = await mailFolderClient.ConnectAsync(false, cancellationToken).ConfigureAwait(false);
                     foreach (var uniqueId in uniqueIds)

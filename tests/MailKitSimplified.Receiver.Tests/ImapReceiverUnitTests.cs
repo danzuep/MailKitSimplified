@@ -17,7 +17,6 @@ namespace MailKitSimplified.Receiver.Tests
     {
         private const string _localhost = "localhost";
         private const int _defaultPort = 143;
-        private static readonly string _inbox = "INBOX";
         private readonly Mock<IImapClient> _imapClientMock = new();
         private readonly IImapReceiver _imapReceiver;
 
@@ -102,7 +101,7 @@ namespace MailKitSimplified.Receiver.Tests
         public async Task ConnectMailFolderAsync_VerifyType()
         {
             // Act
-            var mailFolder = await _imapReceiver.ConnectMailFolderAsync(_inbox, It.IsAny<CancellationToken>());
+            var mailFolder = await _imapReceiver.ConnectMailFolderAsync(It.IsAny<CancellationToken>());
             // Assert
             Assert.NotNull(mailFolder);
             Assert.IsAssignableFrom<IMailFolder>(mailFolder);
@@ -112,7 +111,7 @@ namespace MailKitSimplified.Receiver.Tests
         public async Task ConnectMailFolderClientAsync_VerifyType()
         {
             // Act
-            var mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(_inbox, It.IsAny<CancellationToken>());
+            var mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(It.IsAny<CancellationToken>());
             // Assert
             Assert.NotNull(mailFolderClient);
             Assert.IsAssignableFrom<IMailFolderClient>(mailFolderClient);

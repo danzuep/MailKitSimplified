@@ -48,17 +48,15 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <summary>
         /// Connect to the given mail folder.
         /// </summary>
-        /// <param name="mailFolderName">Mail folder name.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <returns>Connected <see cref="IMailFolder"/>.</returns>
-        ValueTask<IMailFolder> ConnectMailFolderAsync(string mailFolderName = null, CancellationToken cancellationToken = default);
+        ValueTask<IMailFolder> ConnectMailFolderAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Connect an <see cref="IMailFolderClient"/> to the mail folder.
         /// </summary>
-        /// <param name="mailFolderName">Mail folder name.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <returns><see cref="IMailFolderClient"/>.</returns>
-        ValueTask<IMailFolderClient> ConnectMailFolderClientAsync(string mailFolderName = null, CancellationToken cancellationToken = default);
+        ValueTask<IMailFolderClient> ConnectMailFolderClientAsync(CancellationToken cancellationToken = default);
     }
 }

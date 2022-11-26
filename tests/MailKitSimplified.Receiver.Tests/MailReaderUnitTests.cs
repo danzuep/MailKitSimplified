@@ -14,16 +14,9 @@ namespace MailKitSimplified.Receiver.Tests
             // Arrange
             _mailFolderMock.Setup(_ => _.OpenAsync(It.IsAny<FolderAccess>(), It.IsAny<CancellationToken>())).Verifiable();
             _mailFolderMock.Setup(_ => _.CloseAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).Verifiable();
-            _imapReceiverMock.Setup(_ => _.ConnectMailFolderAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _imapReceiverMock.Setup(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_mailFolderMock.Object).Verifiable();
             _mailReader = new MailReader(_imapReceiverMock.Object).Skip(0).Take(1);
-        }
-
-        [Fact]
-        public void CreateMailReader_WithValidMailFolderName()
-        {
-            var mailReader = MailReader.Create(_imapReceiverMock.Object, "INBOX");
-            Assert.NotNull(mailReader);
         }
 
         [Fact]

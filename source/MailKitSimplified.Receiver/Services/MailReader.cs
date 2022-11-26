@@ -15,7 +15,6 @@ namespace MailKitSimplified.Receiver.Services
             MessageSummaryItems.BodyStructure |
             MessageSummaryItems.UniqueId;
 
-        protected string _mailFolderName = null;
         private int _skip = 0;
         private bool _continueSkip = false;
         private int _take = 250;
@@ -25,21 +24,6 @@ namespace MailKitSimplified.Receiver.Services
         public MailReader(IImapReceiver imapReceiver)
         {
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
-        }
-
-        public static MailReader Create(IImapReceiver imapReceiver, string mailFolderName)
-        {
-            var emailReader = new MailReader(imapReceiver);
-            emailReader.ReadFrom(mailFolderName);
-            return emailReader;
-        }
-
-        private MailReader ReadFrom(string mailFolderName)
-        {
-            if (string.IsNullOrWhiteSpace(mailFolderName))
-                throw new ArgumentNullException(nameof(mailFolderName));
-            _mailFolderName = mailFolderName;
-            return this;
         }
 
         public IMailReader Skip(int skipCount, bool continuous = false)
@@ -72,10 +56,10 @@ namespace MailKitSimplified.Receiver.Services
         public async ValueTask<IList<IMessageSummary>> GetMessageSummariesAsync(MessageSummaryItems filter, CancellationToken cancellationToken = default)
         {
             filter |= MessageSummaryItems.UniqueId;
-            var mailFolder = await _imapReceiver.ConnectMailFolderAsync(_mailFolderName, cancellationToken).ConfigureAwait(false);
+            var mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
             _ = await mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
             var messageSummaries = await GetMessageSummariesAsync(mailFolder, filter, cancellationToken).ConfigureAwait(false);
-            await mailFolder.CloseAsync().ConfigureAwait(false);
+            await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
             return messageSummaries;
         }
 
@@ -85,7 +69,7 @@ namespace MailKitSimplified.Receiver.Services
         public async ValueTask<IList<MimeMessage>> GetMimeMessagesAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
         {
             var mimeMessages = new List<MimeMessage>();
-            var mailFolder = await _imapReceiver.ConnectMailFolderAsync(_mailFolderName, cancellationToken).ConfigureAwait(false);
+            var mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
             _ = await mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
             int startIndex = _skip < mailFolder.Count ? _skip : mailFolder.Count;
             int endIndex = startIndex + _take > mailFolder.Count ? mailFolder.Count : startIndex + _take;
@@ -94,10 +78,10 @@ namespace MailKitSimplified.Receiver.Services
                 var mimeMessage = await mailFolder.GetMessageAsync(index, cancellationToken, transferProgress).ConfigureAwait(false);
                 mimeMessages.Add(mimeMessage);
             }
-            await mailFolder.CloseAsync().ConfigureAwait(false);
+            await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
             return mimeMessages;
         }
 
-        public override string ToString() => $"{_mailFolderName} (skip {_skip}, take {_take})";
+        public override string ToString() => $"{_imapReceiver} (skip {_skip}, take {_take})";
     }
 }

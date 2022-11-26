@@ -43,7 +43,7 @@ namespace MailKitSimplified.Receiver.Services
         public virtual async ValueTask DisposeAsync()
         {
             if (_mailFolder.IsOpen)
-                await _mailFolder.CloseAsync().ConfigureAwait(false);
+                await _mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
         }
 
         public virtual void Dispose()

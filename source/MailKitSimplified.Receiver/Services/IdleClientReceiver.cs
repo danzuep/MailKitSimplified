@@ -53,7 +53,7 @@ namespace MailKitSimplified.Receiver
             {
 				ProcessMessageSummariesAsync = messagesArrivedMethod;
 				using (_imapClient = await _imapReceiver.ConnectImapClientAsync(cancellationToken))
-				using (_mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(null, cancellationToken))
+				using (_mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(cancellationToken))
 				{
 					_canIdle = _imapClient.Capabilities.HasFlag(ImapCapabilities.Idle);
 					_mailFolder = await _mailFolderClient.ConnectAsync(false, cancellationToken);

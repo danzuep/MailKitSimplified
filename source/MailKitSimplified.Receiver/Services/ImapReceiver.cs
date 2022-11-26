@@ -121,19 +121,18 @@ namespace MailKitSimplified.Receiver.Services
         }
 
         /// <exception cref="FolderNotFoundException">No mail folder has the specified name</exception>
-        public async ValueTask<IMailFolder> ConnectMailFolderAsync(string mailFolderName = null, CancellationToken cancellationToken = default)
+        public async ValueTask<IMailFolder> ConnectMailFolderAsync(CancellationToken cancellationToken = default)
         {
             _ = await ConnectImapClientAsync(cancellationToken).ConfigureAwait(false);
-            var targetMailFolder = mailFolderName ?? _receiverOptions.MailFolderName;
-            _logger.LogTrace($"Target mail folder: '{targetMailFolder}'.");
-            var mailFolder = string.IsNullOrWhiteSpace(targetMailFolder) || targetMailFolder.Equals("INBOX", StringComparison.OrdinalIgnoreCase) ?
-                _imapClient.Inbox : await _imapClient.GetFolderAsync(targetMailFolder, cancellationToken).ConfigureAwait(false);
+            _logger.LogTrace($"Connecting to mail folder: '{_receiverOptions.MailFolderName}'.");
+            var mailFolder = string.IsNullOrWhiteSpace(_receiverOptions.MailFolderName) || _receiverOptions.MailFolderName.Equals("INBOX", StringComparison.OrdinalIgnoreCase) ?
+                _imapClient.Inbox : await _imapClient.GetFolderAsync(_receiverOptions.MailFolderName, cancellationToken).ConfigureAwait(false);
             return mailFolder;
         }
 
-        public async ValueTask<IMailFolderClient> ConnectMailFolderClientAsync(string mailFolderName = null, CancellationToken cancellationToken = default)
+        public async ValueTask<IMailFolderClient> ConnectMailFolderClientAsync(CancellationToken cancellationToken = default)
         {
-            var mailFolder = await ConnectMailFolderAsync(mailFolderName, cancellationToken).ConfigureAwait(false);
+            var mailFolder = await ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
             var mailFolderClient = new MailFolderClient(mailFolder);
             return mailFolderClient;
         }

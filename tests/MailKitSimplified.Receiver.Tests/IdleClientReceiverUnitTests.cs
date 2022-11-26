@@ -19,11 +19,11 @@ namespace MailKitSimplified.Receiver.Tests
             _imapClientMock.SetupGet(_ => _.Capabilities).Returns(ImapCapabilities.Idle).Verifiable();
             _mailFolderClientMock.Setup(_ => _.ConnectAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_mailFolderMock.Object).Verifiable();
-            _imapReceiverMock.Setup(_ => _.ConnectMailFolderAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _imapReceiverMock.Setup(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_mailFolderMock.Object).Verifiable();
             _imapReceiverMock.Setup(_ => _.ConnectImapClientAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_imapClientMock.Object).Verifiable();
-            _imapReceiverMock.Setup(_ => _.ConnectMailFolderClientAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _imapReceiverMock.Setup(_ => _.ConnectMailFolderClientAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_mailFolderClientMock.Object).Verifiable();
             _imapIdleClient = new IdleClientReceiver(_imapReceiverMock.Object, Mock.Of<ILogger<IdleClientReceiver>>());
         }
@@ -46,7 +46,7 @@ namespace MailKitSimplified.Receiver.Tests
         //    // Act
         //    await _imapIdleClient.MonitorAsync(MessageArrival, It.IsAny<string>(), It.IsAny<CancellationToken>());
         //    // Assert
-        //    _imapReceiverMock.Verify(_ => _.ConnectMailFolderAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        //    _imapReceiverMock.Verify(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()), Times.Once);
         //}
 
         private ValueTask MessageArrival(IList<IMessageSummary> messages) => throw new NotImplementedException();//ValueTask.CompletedTask;
