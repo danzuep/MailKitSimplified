@@ -17,7 +17,7 @@
         /// </summary>
         string EmailAddress { get; set; }
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         /// <summary>
         /// Email contact name and address as a string.
         /// </summary>

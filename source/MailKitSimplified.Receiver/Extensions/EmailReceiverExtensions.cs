@@ -20,24 +20,42 @@ namespace MailKitSimplified.Receiver.Extensions
         public static string ToEnumeratedString<T>(this IEnumerable<T> data, string div = ", ") =>
             data is null ? "" : string.Join(div, data.Select(o => o?.ToString() ?? ""));
 
-        public static void AddRange<T>(this IList<T> list, IEnumerable<T> items)
+        public static IList<T> TryAddUniqueRange<T>(this IList<T> list, IEnumerable<T> items)
         {
+            var result = new List<T>();
             if (list is null)
                 list = new List<T>();
             if (items != null)
             {
-                if (list is List<T> listT)
-                    listT.AddRange(items);
-                else
-                    foreach (T item in items)
-                        if (item != null)
-                            list.Add(item);
+                foreach (T item in items)
+                {
+                    if (item != null && !list.Contains(item))
+                    {
+                        list.Add(item);
+                        result.Add(item);
+                    }
+                }
+            }
+            return result;
+        }
+
+        public static void ActionEach<T>(this IEnumerable<T> items, Action<T> action, CancellationToken cancellationToken = default)
+        {
+            if (items != null && action != null)
+            {
+                foreach (T item in items)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
+                    else if (item != null)
+                        action(item);
+                }
             }
         }
 
         internal static IList<string> GetFolderList(this ImapClient client, ILogger logger = null)
         {
-            IList<string> mailFolderNames = new List<string>();
+            var mailFolderNames = new List<string>();
             if (client != null && client.IsAuthenticated)
             {
                 if (logger == null)

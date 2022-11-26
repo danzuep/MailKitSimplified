@@ -92,7 +92,7 @@ namespace MailKitSimplified.Receiver.Services
         public IIdleClientReceiver Folder(string mailFolderName)
         {
             _receiverOptions.MailFolderName = mailFolderName;
-            var idleClient = new IdleClientReceiver(this);
+            var idleClient = new MailFolderMonitor(this);
             return idleClient;
         }
 
@@ -140,7 +140,7 @@ namespace MailKitSimplified.Receiver.Services
         public async ValueTask<IList<string>> GetMailFolderNamesAsync(CancellationToken cancellationToken = default)
         {
             _ = await ConnectImapClientAsync(cancellationToken).ConfigureAwait(false);
-            IList<string> mailFolderNames = new List<string>();
+            var mailFolderNames = new List<string>();
             if (_imapClient.PersonalNamespaces.Count > 0)
             {
                 var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.PersonalNamespaces[0], cancellationToken: cancellationToken).ConfigureAwait(false);

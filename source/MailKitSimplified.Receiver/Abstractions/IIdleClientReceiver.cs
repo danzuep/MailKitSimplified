@@ -1,4 +1,6 @@
-﻿using System.Threading;
+﻿using MailKit;
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MailKitSimplified.Receiver.Abstractions
@@ -8,8 +10,14 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <summary>
         /// Idle client that monitors a mail folder for incoming messages.
         /// </summary>
-        /// <param name="messagesArrivedMethod">Method for processing messages as they arrive.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
-        Task MonitorAsync(MessagesArrived messagesArrivedMethod, CancellationToken cancellationToken = default);
+        Task MonitorAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Idle client that monitors a mail folder for incoming messages.
+        /// </summary>
+        /// <param name="messageArrivalMethod">Method for processing messages as they arrive.</param>
+        /// <param name="cancellationToken">Request cancellation token.</param>
+        Task MonitorAsync(Func<IMessageSummary, Task> messageArrivalMethod, CancellationToken cancellationToken = default);
     }
 }
