@@ -26,8 +26,8 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// Connect to a mail folder ready to monitor with an idle client.
         /// </summary>
         /// <param name="mailFolderName">Mail folder to connect to.</param>
-        /// <returns><see cref="IIdleClientReceiver"/>.</returns>
-        IIdleClientReceiver Folder(string mailFolderName);
+        /// <returns><see cref="IMailFolderMonitor"/>.</returns>
+        IMailFolderMonitor Folder(string mailFolderName);
 
         /// <summary>
         /// Get a list of the names of all the folders connected to this account.

@@ -89,7 +89,7 @@ namespace MailKitSimplified.Receiver.Services
 
         public IMailFolderReader ReadMail => new MailFolderReader(this);
 
-        public IIdleClientReceiver Folder(string mailFolderName)
+        public IMailFolderMonitor Folder(string mailFolderName)
         {
             _receiverOptions.MailFolderName = mailFolderName;
             var idleClient = new MailFolderMonitor(this);

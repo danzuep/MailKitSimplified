@@ -44,7 +44,11 @@ namespace MailKitSimplified.Receiver.Services
             _useTimestamp = useTimestamp;
             _redactSecrets = redactSecrets;
             //bool isMockFileSystem = _fileSystem.GetType().Name == "MockFileSystem";
-            if (!string.IsNullOrEmpty(logFilePath))
+            if (logFilePath?.Equals("console", StringComparison.OrdinalIgnoreCase) ?? false)
+            {
+                _protocolLogger = new ProtocolLogger(Console.OpenStandardError());
+            }
+            else if (!string.IsNullOrWhiteSpace(logFilePath))
             {
                 var directoryName = _fileSystem.Path.GetDirectoryName(logFilePath);
                 if (!string.IsNullOrWhiteSpace(directoryName))
@@ -53,10 +57,6 @@ namespace MailKitSimplified.Receiver.Services
                 var stream = _fileSystem.File.Open(logFilePath, mode, FileAccess.Write, FileShare.Read);
                 _protocolLogger = new ProtocolLogger(stream);
                 _logger.LogDebug($"Saving logs to file: {logFilePath}");
-            }
-            else if (logFilePath != null)
-            {
-                _protocolLogger = new ProtocolLogger(Console.OpenStandardError());
             }
             return this;
         }

@@ -138,7 +138,7 @@ namespace MailKitSimplified.Receiver.Tests
         {
             var idleClient = _imapReceiver.Folder("INBOX");
             Assert.NotNull(idleClient);
-            Assert.IsAssignableFrom<IIdleClientReceiver>(idleClient);
+            Assert.IsAssignableFrom<IMailFolderMonitor>(idleClient);
         }
 
         [Fact]

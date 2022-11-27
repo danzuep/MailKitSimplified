@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace MailKitSimplified.Receiver.Abstractions
 {
-    public interface IIdleClientReceiver
+    public interface IMailFolderMonitor
     {
         /// <summary>
         /// Idle client that monitors a mail folder for incoming messages.

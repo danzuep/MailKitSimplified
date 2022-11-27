@@ -50,8 +50,6 @@ namespace MailKitSimplified.Receiver.Tests
         //    _imapReceiverMock.Verify(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()), Times.Once);
         //}
 
-        private ValueTask MessageArrival(IList<IMessageSummary> messages) => throw new NotImplementedException();//ValueTask.CompletedTask;
-
         //[Fact]
         //public void ToString_Verify()
         //{

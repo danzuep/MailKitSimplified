@@ -58,8 +58,8 @@ namespace MailKitSimplified.Receiver
         private static IServiceCollection AddMailKitSimplifiedEmailReceiver(this IServiceCollection services)
         {
             services.AddTransient<IMailReader, MailReader>();
-            services.AddTransient<IMailFolderClient, MailFolderClient>();
             services.AddTransient<IMailFolderReader, MailFolderReader>();
+            services.AddTransient<IMailFolderMonitor, MailFolderMonitor>();
             services.AddTransient<IImapReceiver, ImapReceiver>();
             return services;
         }

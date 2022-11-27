@@ -77,16 +77,19 @@ namespace MailKitSimplified.Sender.Services
 
         public static IProtocolLogger GetProtocolLogger(string logFilePath = null, IFileSystem fileSystem = null)
         {
-            if (!string.IsNullOrEmpty(logFilePath))
+            IProtocolLogger protocolLogger = null;
+            if (logFilePath?.Equals("console", StringComparison.OrdinalIgnoreCase) ?? false)
+            {
+                protocolLogger = new ProtocolLogger(Console.OpenStandardError());
+            }
+            else if (!string.IsNullOrWhiteSpace(logFilePath))
             {
                 var _fileSystem = fileSystem ?? new FileSystem();
                 var directoryName = _fileSystem.Path.GetDirectoryName(logFilePath);
-                _fileSystem.Directory.CreateDirectory(directoryName);
+                if (!string.IsNullOrWhiteSpace(directoryName))
+                    _fileSystem.Directory.CreateDirectory(directoryName);
+                protocolLogger = new ProtocolLogger(logFilePath);
             }
-            var protocolLogger = logFilePath == null ? null :
-                string.IsNullOrWhiteSpace(logFilePath) ?
-                    new ProtocolLogger(Console.OpenStandardError()) :
-                        new ProtocolLogger(logFilePath);
             return protocolLogger;
         }
 

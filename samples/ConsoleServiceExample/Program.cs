@@ -29,14 +29,14 @@ logger.LogInformation("Email 1 {result}.", isSent ? "sent" : "failed to send");
 isSent = await writtenEmail.Copy().To("new@io").TrySendAsync();
 logger.LogInformation("Email 2 {result}.", isSent ? "sent" : "failed to send");
 
-var emailReceiverOptions = Options.Create(configuration.GetRequiredSection(EmailReceiverOptions.SectionName).Get<EmailReceiverOptions>()!);
-//var imapLogger = new MailKitProtocolLogger(loggerFactory.CreateLogger<MailKitProtocolLogger>());
-using var imapReceiver = new ImapReceiver(emailReceiverOptions, loggerFactory.CreateLogger<ImapReceiver>()); //ImapReceiver.Create("localhost");
+//var emailReceiverOptions = Options.Create(configuration.GetRequiredSection(EmailReceiverOptions.SectionName).Get<EmailReceiverOptions>()!);
+////var imapLogger = new MailKitProtocolLogger(loggerFactory.CreateLogger<MailKitProtocolLogger>());
+//using var imapReceiver = new ImapReceiver(emailReceiverOptions, loggerFactory.CreateLogger<ImapReceiver>()); //ImapReceiver.Create("localhost");
 
-var mailFolderReader = imapReceiver.ReadFrom("INBOX").Skip(5).Take(2);
-var messageSummaries = await mailFolderReader.GetMessageSummariesAsync(MessageSummaryItems.UniqueId);
-//logger.LogDebug("Email(s) received: {fields}", messageSummaries.FirstOrDefault()?.Fields);
-logger.LogDebug("Email(s) received: {ids}.", messageSummaries.Select(m => m.UniqueId).ToEnumeratedString());
+//var mailFolderReader = imapReceiver.ReadFrom("INBOX").Skip(5).Take(2);
+//var messageSummaries = await mailFolderReader.GetMessageSummariesAsync(MessageSummaryItems.UniqueId);
+////logger.LogDebug("Email(s) received: {fields}", messageSummaries.FirstOrDefault()?.Fields);
+//logger.LogDebug("Email(s) received: {ids}.", messageSummaries.Select(m => m.UniqueId).ToEnumeratedString());
 
-var mimeMessages = await imapReceiver.ReadMail.Skip(0).Take(1).GetMimeMessagesAsync();
-logger.LogDebug("Email(s) received: {ids}.", mimeMessages.Select(m => m.MessageId).ToEnumeratedString());
+//var mimeMessages = await imapReceiver.ReadMail.Skip(0).Take(1).GetMimeMessagesAsync();
+//logger.LogDebug("Email(s) received: {ids}.", mimeMessages.Select(m => m.MessageId).ToEnumeratedString());

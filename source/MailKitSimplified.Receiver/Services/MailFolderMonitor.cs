@@ -15,15 +15,16 @@ using MailKitSimplified.Receiver.Extensions;
 
 namespace MailKitSimplified.Receiver
 {
-    public sealed class MailFolderMonitor : IDisposable, IIdleClientReceiver
+    public sealed class MailFolderMonitor : IDisposable, IMailFolderMonitor
     {
         public MessageSummaryItems MessageFilter { get; set; } = MessageSummaryItems.UniqueId;
         public Func<IMessageSummary, Task> MessageArrivalMethod { private get; set; }
         public Func<IMessageSummary, Task> MessageRemovalMethod { private get; set; }
 
         private const int _maxRetries = 3;
-        private const int _idleMinutesImap = 9; // 9 for Gmail, otherwise 29
-        private readonly int _idleMinutes = _idleMinutesImap;
+        private const int _idleMinutesGmail = 9;
+        private const int _idleMinutesImap = 29;
+        private int _idleMinutes = _idleMinutesImap;
         private readonly object _cacheLock = new object();
         private readonly IList<IMessageSummary> _messageCache = new List<IMessageSummary>();
         private readonly ConcurrentQueue<IMessageSummary> _arrivalQueue = new ConcurrentQueue<IMessageSummary>();
@@ -134,8 +135,11 @@ namespace MailKitSimplified.Receiver
             }
         }
         
-        private async ValueTask ReconnectAsync(CancellationToken cancellationToken = default) =>
+        private async ValueTask ReconnectAsync(CancellationToken cancellationToken = default)
+        {
+            _ = await _imapReceiver.ConnectImapClientAsync(cancellationToken).ConfigureAwait(false);
             _ = await _mailFolderClient.ConnectAsync(false, cancellationToken).ConfigureAwait(false);
+        }
 
         private async ValueTask WaitForNewMessagesAsync(CancellationToken cancellationToken = default)
         {
@@ -169,8 +173,15 @@ namespace MailKitSimplified.Receiver
                 }
                 catch (ImapProtocolException ex)
                 {
-                    _logger.LogInformation(ex, "IMAP protocol exception, checking connection.");
+                    if (ex.Message.StartsWith("Idle timeout"))
+                        _logger.LogInformation($"{ex.Message} Trying again.");
+                    else
+                        _logger.LogInformation(ex, "IMAP protocol exception, checking connection.");
                     await ReconnectAsync(cancellationToken).ConfigureAwait(false);
+                    if (_idleMinutes > _idleMinutesGmail)
+                        _idleMinutes = _idleMinutesGmail;
+                    else if (_idleMinutes == _idleMinutesGmail)
+                        _idleMinutes = 1;
                 }
                 catch (ImapCommandException ex)
                 {
@@ -216,8 +227,7 @@ namespace MailKitSimplified.Receiver
         private async ValueTask<int> ProcessMessagesArrivedAsync(CancellationToken cancellationToken = default)
         {
             int startIndex = _messageCache.Count;
-            _logger.LogTrace($"{_imapReceiver} {1} ({2}) Fetching new message arrivals, starting from {3}",
-                _mailFolder.FullName, _mailFolder.Count, startIndex);
+            _logger.LogTrace($"{_imapReceiver} ({_mailFolder.Count}) Fetching new message arrivals, starting from {startIndex}.");
             if (startIndex > _mailFolder.Count)
                 startIndex = _mailFolder.Count;
             var filter = MessageFilter | MessageSummaryItems.UniqueId;

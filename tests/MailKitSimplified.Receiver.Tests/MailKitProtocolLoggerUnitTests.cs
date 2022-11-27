@@ -40,7 +40,7 @@ namespace MailKitSimplified.Receiver.Tests
         [Fact]
         public void SetLogFilePath_ToConsole()
         {
-            _mailKitProtocolLogger.SetLogFilePath(string.Empty);
+            _mailKitProtocolLogger.SetLogFilePath("Console");
             _mailKitProtocolLogger.LogServer(_testBytes, 0, 15);
         }
 
