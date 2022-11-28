@@ -71,7 +71,7 @@ namespace MailKitSimplified.Core.Services
             return this;
         }
 
-        public IGenericEmailWriter Attach(string key, object value)
+        public IGenericEmailWriter Attach(string key, object value = null)
         {
             _email.Attachments.Add(key, value);
             return this;

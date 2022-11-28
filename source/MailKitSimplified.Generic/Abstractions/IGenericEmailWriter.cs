@@ -66,11 +66,14 @@ namespace MailKitSimplified.Core.Abstractions
 
         /// <summary>
         /// Add an object as an attachment to the email.
+        /// Key could be file path if value is null, or
+        /// Content-Id if value is a byte[] or stream.
+        /// Key may be ignored if value is a MimeEntity.
         /// </summary>
-        /// <param name="key">Attachment key (Content-Id).</param>
-        /// <param name="value">Attachemnt object value.</param>
+        /// <param name="key">Attachment key (e.g. Content-Id).</param>
+        /// <param name="value">Attachemnt object value (e.g. byte[]).</param>
         /// <returns><see cref="IGenericEmailWriter"/> interface.</returns>
-        IGenericEmailWriter Attach(string key, object value);
+        IGenericEmailWriter Attach(string key, object value = null);
 
         /// <summary>
         /// Add a plain-text body to the email.

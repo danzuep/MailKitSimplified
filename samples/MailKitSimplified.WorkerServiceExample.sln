@@ -9,6 +9,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Receiver"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Sender", "..\source\MailKitSimplified.Sender\MailKitSimplified.Sender.csproj", "{62E73C5A-07D1-455B-9277-4DDB5B244CE4}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Generic", "..\source\MailKitSimplified.Generic\MailKitSimplified.Generic.csproj", "{D6877D24-40A2-44CA-B331-71096D7B3C52}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Receiver.Tests", "..\tests\MailKitSimplified.Receiver.Tests\MailKitSimplified.Receiver.Tests.csproj", "{B73F48C4-7BCB-43CA-A3DB-76D543E0C1B1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Sender.Tests", "..\tests\MailKitSimplified.Sender.Tests\MailKitSimplified.Sender.Tests.csproj", "{ABB5675F-F96B-4CFB-9B13-130924172662}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +33,18 @@ Global
 		{62E73C5A-07D1-455B-9277-4DDB5B244CE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{62E73C5A-07D1-455B-9277-4DDB5B244CE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{62E73C5A-07D1-455B-9277-4DDB5B244CE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6877D24-40A2-44CA-B331-71096D7B3C52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6877D24-40A2-44CA-B331-71096D7B3C52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6877D24-40A2-44CA-B331-71096D7B3C52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6877D24-40A2-44CA-B331-71096D7B3C52}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B73F48C4-7BCB-43CA-A3DB-76D543E0C1B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B73F48C4-7BCB-43CA-A3DB-76D543E0C1B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B73F48C4-7BCB-43CA-A3DB-76D543E0C1B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B73F48C4-7BCB-43CA-A3DB-76D543E0C1B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABB5675F-F96B-4CFB-9B13-130924172662}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABB5675F-F96B-4CFB-9B13-130924172662}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABB5675F-F96B-4CFB-9B13-130924172662}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABB5675F-F96B-4CFB-9B13-130924172662}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

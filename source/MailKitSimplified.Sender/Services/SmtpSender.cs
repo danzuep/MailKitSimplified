@@ -20,7 +20,7 @@ namespace MailKitSimplified.Sender.Services
 {
     public sealed class SmtpSender : ISmtpSender
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<SmtpSender> _logger;
         private readonly ISmtpClient _smtpClient;
         private readonly EmailSenderOptions _senderOptions;
 
@@ -55,6 +55,13 @@ namespace MailKitSimplified.Sender.Services
             return sender;
         }
 
+        public SmtpSender SetProtocolLog(string logFilePath)
+        {
+            _senderOptions.ProtocolLog = logFilePath;
+            var sender = Create(_senderOptions, _logger);
+            return sender;
+        }
+
         public SmtpSender SetPort(ushort smtpPort)
         {
             _senderOptions.SmtpPort = smtpPort;
@@ -64,12 +71,6 @@ namespace MailKitSimplified.Sender.Services
         public SmtpSender SetCredential(string username, string password)
         {
             _senderOptions.SmtpCredential = new NetworkCredential(username, password);
-            return this;
-        }
-
-        public SmtpSender SetProtocolLog(string logFilePath)
-        {
-            _senderOptions.ProtocolLog = logFilePath;
             return this;
         }
 

@@ -18,7 +18,7 @@ namespace MailKitSimplified.Receiver.Services
 {
     public sealed class ImapReceiver : IImapReceiver
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<ImapReceiver> _logger;
         private readonly IImapClient _imapClient;
         private readonly EmailReceiverOptions _receiverOptions;
 
@@ -39,7 +39,7 @@ namespace MailKitSimplified.Receiver.Services
         public static ImapReceiver Create(string imapHost, ushort imapPort = 0, string username = null, string password = null, string protocolLog = null, string mailFolderName = null)
         {
             var imapCredential = new NetworkCredential(username, password);
-            var receiver = Create(imapHost, imapCredential, imapPort, protocolLog);
+            var receiver = Create(imapHost, imapCredential, imapPort, protocolLog, mailFolderName);
             return receiver;
         }
 
@@ -57,6 +57,13 @@ namespace MailKitSimplified.Receiver.Services
             return receiver;
         }
 
+        public ImapReceiver SetProtocolLog(string logFilePath)
+        {
+            _receiverOptions.ProtocolLog = logFilePath;
+            var receiver = Create(_receiverOptions, _logger);
+            return receiver;
+        }
+
         public ImapReceiver SetPort(ushort imapPort)
         {
             _receiverOptions.ImapPort = imapPort;
@@ -66,12 +73,6 @@ namespace MailKitSimplified.Receiver.Services
         public ImapReceiver SetCredential(string username, string password)
         {
             _receiverOptions.ImapCredential = new NetworkCredential(username, password);
-            return this;
-        }
-
-        public ImapReceiver SetProtocolLog(string logFilePath)
-        {
-            _receiverOptions.ProtocolLog = logFilePath;
             return this;
         }
 
