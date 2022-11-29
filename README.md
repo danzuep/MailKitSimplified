@@ -27,9 +27,7 @@ The examples above will actually work with no other setup if you use something l
 ### Sending Mail
 
 ```csharp
-using var smtpSender = SmtpSender.Create("mail.example.com:587")
-    .SetCredential("U5ern@m3", "P455w0rd")
-    .SetProtocolLog("Logs/SmtpClient.txt");
+using var smtpSender = SmtpSender.Create("mail.example.com", 587, "U5ern@m3", "P455w0rd", "Logs/SmtpClient.txt");
 await smtpSender.WriteEmail
     .From("my.name@example.com")
     .To("YourName@example.com")
@@ -46,9 +44,7 @@ See the [MailKitSimplified.Sender wiki](https://github.com/danzuep/MailKitSimpli
 ### Receiving Mail
 
 ```csharp
-using var imapReceiver = ImapReceiver.Create("imap.example.com:993")
-    .SetCredential("U5ern@m3", "P455w0rd")
-    .SetProtocolLog("Logs/ImapClient.txt");
+using var imapReceiver = ImapReceiver.Create("imap.example.com", 993, "U5ern@m3", "P455w0rd", "Logs/ImapClient.txt");
 var mimeMessages = await imapReceiver.ReadFrom("INBOX")
     .Skip(0).Take(10).GetMimeMessagesAsync();
 ```
