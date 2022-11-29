@@ -8,16 +8,25 @@ namespace MailKitSimplified.Receiver.Abstractions
     public interface IMailFolderMonitor
     {
         /// <summary>
-        /// Idle client that monitors a mail folder for incoming messages.
+        /// Specify which properties of <see cref="IMessageSummary"/> should be populated.
+        /// <see cref="UniqueId"/> is always included by default.
         /// </summary>
-        /// <param name="cancellationToken">Request cancellation token.</param>
-        Task MonitorAsync(CancellationToken cancellationToken = default);
+        MessageSummaryItems MessageFilter { get; set; }
+
+        /// <summary>
+        /// Method for processing messages as they are added to the mail folder.
+        /// </summary>
+        Func<IMessageSummary, Task> MessageArrivalMethod { set; }
+
+        /// <summary>
+        /// Method for processing messages as they are removed from the mail folder.
+        /// </summary>
+        Func<IMessageSummary, Task> MessageDepartureMethod { set; }
 
         /// <summary>
         /// Idle client that monitors a mail folder for incoming messages.
         /// </summary>
-        /// <param name="messageArrivalMethod">Method for processing messages as they arrive.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
-        Task MonitorAsync(Func<IMessageSummary, Task> messageArrivalMethod, CancellationToken cancellationToken = default);
+        Task IdleAsync(CancellationToken cancellationToken = default);
     }
 }

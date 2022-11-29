@@ -88,16 +88,26 @@ namespace MailKitSimplified.Receiver.Services
             return ReadMail;
         }
 
-        public IMailFolderReader ReadMail => new MailFolderReader(this);
-
-        public IMailFolderMonitor Folder(string mailFolderName)
+        public IMailFolderMonitor Monitor(string mailFolderName)
         {
             _receiverOptions.MailFolderName = mailFolderName;
-            var idleClient = new MailFolderMonitor(this);
-            return idleClient;
+            return MonitorFolder;
         }
 
-        public async ValueTask<IImapClient> ConnectImapClientAsync(CancellationToken cancellationToken = default)
+        public IMailFolderClient MailFolderClient => new MailFolderClient(this);
+
+        public IMailFolderReader ReadMail => new MailFolderReader(MailFolderClient);
+
+        public IMailFolderMonitor MonitorFolder => new MailFolderMonitor(this);
+
+        public async ValueTask<IImapClient> ConnectAuthenticatedImapClientAsync(CancellationToken cancellationToken = default)
+        {
+            await ConnectImapClientAsync(cancellationToken).ConfigureAwait(false);
+            await AuthenticateImapClientAsync(cancellationToken).ConfigureAwait(false);
+            return _imapClient;
+        }
+
+        internal async ValueTask ConnectImapClientAsync(CancellationToken cancellationToken = default)
         {
             if (!_imapClient.IsConnected)
             {
@@ -106,6 +116,10 @@ namespace MailKitSimplified.Receiver.Services
                     await _imapClient.CompressAsync(cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace($"IMAP client connected to {_receiverOptions.ImapHost}.");
             }
+        }
+
+        internal async ValueTask AuthenticateImapClientAsync(CancellationToken cancellationToken = default)
+        {
             if (!_imapClient.IsAuthenticated)
             {
                 // Pre-emptively disable XOAUTH2 authentication since we don't have an OAuth2 token.
@@ -118,35 +132,27 @@ namespace MailKitSimplified.Receiver.Services
                     await _imapClient.AuthenticateAsync(_receiverOptions.ImapCredential, cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace($"IMAP client authenticated with {_receiverOptions.ImapHost}.");
             }
-            return _imapClient;
         }
 
         /// <exception cref="FolderNotFoundException">No mail folder has the specified name</exception>
         public async ValueTask<IMailFolder> ConnectMailFolderAsync(CancellationToken cancellationToken = default)
         {
-            _ = await ConnectImapClientAsync(cancellationToken).ConfigureAwait(false);
+            _ = await ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
             _logger.LogTrace($"Connecting to mail folder: '{_receiverOptions.MailFolderName}'.");
             var mailFolder = string.IsNullOrWhiteSpace(_receiverOptions.MailFolderName) || _receiverOptions.MailFolderName.Equals("INBOX", StringComparison.OrdinalIgnoreCase) ?
                 _imapClient.Inbox : await _imapClient.GetFolderAsync(_receiverOptions.MailFolderName, cancellationToken).ConfigureAwait(false);
             return mailFolder;
         }
 
-        public async ValueTask<IMailFolderClient> ConnectMailFolderClientAsync(CancellationToken cancellationToken = default)
-        {
-            var mailFolder = await ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
-            var mailFolderClient = new MailFolderClient(mailFolder);
-            return mailFolderClient;
-        }
-
         public async ValueTask<IList<string>> GetMailFolderNamesAsync(CancellationToken cancellationToken = default)
         {
-            _ = await ConnectImapClientAsync(cancellationToken).ConfigureAwait(false);
+            _ = await ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
             var mailFolderNames = new List<string>();
             if (_imapClient.PersonalNamespaces.Count > 0)
             {
                 var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.PersonalNamespaces[0], cancellationToken: cancellationToken).ConfigureAwait(false);
                 var subfolders = rootFolder.SelectMany(rf => rf.GetSubfolders().Select(sf => sf.Name));
-                var inboxSubfolders = _imapClient.Inbox.GetSubfolders().Select(f => f.FullName);
+                var inboxSubfolders = _imapClient.Inbox.GetSubfolders(cancellationToken: cancellationToken).Select(f => f.FullName);
                 mailFolderNames.AddRange(inboxSubfolders);
                 mailFolderNames.AddRange(subfolders);
                 _logger.LogDebug($"{inboxSubfolders.Count()} Inbox folders: {inboxSubfolders.ToEnumeratedString()}.");
@@ -155,14 +161,14 @@ namespace MailKitSimplified.Receiver.Services
             if (_imapClient.SharedNamespaces.Count > 0)
             {
                 var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.SharedNamespaces[0], cancellationToken: cancellationToken).ConfigureAwait(false);
-                var subfolders = rootFolder.SelectMany(rf => rf.GetSubfolders().Select(sf => sf.Name));
+                var subfolders = rootFolder.SelectMany(rf => rf.GetSubfolders(cancellationToken: cancellationToken).Select(sf => sf.Name));
                 mailFolderNames.AddRange(subfolders);
                 _logger.LogDebug($"{subfolders.Count()} shared folders: {subfolders.ToEnumeratedString()}.");
             }
             if (_imapClient.OtherNamespaces.Count > 0)
             {
                 var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.OtherNamespaces[0], cancellationToken: cancellationToken).ConfigureAwait(false);
-                var subfolders = rootFolder.SelectMany(rf => rf.GetSubfolders().Select(sf => sf.Name));
+                var subfolders = rootFolder.SelectMany(rf => rf.GetSubfolders(cancellationToken: cancellationToken).Select(sf => sf.Name));
                 mailFolderNames.AddRange(subfolders);
                 _logger.LogDebug($"{subfolders.Count()} other folders: {subfolders.ToEnumeratedString()}.");
             }
@@ -171,7 +177,7 @@ namespace MailKitSimplified.Receiver.Services
 
         public override string ToString() => _receiverOptions.ToString();
 
-        public async ValueTask DisconnectAsync(CancellationToken cancellationToken = default)
+        public async Task DisconnectAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogTrace("Disconnecting IMAP email client...");
             if (_imapClient.IsConnected)

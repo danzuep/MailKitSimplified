@@ -1,6 +1,5 @@
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Services;
-using MimeKit;
 
 namespace MailKitSimplified.Receiver.Tests
 {
@@ -16,22 +15,15 @@ namespace MailKitSimplified.Receiver.Tests
             // Arrange
             _mailFolderClientMock.Setup(_ => _.ConnectAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_mailFolderMock.Object).Verifiable();
-            _imapReceiverMock.Setup(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(_mailFolderMock.Object).Verifiable();
-            _imapReceiverMock.Setup(_ => _.ConnectMailFolderClientAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(_mailFolderClientMock.Object).Verifiable();
-            _mailFolderReader = new MailFolderReader(_imapReceiverMock.Object);
+            _mailFolderReader = new MailFolderReader(_mailFolderClientMock.Object);
         }
 
         [Fact]
-        public void ToString_VerifyMailFolderClientToStringCalled()
+        public void ToString_ReturnsOverriddenToString()
         {
-            // Arrange
-            _imapReceiverMock.Setup(_ => _.ToString());
-            // Act
-            _ = _mailFolderReader.ToString();
-            // Assert / Verify
-            _imapReceiverMock.Verify(_ => _.ToString(), Times.Once);
+            var description = _mailFolderReader.ToString();
+            Assert.False(string.IsNullOrWhiteSpace(description));
+            Assert.DoesNotContain(nameof(MailFolderReader), description);
         }
 
         [Fact]
@@ -78,6 +70,47 @@ namespace MailKitSimplified.Receiver.Tests
             Assert.NotNull(mimeMessages);
             Assert.Equal(expected, mimeMessages);
             _mailFolderMock.Verify(_ => _.GetMessageAsync(It.IsAny<UniqueId>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetMessageAsync_WithNullMessageSummary_ReturnsMimeMessages()
+        {
+            // Arrange
+            _mailFolderMock.Setup(_ => _.GetMessageAsync(It.IsAny<int>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
+                .ReturnsAsync(new MimeMessage()).Verifiable();
+            // Act
+            var mimeMessages = await _mailFolderReader.Skip(0).Take(1)
+                .GetMimeMessagesAsync(It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>());
+            // Assert
+            Assert.NotNull(mimeMessages);
+        }
+
+        [Fact]
+        public async Task GetMessageSummariesAsync_WithMessageSummaryItemFilter_ReturnsMessageSummaries()
+        {
+            // Arrange
+            var stubMessageSummaries = new List<IMessageSummary>();
+            _mailFolderMock.Setup(_ => _.FetchAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<IFetchRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stubMessageSummaries);
+            // Act
+            var messageSummaries = await _mailFolderReader.GetMessageSummariesAsync(MessageSummaryItems.UniqueId, It.IsAny<CancellationToken>());
+            // Assert
+            Assert.NotNull(messageSummaries);
+            Assert.Equal(stubMessageSummaries, messageSummaries);
+        }
+
+        [Fact]
+        public async Task GetMessageSummariesAsync_ReturnsMessageSummaries()
+        {
+            // Arrange
+            var stubMessageSummaries = new List<IMessageSummary>();
+            _mailFolderMock.Setup(_ => _.FetchAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<IFetchRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stubMessageSummaries);
+            // Act
+            var messageSummaries = await _mailFolderReader.GetMessageSummariesAsync(It.IsAny<CancellationToken>());
+            // Assert
+            Assert.NotNull(messageSummaries);
+            Assert.Equal(stubMessageSummaries, messageSummaries);
         }
     }
 }

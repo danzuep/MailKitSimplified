@@ -72,7 +72,8 @@ namespace MailKitSimplified.Receiver.Tests
             using var imapReceiver = ImapReceiver.Create(_localhost)
                 .SetPort(It.IsAny<ushort>())
                 .SetCredential(It.IsAny<string>(), It.IsAny<string>())
-                .SetProtocolLog(It.IsAny<string>());
+                .SetProtocolLog(It.IsAny<string>())
+                .SetFolder(It.IsAny<string>());
             Assert.NotNull(imapReceiver);
             Assert.IsAssignableFrom<IImapReceiver>(imapReceiver);
         }
@@ -89,7 +90,7 @@ namespace MailKitSimplified.Receiver.Tests
         public async Task ConnectImapClientAsync_VerifyType()
         {
             // Act
-            var imapReceiver = await _imapReceiver.ConnectImapClientAsync(It.IsAny<CancellationToken>());
+            var imapReceiver = await _imapReceiver.ConnectAuthenticatedImapClientAsync(It.IsAny<CancellationToken>());
             // Assert
             Assert.NotNull(imapReceiver);
             Assert.IsAssignableFrom<IImapClient>(imapReceiver);
@@ -108,10 +109,10 @@ namespace MailKitSimplified.Receiver.Tests
         }
 
         [Fact]
-        public async Task ConnectMailFolderClientAsync_VerifyType()
+        public void MailFolderClient_VerifyType()
         {
             // Act
-            var mailFolderClient = await _imapReceiver.ConnectMailFolderClientAsync(It.IsAny<CancellationToken>());
+            using var mailFolderClient = _imapReceiver.MailFolderClient;
             // Assert
             Assert.NotNull(mailFolderClient);
             Assert.IsAssignableFrom<IMailFolderClient>(mailFolderClient);
@@ -126,9 +127,17 @@ namespace MailKitSimplified.Receiver.Tests
         }
 
         [Fact]
+        public void MonitorFolder_WithImapReceiver_VerifyType()
+        {
+            var idleClient = _imapReceiver.MonitorFolder;
+            Assert.NotNull(idleClient);
+            Assert.IsAssignableFrom<IMailFolderMonitor>(idleClient);
+        }
+
+        [Fact]
         public void ReadFrom_WithAnyMailFolderName_VerifyType()
         {
-            var mailFolderReader = _imapReceiver.ReadFrom("INBOX");
+            var mailFolderReader = ImapReceiver.Create(_localhost).ReadFrom("INBOX");
             Assert.NotNull(mailFolderReader);
             Assert.IsAssignableFrom<IMailFolderReader>(mailFolderReader);
         }
@@ -136,7 +145,7 @@ namespace MailKitSimplified.Receiver.Tests
         [Fact]
         public void Folder_WithAnyMailFolderName_VerifyType()
         {
-            var idleClient = _imapReceiver.Folder("INBOX");
+            var idleClient = ImapReceiver.Create(_localhost).Monitor("INBOX");
             Assert.NotNull(idleClient);
             Assert.IsAssignableFrom<IMailFolderMonitor>(idleClient);
         }

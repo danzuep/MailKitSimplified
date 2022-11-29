@@ -27,15 +27,13 @@ namespace MailKitSimplified.Receiver.Services
 
         private readonly ILogger _logger;
         private readonly IFileSystem _fileSystem;
-        private IProtocolLogger _protocolLogger;
+        private IProtocolLogger _protocolLogger = new ProtocolLogger(Stream.Null);
         private bool _redactSecrets;
         private bool _useTimestamp;
 
-        public MailKitProtocolLogger(ILogger<MailKitProtocolLogger> logger = null, IProtocolLogger protocolLogger = null, IFileSystem fileSystem = null)
+        public MailKitProtocolLogger(ILogger<MailKitProtocolLogger> logger = null, IFileSystem fileSystem = null)
         {
             _logger = logger ?? NullLogger<MailKitProtocolLogger>.Instance;
-            _protocolLogger = protocolLogger == null || protocolLogger is MailKitProtocolLogger ?
-                new ProtocolLogger(Stream.Null) : protocolLogger;
             _fileSystem = fileSystem ?? new FileSystem();
         }
 

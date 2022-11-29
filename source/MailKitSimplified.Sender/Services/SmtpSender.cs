@@ -232,7 +232,7 @@ namespace MailKitSimplified.Sender.Services
 
         public override string ToString() => _senderOptions.ToString();
 
-        public async ValueTask DisconnectAsync(CancellationToken cancellationToken = default)
+        public async Task DisconnectAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogTrace("Disconnecting SMTP email client...");
             if (_smtpClient.IsConnected)

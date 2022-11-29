@@ -20,8 +20,8 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken = default)
     {
-        await _mailFolderMonitor.MonitorAsync(stoppingToken);
-        //await _imapReceiver.Folder("INBOX").MonitorAsync(stoppingToken);
+        await _mailFolderMonitor.IdleAsync(stoppingToken);
+        //await _imapReceiver.MonitorFolder.IdleAsync(stoppingToken);
         //await SendAsync(stoppingToken);
         //await ReceiveAsync(stoppingToken);
     }

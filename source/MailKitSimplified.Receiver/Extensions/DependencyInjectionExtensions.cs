@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MailKit;
+using System;
+using System.IO.Abstractions;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
@@ -14,8 +16,8 @@ namespace MailKitSimplified.Receiver
         /// <summary>
         /// Add the MailKitSimplified.Receiver configuration and services.
         /// Adds IOptions<<see cref="EmailReceiverOptions"/>>,
-        /// <see cref="IMailReader"/>, <see cref="IMailFolderClient"/>,
-        /// <see cref="IMailFolderReader"/>, and <see cref="IImapReceiver"/>.
+        /// <see cref="IImapReceiver"/>, <see cref="IMailFolderClient"/>,
+        /// <see cref="IMailFolderReader"/>, and <see cref="IMailFolderMonitor"/>.
         /// </summary>
         /// <param name="services">Collection of service descriptors.</param>
         /// <param name="emailReceiverOptions">Email sender options.</param>
@@ -35,8 +37,8 @@ namespace MailKitSimplified.Receiver
         /// <summary>
         /// Add the MailKitSimplified.Receiver configuration and services.
         /// Adds IOptions<<see cref="EmailReceiverOptions"/>>,
-        /// <see cref="IMailReader"/>, <see cref="IMailFolderClient"/>,
-        /// <see cref="IMailFolderReader"/>, and <see cref="IImapReceiver"/>.
+        /// <see cref="IImapReceiver"/>, <see cref="IMailFolderClient"/>,
+        /// <see cref="IMailFolderReader"/>, and <see cref="IMailFolderMonitor"/>.
         /// </summary>
         /// <param name="services">Collection of service descriptors.</param>
         /// <param name="emailReceiverOptions">Email sender options.</param>
@@ -51,16 +53,18 @@ namespace MailKitSimplified.Receiver
 
         /// <summary>
         /// Add the MailKitSimplified.Receiver services.
-        /// Adds <see cref="IMailReader"/>, <see cref="IMailFolderClient"/>,
-        /// <see cref="IMailFolderReader"/>, and <see cref="IImapReceiver"/>.
+        /// Adds <see cref="IImapReceiver"/>, <see cref="IMailFolderClient"/>,
+        /// <see cref="IMailFolderReader"/>, and <see cref="IMailFolderMonitor"/>.
         /// </summary>
         /// <param name="services">Collection of service descriptors.</param>
         private static IServiceCollection AddMailKitSimplifiedEmailReceiver(this IServiceCollection services)
         {
-            services.AddTransient<IMailReader, MailReader>();
+            services.AddTransient<IFileSystem, FileSystem>();
+            services.AddTransient<IProtocolLogger, MailKitProtocolLogger>();
+            services.AddTransient<IImapReceiver, ImapReceiver>();
+            services.AddTransient<IMailFolderClient, MailFolderClient>();
             services.AddTransient<IMailFolderReader, MailFolderReader>();
             services.AddTransient<IMailFolderMonitor, MailFolderMonitor>();
-            services.AddTransient<IImapReceiver, ImapReceiver>();
             return services;
         }
     }
