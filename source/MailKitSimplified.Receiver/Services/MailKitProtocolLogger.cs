@@ -37,11 +37,10 @@ namespace MailKitSimplified.Receiver.Services
             _fileSystem = fileSystem ?? new FileSystem();
         }
 
-        public IProtocolLogger SetLogFilePath(string logFilePath = null, bool appendFile = false, bool useTimestamp = false, bool redactSecrets = true)
+        public IProtocolLogger SetLogFilePath(string logFilePath = null, bool appendToExisting = false, bool useTimestamp = false, bool redactSecrets = true)
         {
             _useTimestamp = useTimestamp;
             _redactSecrets = redactSecrets;
-            //bool isMockFileSystem = _fileSystem.GetType().Name == "MockFileSystem";
             if (logFilePath?.Equals("console", StringComparison.OrdinalIgnoreCase) ?? false)
             {
                 _protocolLogger = new ProtocolLogger(Console.OpenStandardError());
@@ -51,7 +50,7 @@ namespace MailKitSimplified.Receiver.Services
                 var directoryName = _fileSystem.Path.GetDirectoryName(logFilePath);
                 if (!string.IsNullOrWhiteSpace(directoryName))
                     _fileSystem.Directory.CreateDirectory(directoryName);
-                var mode = appendFile ? FileMode.Append : FileMode.Create;
+                var mode = appendToExisting ? FileMode.Append : FileMode.Create;
                 var stream = _fileSystem.File.Open(logFilePath, mode, FileAccess.Write, FileShare.Read);
                 _protocolLogger = new ProtocolLogger(stream);
                 _logger.LogDebug($"Saving logs to file: {logFilePath}");

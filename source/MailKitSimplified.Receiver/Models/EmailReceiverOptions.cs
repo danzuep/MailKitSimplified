@@ -9,17 +9,18 @@ namespace MailKitSimplified.Receiver.Models
     {
         public const string SectionName = "EmailReceiver";
 
+        public string MailFolderName { get; set; } = "INBOX";
         [Required]
         public string ImapHost { get; set; }
         public ushort ImapPort { get; set; } = 0;
         public NetworkCredential ImapCredential { get; set; } = new NetworkCredential();
         public string ProtocolLog { get; set; } = null;
-        public string MailFolderName { get; set; } = "INBOX";
+        public bool ProtocolLogFileAppend { get; set; } = false;
 
         // Constructor required for Configuration mapping.
         public EmailReceiverOptions() { }
 
-        public EmailReceiverOptions(string imapHost, NetworkCredential imapCredential = null, ushort imapPort = 0, string protocolLog = null, string mailFolderName = null)
+        public EmailReceiverOptions(string imapHost, NetworkCredential imapCredential = null, ushort imapPort = 0, string mailFolderName = null, string protocolLog = null, bool protocolLogFileAppend = false)
         {
             if (string.IsNullOrWhiteSpace(imapHost))
                 throw new ArgumentNullException(nameof(imapHost));
@@ -33,9 +34,10 @@ namespace MailKitSimplified.Receiver.Models
             ImapPort = imapPort;
             if (imapCredential != null)
                 ImapCredential = imapCredential;
-            ProtocolLog = protocolLog;
             if (!string.IsNullOrWhiteSpace(mailFolderName))
                 MailFolderName = mailFolderName;
+            ProtocolLog = protocolLog;
+            ProtocolLogFileAppend = protocolLogFileAppend;
         }
 
         public override string ToString() => $"{ImapHost}:{ImapPort} {ImapCredential.UserName} {MailFolderName}";

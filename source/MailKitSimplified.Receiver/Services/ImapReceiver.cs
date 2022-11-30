@@ -32,20 +32,20 @@ namespace MailKitSimplified.Receiver.Services
                 throw new NullReferenceException($"{nameof(EmailReceiverOptions.ImapCredential)} is null.");
             var imapLogger = protocolLogger ?? new MailKitProtocolLogger();
             if (imapLogger is MailKitProtocolLogger imapLog)
-                imapLog.SetLogFilePath(_receiverOptions.ProtocolLog);
+                imapLog.SetLogFilePath(_receiverOptions.ProtocolLog, _receiverOptions.ProtocolLogFileAppend);
             _imapClient = imapClient ?? new ImapClient(imapLogger);
         }
 
-        public static ImapReceiver Create(string imapHost, ushort imapPort = 0, string username = null, string password = null, string protocolLog = null, string mailFolderName = null)
+        public static ImapReceiver Create(string imapHost, ushort imapPort = 0, string username = null, string password = null, string mailFolderName = null, string protocolLog = null, bool protocolLogFileAppend = false)
         {
             var imapCredential = new NetworkCredential(username, password);
-            var receiver = Create(imapHost, imapCredential, imapPort, protocolLog, mailFolderName);
+            var receiver = Create(imapHost, imapCredential, imapPort, mailFolderName, protocolLog, protocolLogFileAppend);
             return receiver;
         }
 
-        public static ImapReceiver Create(string imapHost, NetworkCredential imapCredential, ushort imapPort = 0, string protocolLog = null, string mailFolderName = null)
+        public static ImapReceiver Create(string imapHost, NetworkCredential imapCredential, ushort imapPort = 0, string mailFolderName = null, string protocolLog = null, bool protocolLogFileAppend = false)
         {
-            var receiverOptions = new EmailReceiverOptions(imapHost, imapCredential, imapPort, protocolLog, mailFolderName);
+            var receiverOptions = new EmailReceiverOptions(imapHost, imapCredential, imapPort, mailFolderName, protocolLog, protocolLogFileAppend);
             var receiver = Create(receiverOptions);
             return receiver;
         }
@@ -57,9 +57,10 @@ namespace MailKitSimplified.Receiver.Services
             return receiver;
         }
 
-        public ImapReceiver SetProtocolLog(string logFilePath)
+        public ImapReceiver SetProtocolLog(string logFilePath, bool append = false)
         {
             _receiverOptions.ProtocolLog = logFilePath;
+            _receiverOptions.ProtocolLogFileAppend = append;
             var receiver = Create(_receiverOptions, _logger);
             return receiver;
         }

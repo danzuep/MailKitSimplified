@@ -11,13 +11,16 @@ using Microsoft.Extensions.Options;
 using MailKitSimplified.Sender.Services;
 using MailKitSimplified.Sender.Models;
 using MailKitSimplified.Sender.Abstractions;
+using System.IO.Abstractions.TestingHelpers;
 
 namespace MailKitSimplified.Sender.Tests
 {
     public class SmtpSenderUnitTests
     {
+        private const string _logFilePath = @"Logs\SmtpClient.txt";
         private const string _localhost = "localhost";
         private const int _defaultPort = 25;
+        private readonly MockFileSystem _fileSystem = new();
         private readonly Mock<ISmtpClient> _smtpSenderMock = new();
         private readonly ISmtpSender _smtpSender;
 
@@ -97,11 +100,28 @@ namespace MailKitSimplified.Sender.Tests
         }
 
         [Fact]
-        public void WriteEmail_WithSmtpSender_VerifyNotNull()
+        public void WriteEmail_WithSmtpSender_VerifyType()
         {
             var emailWriter = _smtpSender.WriteEmail;
             Assert.NotNull(emailWriter);
             Assert.IsAssignableFrom<IEmailWriter>(emailWriter);
+        }
+
+        [Fact]
+        public void GetProtocolLogger_WithAppend_VerifyType()
+        {
+            _fileSystem.AddFile(_logFilePath, new MockFileData(string.Empty));
+            using var protocolLogger = SmtpSender.GetProtocolLogger(_logFilePath, true, _fileSystem);
+            Assert.NotNull(protocolLogger);
+            Assert.IsAssignableFrom<IProtocolLogger>(protocolLogger);
+        }
+
+        [Fact]
+        public void GetProtocolLogger_WithCreate_VerifyType()
+        {
+            using var protocolLogger = SmtpSender.GetProtocolLogger(_logFilePath, false, _fileSystem);
+            Assert.NotNull(protocolLogger);
+            Assert.IsAssignableFrom<IProtocolLogger>(protocolLogger);
         }
 
         [Fact]

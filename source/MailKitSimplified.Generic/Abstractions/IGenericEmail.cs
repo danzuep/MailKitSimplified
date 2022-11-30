@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace MailKitSimplified.Core.Abstractions
+namespace MailKitSimplified.Generic.Abstractions
 {
     /// <summary>
     /// Simple email format based on the RFC standards:
@@ -61,5 +61,11 @@ namespace MailKitSimplified.Core.Abstractions
         /// HTML-formatted body of the email (text/html).
         /// </summary>
         string BodyHtml { get; set; }
+
+        /// <summary>
+        /// Email envelope (from, to, subject etc.) in a readable format.
+        /// </summary>
+        /// <returns>Email summary in plain text.</returns>
+        string ToString();
     }
 }

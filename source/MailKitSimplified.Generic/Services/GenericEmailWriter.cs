@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using MailKitSimplified.Core.Abstractions;
-using MailKitSimplified.Core.Models;
+using MailKitSimplified.Generic.Abstractions;
+using MailKitSimplified.Generic.Models;
 
-namespace MailKitSimplified.Core.Services
+namespace MailKitSimplified.Generic.Services
 {
     public class GenericEmailWriter : IGenericEmailWriter
     {

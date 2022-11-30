@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging;
-using MailKitSimplified.Core.Abstractions;
+using MailKitSimplified.Generic.Abstractions;
 
-namespace MailKitSimplified.Core.Models
+namespace MailKitSimplified.Generic.Models
 {
     public class EmailContact : IEmailContact
     {

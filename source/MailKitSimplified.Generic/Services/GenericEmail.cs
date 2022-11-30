@@ -2,9 +2,9 @@
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using MailKitSimplified.Core.Abstractions;
+using MailKitSimplified.Generic.Abstractions;
 
-namespace MailKitSimplified.Core.Services
+namespace MailKitSimplified.Generic.Services
 {
     public class GenericEmail : IGenericEmail
     {

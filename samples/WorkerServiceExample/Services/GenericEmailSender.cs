@@ -1,13 +1,10 @@
 ﻿using MimeKit;
-using MailKit;
 using MailKit.Net.Smtp;
-using System.Net;
-using System.IO.Abstractions;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using MailKitSimplified.Core.Abstractions;
-using MailKitSimplified.Core.Services;
-using MailKitSimplified.Sender.Models;
+using Microsoft.Extensions.Logging.Abstractions;
+using MailKitSimplified.Generic.Abstractions;
+using MailKitSimplified.Generic.Services;
+using MailKitSimplified.Generic.Models;
 
 namespace WorkerServiceExample.Services
 {
@@ -15,67 +12,48 @@ namespace WorkerServiceExample.Services
     {
         private readonly ILogger<GenericEmailSender> _logger;
         private readonly ISmtpClient _smtpClient;
-        private readonly EmailSenderOptions _senderOptions;
+        private readonly SmtpOptions _senderOptions;
 
-        public GenericEmailSender(IOptions<EmailSenderOptions> senderOptions, ILogger<GenericEmailSender>? logger = null, IProtocolLogger? protocolLogger = null, ISmtpClient? smtpClient = null)
+        public GenericEmailSender(IOptions<SmtpOptions> senderOptions, ILogger<GenericEmailSender>? logger = null, ISmtpClient? smtpClient = null)
         {
             _logger = logger ?? NullLogger<GenericEmailSender>.Instance;
             _senderOptions = senderOptions.Value;
-            if (string.IsNullOrWhiteSpace(_senderOptions.SmtpHost))
-                throw new NullReferenceException(nameof(EmailSenderOptions.SmtpHost));
-            var smtpLogger = protocolLogger ?? GetProtocolLogger(smtpClient == null ? _senderOptions.ProtocolLog : null);
-            _smtpClient = smtpClient ?? (smtpLogger != null ? new SmtpClient(smtpLogger) : new SmtpClient());
+            if (string.IsNullOrWhiteSpace(_senderOptions.Host))
+                throw new NullReferenceException(nameof(SmtpOptions.Host));
+            _smtpClient = smtpClient ?? new SmtpClient();
         }
 
         public static GenericEmailSender Create(string smtpHost, ILogger<GenericEmailSender>? logger = null)
         {
-            var emailSenderOptions = new EmailSenderOptions(smtpHost);
-            var sender = Create(emailSenderOptions, logger);
-            return sender;
-        }
-
-        public static GenericEmailSender Create(EmailSenderOptions emailSenderOptions, ILogger<GenericEmailSender>? logger = null)
-        {
+            if (string.IsNullOrWhiteSpace(smtpHost))
+                throw new NullReferenceException(nameof(smtpHost));
+            ushort smtpPort = 0;
+            string[] hostParts = smtpHost.Split(':');
+            if (hostParts.Length == 2 && ushort.TryParse(hostParts[1], out smtpPort))
+                smtpHost = hostParts[0];
+            var emailSenderOptions = new SmtpOptions
+            {
+                Host = smtpHost,
+                Port = smtpPort
+            };
             var senderOptions = Options.Create(emailSenderOptions);
             var sender = new GenericEmailSender(senderOptions, logger);
             return sender;
         }
 
-        public GenericEmailSender SetProtocolLog(string logFilePath)
-        {
-            _senderOptions.ProtocolLog = logFilePath;
-            var sender = Create(_senderOptions, _logger);
-            return sender;
-        }
-
         public GenericEmailSender SetPort(ushort smtpPort)
         {
-            _senderOptions.SmtpPort = smtpPort;
+            _senderOptions.Port = smtpPort;
             return this;
         }
 
         public GenericEmailSender SetCredential(string username, string password)
         {
-            _senderOptions.SmtpCredential = new NetworkCredential(username, password);
+            if (string.IsNullOrWhiteSpace(username))
+                throw new NullReferenceException(nameof(username));
+            _senderOptions.Username = username;
+            _senderOptions.Password = password;
             return this;
-        }
-
-        public static IProtocolLogger? GetProtocolLogger(string? logFilePath = null, IFileSystem? fileSystem = null)
-        {
-            IProtocolLogger? protocolLogger = null;
-            if (logFilePath?.Equals("console", StringComparison.OrdinalIgnoreCase) ?? false)
-            {
-                protocolLogger = new ProtocolLogger(Console.OpenStandardError());
-            }
-            else if (!string.IsNullOrWhiteSpace(logFilePath))
-            {
-                var _fileSystem = fileSystem ?? new FileSystem();
-                var directoryName = _fileSystem.Path.GetDirectoryName(logFilePath);
-                if (!string.IsNullOrWhiteSpace(directoryName))
-                    _fileSystem.Directory.CreateDirectory(directoryName);
-                protocolLogger = new ProtocolLogger(logFilePath);
-            }
-            return protocolLogger;
         }
 
         public IGenericEmailWriter WriteEmail => new GenericEmailWriter(this);
@@ -147,7 +125,7 @@ namespace WorkerServiceExample.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send email.");
+                _logger.LogError(ex, $"Failed to send email: {email}");
                 return false;
             }
         }

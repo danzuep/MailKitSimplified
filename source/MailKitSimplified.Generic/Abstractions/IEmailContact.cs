@@ -1,4 +1,4 @@
-﻿namespace MailKitSimplified.Core.Abstractions
+﻿namespace MailKitSimplified.Generic.Abstractions
 {
     /// <summary>
     /// Simple email contact based on the RFC standard.
