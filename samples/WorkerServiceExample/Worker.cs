@@ -8,21 +8,19 @@ public class Worker : BackgroundService
     private readonly ILogger<Worker> _logger;
     private readonly ISmtpSender _smtpSender;
     private readonly IImapReceiver _imapReceiver;
-    private readonly IMailFolderMonitor _mailFolderMonitor;
 
-    public Worker(ISmtpSender smtpSender, IImapReceiver imapReceiver, IMailFolderMonitor mailFolderMonitor, ILogger<Worker> logger)
+    public Worker(ISmtpSender smtpSender, IImapReceiver imapReceiver, ILogger<Worker> logger)
     {
         _logger = logger;
         _smtpSender = smtpSender;
         _imapReceiver = imapReceiver;
-        _mailFolderMonitor = mailFolderMonitor;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken = default)
     {
         await ReceiveAsync(stoppingToken);
         var sendTask = DelayedSendAsync(5, stoppingToken);
-        await _mailFolderMonitor.IdleAsync(stoppingToken);
+        await _imapReceiver.MonitorFolder.IdleAsync(stoppingToken);
         await sendTask;
     }
 

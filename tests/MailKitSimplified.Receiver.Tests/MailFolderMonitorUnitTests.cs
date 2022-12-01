@@ -46,8 +46,13 @@ namespace MailKitSimplified.Receiver.Tests
         {
             //_imapIdleClient.MessageArrivalMethod = messageSummary => _completedTask;
             //_imapIdleClient.MessageDepartureMethod = messageSummary => _completedTask;
-            _imapIdleClient.MessageArrivalMethod = messageSummary => null;
+            _imapIdleClient.MessageArrivalMethod = (messageSummary) => Process(messageSummary);
             _imapIdleClient.MessageDepartureMethod = messageSummary => null;
+        }
+
+        private Task Process(IMessageSummary messageSummary)
+        {
+            throw new NotImplementedException();
         }
 
         //[Fact]

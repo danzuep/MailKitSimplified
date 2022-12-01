@@ -43,9 +43,8 @@ namespace MailKitSimplified.Receiver
         {
             _logger = logger ?? NullLogger<MailFolderMonitor>.Instance;
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
+            _folderMonitorOptions = folderMonitorOptions?.Value ?? new FolderMonitorOptions();
             _mailFolderClient = _imapReceiver.MailFolderClient;
-            if (folderMonitorOptions?.Value != null)
-                _folderMonitorOptions = folderMonitorOptions.Value;
             MessageArrivalMethod = (m) =>
             {
                 _logger.LogInformation($"{_imapReceiver} message #{m.UniqueId} arrival processed.");
