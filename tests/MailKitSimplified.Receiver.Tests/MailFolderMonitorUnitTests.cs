@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Services;
+using MailKitSimplified.Receiver.Models;
 
 namespace MailKitSimplified.Receiver.Tests
 {
@@ -26,7 +28,8 @@ namespace MailKitSimplified.Receiver.Tests
                 .ReturnsAsync(_imapClientMock.Object).Verifiable();
             _imapReceiverMock.SetupGet(_ => _.MailFolderClient)
                 .Returns(_mailFolderClientMock.Object).Verifiable();
-            _imapIdleClient = new MailFolderMonitor(_imapReceiverMock.Object, loggerFactory.CreateLogger<MailFolderMonitor>());
+            var options = Options.Create(new FolderMonitorOptions { MessageFilter = MessageSummaryItems.Envelope });
+            _imapIdleClient = new MailFolderMonitor(_imapReceiverMock.Object, options, loggerFactory.CreateLogger<MailFolderMonitor>());
         }
 
         [Fact]
@@ -41,7 +44,6 @@ namespace MailKitSimplified.Receiver.Tests
 
         private void SetupImapIdleClient()
         {
-            _imapIdleClient.MessageFilter = MessageSummaryItems.Envelope;
             //_imapIdleClient.MessageArrivalMethod = messageSummary => _completedTask;
             //_imapIdleClient.MessageDepartureMethod = messageSummary => _completedTask;
             _imapIdleClient.MessageArrivalMethod = messageSummary => null;

@@ -30,6 +30,7 @@ namespace MailKitSimplified.Receiver.Services
         private IProtocolLogger _protocolLogger = new ProtocolLogger(Stream.Null);
         private bool _redactSecrets;
         private bool _useTimestamp;
+        private bool _isFileOpen;
 
         public MailKitProtocolLogger(ILogger<MailKitProtocolLogger> logger = null, IFileSystem fileSystem = null)
         {
@@ -47,12 +48,15 @@ namespace MailKitSimplified.Receiver.Services
             }
             else if (!string.IsNullOrWhiteSpace(logFilePath))
             {
+                if (_isFileOpen)
+                    _protocolLogger.Dispose();
                 var directoryName = _fileSystem.Path.GetDirectoryName(logFilePath);
                 if (!string.IsNullOrWhiteSpace(directoryName))
                     _fileSystem.Directory.CreateDirectory(directoryName);
                 var mode = appendToExisting ? FileMode.Append : FileMode.Create;
                 var stream = _fileSystem.File.Open(logFilePath, mode, FileAccess.Write, FileShare.Read);
                 _protocolLogger = new ProtocolLogger(stream);
+                _isFileOpen = true;
                 _logger.LogDebug($"Saving logs to file: {logFilePath}");
             }
             return this;
@@ -119,14 +123,15 @@ namespace MailKitSimplified.Receiver.Services
 
                 sb.Append(Encoding.UTF8.GetString(buffer, num2, i - num2));
             }
+            _logger.LogTrace(sb.ToString());
 
-            using (_logger.BeginScope(nameof(MailKitProtocolLogger)))
-                _logger.LogTrace(sb.ToString());
-
-            if (isClient)
-                _protocolLogger?.LogClient(buffer, offset, count);
-            else
-                _protocolLogger?.LogServer(buffer, offset, count);
+            if (_isFileOpen)
+            {
+                if (isClient)
+                    _protocolLogger?.LogClient(buffer, offset, count);
+                else
+                    _protocolLogger?.LogServer(buffer, offset, count);
+            }
         }
 
         public void LogConnect(Uri uri)
@@ -138,8 +143,7 @@ namespace MailKitSimplified.Receiver.Services
                 sb.Append(' ');
             }
             sb.AppendLine($"Connected to {uri}");
-            using (_logger.BeginScope(nameof(MailKitProtocolLogger)))
-                _logger.LogTrace(sb.ToString());
+            _logger.LogDebug(sb.ToString());
 
             if (_clientMidline || _serverMidline)
             {
@@ -153,6 +157,10 @@ namespace MailKitSimplified.Receiver.Services
 
         public void LogClient(byte[] buffer, int offset, int count) => Log(buffer, offset, count, isClient: true);
 
-        public void Dispose() => _protocolLogger?.Dispose();
+        public void Dispose()
+        {
+            _isFileOpen = false;
+            _protocolLogger?.Dispose();
+        }
     }
 }

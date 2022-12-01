@@ -8,12 +8,6 @@ namespace MailKitSimplified.Receiver.Abstractions
     public interface IMailFolderMonitor
     {
         /// <summary>
-        /// Specify which properties of <see cref="IMessageSummary"/> should be populated.
-        /// <see cref="UniqueId"/> is always included by default.
-        /// </summary>
-        MessageSummaryItems MessageFilter { get; set; }
-
-        /// <summary>
         /// Method for processing messages as they are added to the mail folder.
         /// </summary>
         Func<IMessageSummary, Task> MessageArrivalMethod { set; }

@@ -8,23 +8,22 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
+using MailKitSimplified.Receiver.Models;
 
 namespace MailKitSimplified.Receiver
 {
     public sealed class MailFolderMonitor : IMailFolderMonitor
     {
-        public MessageSummaryItems MessageFilter { get; set; } = MessageSummaryItems.None;
         public Func<IMessageSummary, Task> MessageArrivalMethod { private get; set; }
         public Func<IMessageSummary, Task> MessageDepartureMethod { private get; set; }
+        
 
         private const int _maxRetries = 3;
-        private const int _idleMinutesGmail = 9;
-        private const int _idleMinutesImap = 29;
-        private int _idleMinutes = _idleMinutesImap;
         private static readonly Task _completedTask = Task.CompletedTask;
         private readonly object _cacheLock = new object();
         private readonly IList<IMessageSummary> _messageCache = new List<IMessageSummary>();
@@ -38,12 +37,15 @@ namespace MailKitSimplified.Receiver
         private readonly ILogger _logger;
         private readonly IImapReceiver _imapReceiver;
         private readonly IMailFolderClient _mailFolderClient;
+        private readonly FolderMonitorOptions _folderMonitorOptions;
 
-        public MailFolderMonitor(IImapReceiver imapReceiver, ILogger<MailFolderMonitor> logger = null)
+        public MailFolderMonitor(IImapReceiver imapReceiver, IOptions<FolderMonitorOptions> folderMonitorOptions = null, ILogger<MailFolderMonitor> logger = null)
         {
             _logger = logger ?? NullLogger<MailFolderMonitor>.Instance;
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
             _mailFolderClient = _imapReceiver.MailFolderClient;
+            if (folderMonitorOptions?.Value != null)
+                _folderMonitorOptions = folderMonitorOptions.Value;
             MessageArrivalMethod = (m) =>
             {
                 _logger.LogInformation($"{_imapReceiver} message #{m.UniqueId} arrival processed.");
@@ -99,7 +101,7 @@ namespace MailKitSimplified.Receiver
                     _mailFolder.MessageExpunged += OnMessageExpunged;
 
                     if (_mailFolder.Count > 0)
-                        await ProcessMessagesArrivedAsync(cancellationToken).ConfigureAwait(false);
+                        await ProcessMessagesArrivedAsync(true, cancellationToken).ConfigureAwait(false);
                     await WaitForNewMessagesAsync(cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
@@ -145,7 +147,7 @@ namespace MailKitSimplified.Receiver
         {
             int retryCount = 0;
             var cancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            var idleTime = TimeSpan.FromMinutes(_idleMinutes);
+            var idleTime = TimeSpan.FromMinutes(_folderMonitorOptions.IdleMinutes);
             do
             {
                 try
@@ -162,7 +164,7 @@ namespace MailKitSimplified.Receiver
                         await _imapClient.NoOpAsync(cancel.Token).ConfigureAwait(false);
                     }
                     if (_arrival.IsCancellationRequested && !cancel.Token.IsCancellationRequested)
-                        await ProcessMessagesArrivedAsync(cancel.Token).ConfigureAwait(false);
+                        await ProcessMessagesArrivedAsync(false, cancel.Token).ConfigureAwait(false);
                     retryCount = 0;
                 }
                 catch (OperationCanceledException) // includes TaskCanceledException
@@ -177,10 +179,10 @@ namespace MailKitSimplified.Receiver
                     else
                         _logger.LogInformation(ex, "IMAP protocol exception, checking connection.");
                     await ReconnectAsync(cancel.Token).ConfigureAwait(false);
-                    if (_idleMinutes > _idleMinutesGmail)
-                        _idleMinutes = _idleMinutesGmail;
-                    else if (_idleMinutes == _idleMinutesGmail)
-                        _idleMinutes = 1;
+                    if (_folderMonitorOptions.IdleMinutes > FolderMonitorOptions.IdleMinutesGmail)
+                        _folderMonitorOptions.IdleMinutes = FolderMonitorOptions.IdleMinutesGmail;
+                    else if (_folderMonitorOptions.IdleMinutes == FolderMonitorOptions.IdleMinutesGmail)
+                        _folderMonitorOptions.IdleMinutes = 1;
                 }
                 catch (ImapCommandException ex)
                 {
@@ -222,18 +224,19 @@ namespace MailKitSimplified.Receiver
             cancel.Dispose();
         }
 
-        private async ValueTask<int> ProcessMessagesArrivedAsync(CancellationToken cancellationToken = default)
+        private async ValueTask<int> ProcessMessagesArrivedAsync(bool firstConnection = false, CancellationToken cancellationToken = default)
         {
             int startIndex = _messageCache.Count;
             _logger.LogTrace($"{_imapReceiver} ({_mailFolder.Count}) Fetching new message arrivals, starting from {startIndex}.");
             if (startIndex > _mailFolder.Count)
                 startIndex = _mailFolder.Count;
-            var filter = MessageFilter | MessageSummaryItems.UniqueId;
+            var filter = _folderMonitorOptions.MessageFilter | MessageSummaryItems.UniqueId;
             var fetched = await _mailFolder.FetchAsync(startIndex, -1, filter, cancellationToken).ConfigureAwait(false);
             if (_arrival.IsCancellationRequested)
                 _arrival = new CancellationTokenSource();
             var newMail = _messageCache.TryAddUniqueRange(fetched);
-            newMail.ActionEach((mail) => _arrivalQueue.Enqueue(mail), cancellationToken);
+            if (!firstConnection || (firstConnection && _folderMonitorOptions.ProcessMailOnConnect))
+                newMail.ActionEach((mail) => _arrivalQueue.Enqueue(mail), cancellationToken);
             return newMail.Count;
         }
 

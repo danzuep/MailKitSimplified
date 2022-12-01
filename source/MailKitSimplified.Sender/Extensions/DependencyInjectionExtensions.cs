@@ -20,6 +20,7 @@ namespace MailKitSimplified.Sender
         /// <param name="services">Collection of service descriptors.</param>
         /// <param name="configuration">Application configuration properties.</param>
         /// <param name="sectionName">Configuration section name.</param>
+        /// <returns><see cref="IServiceCollection"/>.</returns>
         public static IServiceCollection AddMailKitSimplifiedEmailSender(this IServiceCollection services, IConfiguration configuration, string sectionName = EmailSenderOptions.SectionName)
         {
             if (configuration == null)
@@ -31,31 +32,31 @@ namespace MailKitSimplified.Sender
         }
 
         /// <summary>
+        /// Add the MailKitSimplified.Sender services.
+        /// Adds <see cref="IEmailWriter"/>, and <see cref="ISmtpSender"/>.
+        /// </summary>
+        /// <param name="services">Collection of service descriptors.</param>
+        /// <returns><see cref="IServiceCollection"/>.</returns>
+        private static IServiceCollection AddMailKitSimplifiedEmailSender(this IServiceCollection services)
+        {
+            services.AddSingleton<IFileSystem, FileSystem>();
+            services.AddTransient<IEmailWriter, EmailWriter>();
+            services.AddTransient<ISmtpSender, SmtpSender>();
+            return services;
+        }
+
+        /// <summary>
         /// Add the MailKitSimplified.Sender configuration and services.
-        /// Adds IOptions<<see cref="EmailSenderOptions"/>>,
-        /// <see cref="IEmailWriter"/>, and <see cref="ISmtpSender"/>.
+        /// Adds IOptions<<see cref="EmailSenderOptions"/>>.
         /// </summary>
         /// <param name="services">Collection of service descriptors.</param>
         /// <param name="emailSenderOptions">Email sender options.</param>
+        /// <returns><see cref="IServiceCollection"/>.</returns>
         public static IServiceCollection AddMailKitSimplifiedEmailSender(this IServiceCollection services, Action<EmailSenderOptions> emailSenderOptions)
         {
             if (emailSenderOptions == null)
                 throw new ArgumentNullException(nameof(emailSenderOptions));
             services.Configure(emailSenderOptions);
-            services.AddMailKitSimplifiedEmailSender();
-            return services;
-        }
-
-        /// <summary>
-        /// Add the MailKitSimplified.Sender services.
-        /// Adds <see cref="IEmailWriter"/>, and <see cref="ISmtpSender"/>.
-        /// </summary>
-        /// <param name="services">Collection of service descriptors.</param>
-        private static IServiceCollection AddMailKitSimplifiedEmailSender(this IServiceCollection services)
-        {
-            services.AddTransient<IFileSystem, FileSystem>();
-            services.AddTransient<IEmailWriter, EmailWriter>();
-            services.AddTransient<ISmtpSender, SmtpSender>();
             return services;
         }
     }
