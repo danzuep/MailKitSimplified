@@ -20,6 +20,12 @@ using var imapReceiver = ImapReceiver.Create("localhost");
 var mimeMessages = await imapReceiver.ReadMail.GetMimeMessagesAsync();
 ```
 
+You can even monitor an email folder for new messages asynchronously, never before has it been this easy!
+
+```csharp
+await imapReceiver.MonitorFolder.IdleAsync();
+```
+
 ## Example Usage [![Development](https://github.com/danzuep/MailKitSimplified/actions/workflows/development.yml/badge.svg)](https://github.com/danzuep/MailKitSimplified/actions/workflows/development.yml) [![Release](https://github.com/danzuep/MailKitSimplified/actions/workflows/release.yml/badge.svg)](https://github.com/danzuep/MailKitSimplified/actions/workflows/release.yml)
 
 The examples above will actually work with no other setup if you use something like [smtp4dev](https://github.com/rnwood/smtp4dev), but below are some more realistic examples.
@@ -53,11 +59,20 @@ var mimeMessages = await imapReceiver.ReadFrom("INBOX")
     .Skip(0).Take(10).GetMimeMessagesAsync();
 ```
 
-To just download the email parts you want to use:
+To only download the email parts you want to use:
 
 ```csharp
 var messageSummaries = await imapReceiver.ReadFrom("INBOX/Subfolder")
     .GetMessageSummariesAsync(MessageSummaryItems.UniqueId);
+```
+
+To asynchronously monitor the folder for incoming messages:
+
+```csharp
+var imapIdleClient = imapReceiver.Monitor("INBOX");
+imapIdleClient.MessageArrivalMethod = messageSummary => Process(messageSummary);
+imapIdleClient.MessageDepartureMethod = messageSummary => null;
+await imapIdleClient.IdleAsync();
 ```
 
 See the [MailKitSimplified.Receiver wiki](https://github.com/danzuep/MailKitSimplified/wiki/Receiver) for more information.
