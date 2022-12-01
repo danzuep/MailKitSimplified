@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace MailKitSimplified.Core.Abstractions
+namespace MailKitSimplified.Generic.Abstractions
 {
     /// <summary>
     /// Simple email format based on the RFC standards:
@@ -20,27 +20,27 @@ namespace MailKitSimplified.Core.Abstractions
         /// <summary>
         /// Contacts to address the email from.
         /// </summary>
-        IList<IEmailContact> From { get; set; }
+        IList<IGenericEmailContact> From { get; set; }
 
         /// <summary>
         /// Reply address for a contact other than the sender.
         /// </summary>
-        IList<IEmailContact> ReplyTo { get; set; }
+        IList<IGenericEmailContact> ReplyTo { get; set; }
 
         /// <summary>
         /// Contacts to address the email to.
         /// </summary>
-        IList<IEmailContact> To { get; set; }
+        IList<IGenericEmailContact> To { get; set; }
 
         /// <summary>
         /// Contacts to carbon-copy the email to.
         /// </summary>
-        IList<IEmailContact> Cc { get; set; }
+        IList<IGenericEmailContact> Cc { get; set; }
 
         /// <summary>
         /// Contacts to blind carbon-copy the email to.
         /// </summary>
-        IList<IEmailContact> Bcc { get; set; }
+        IList<IGenericEmailContact> Bcc { get; set; }
 
         /// <summary>
         /// Attachments send with the email.
@@ -61,5 +61,11 @@ namespace MailKitSimplified.Core.Abstractions
         /// HTML-formatted body of the email (text/html).
         /// </summary>
         string BodyHtml { get; set; }
+
+        /// <summary>
+        /// Email envelope (from, to, subject etc.) in a readable format.
+        /// </summary>
+        /// <returns>Email summary in plain text.</returns>
+        string ToString();
     }
 }

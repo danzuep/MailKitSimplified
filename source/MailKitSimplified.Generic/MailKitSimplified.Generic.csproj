@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net6.0;net7.0</TargetFrameworks>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -10,9 +10,9 @@
     <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
     <Authors>danzuep</Authors>
-    <Title>Simplified MailKit domain model</Title>
-    <PackageTags>email; MailKit; simple; easy; core</PackageTags>
-    <Description>Domain model for the simplified MailKit package.</Description>
+    <Title>Generic Email Writer and SMTP Sender</Title>
+    <PackageTags>email; SMTP; simple; easy; fluent; C#; .NET; ASP.NET</PackageTags>
+    <Description>Simple, generic SMTP email interfaces and models.</Description>
   </PropertyGroup>
 
   <ItemGroup>

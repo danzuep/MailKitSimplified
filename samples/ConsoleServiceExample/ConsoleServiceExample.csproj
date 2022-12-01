@@ -8,14 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MailKitSimplified.Receiver" Version="1.1.4" />
+    <PackageReference Include="MailKitSimplified.Sender" Version="1.1.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="7.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\source\MailKitSimplified.Receiver\MailKitSimplified.Receiver.csproj" />
-    <ProjectReference Include="..\..\source\MailKitSimplified.Sender\MailKitSimplified.Sender.csproj" />
   </ItemGroup>
 
   <ItemGroup>

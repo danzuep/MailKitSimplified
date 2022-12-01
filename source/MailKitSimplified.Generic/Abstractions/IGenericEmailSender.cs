@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MailKitSimplified.Core.Abstractions
+namespace MailKitSimplified.Generic.Abstractions
 {
     /// <summary>
     /// Interface for sending generic emails.

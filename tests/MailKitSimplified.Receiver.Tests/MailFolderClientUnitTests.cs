@@ -6,6 +6,7 @@ namespace MailKitSimplified.Receiver.Tests
     public class MailFolderClientUnitTests
     {
         private readonly Mock<IMailFolder> _mailFolderMock = new();
+        private readonly Mock<IImapReceiver> _imapReceiverMock = new();
         private readonly IMailFolderClient _mailFolderClient;
 
         public MailFolderClientUnitTests()
@@ -13,13 +14,15 @@ namespace MailKitSimplified.Receiver.Tests
             // Arrange
             _mailFolderMock.Setup(_ => _.OpenAsync(It.IsAny<FolderAccess>(), It.IsAny<CancellationToken>())).Verifiable();
             _mailFolderMock.Setup(_ => _.CloseAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).Verifiable();
-            _mailFolderClient = new MailFolderClient(_mailFolderMock.Object);
+            _imapReceiverMock.Setup(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(_mailFolderMock.Object).Verifiable();
+            _mailFolderClient = new MailFolderClient(_imapReceiverMock.Object);
         }
 
         [Fact]
         public void Dispose_UsingMailFolderClient()
         {
-            using var mailFolderClient = new MailFolderClient(_mailFolderMock.Object);
+            using var mailFolderClient = new MailFolderClient(_imapReceiverMock.Object);
             mailFolderClient.Dispose();
             Assert.NotNull(mailFolderClient);
             Assert.IsAssignableFrom<IMailFolderClient>(mailFolderClient);
@@ -28,7 +31,7 @@ namespace MailKitSimplified.Receiver.Tests
         [Fact]
         public async Task DisposeAsync_WithMailFolderClient()
         {
-            using var mailFolderClient = new MailFolderClient(_mailFolderMock.Object);
+            using var mailFolderClient = new MailFolderClient(_imapReceiverMock.Object);
             await mailFolderClient.DisposeAsync();
             Assert.IsAssignableFrom<IMailFolderClient>(mailFolderClient);
         }

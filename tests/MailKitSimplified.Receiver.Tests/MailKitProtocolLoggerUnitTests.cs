@@ -25,22 +25,23 @@ namespace MailKitSimplified.Receiver.Tests
             _protocolLoggerMock.Setup(_ => _.LogClient(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>())).Verifiable();
             var stub = Mock.Of<IAuthenticationSecretDetector>(_ => _.DetectSecrets(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()) == new List<AuthenticationSecret>());
             _protocolLoggerMock.SetupGet(_ => _.AuthenticationSecretDetector).Returns(stub).Verifiable();
-            _mailKitProtocolLogger = new MailKitProtocolLogger(loggerFactory.CreateLogger<MailKitProtocolLogger>(), _protocolLoggerMock.Object, _fileSystem);
+            _mailKitProtocolLogger = new MailKitProtocolLogger(loggerFactory.CreateLogger<MailKitProtocolLogger>(), _fileSystem);
         }
 
         [Fact]
         public void SetLogFilePath_UseTimestamp()
         {
             _mailKitProtocolLogger.SetLogFilePath(useTimestamp: true, redactSecrets: false);
-            _mailKitProtocolLogger.LogConnect(_localhost);
-            _mailKitProtocolLogger.LogServer(_testBytes, 0, 15);
-            _mailKitProtocolLogger.LogClient(_testBytes, 15, 21);
+            var mailKitProtocolLogger = _protocolLoggerMock.Object;
+            mailKitProtocolLogger.LogConnect(_localhost);
+            mailKitProtocolLogger.LogServer(_testBytes, 0, 15);
+            mailKitProtocolLogger.LogClient(_testBytes, 15, 21);
         }
 
         [Fact]
         public void SetLogFilePath_ToConsole()
         {
-            _mailKitProtocolLogger.SetLogFilePath(string.Empty);
+            _mailKitProtocolLogger.SetLogFilePath("Console");
             _mailKitProtocolLogger.LogServer(_testBytes, 0, 15);
         }
 

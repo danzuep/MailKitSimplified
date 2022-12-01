@@ -20,7 +20,7 @@ namespace MailKitSimplified.Sender.Services
 {
     public sealed class SmtpSender : ISmtpSender
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<SmtpSender> _logger;
         private readonly ISmtpClient _smtpClient;
         private readonly EmailSenderOptions _senderOptions;
 
@@ -30,20 +30,20 @@ namespace MailKitSimplified.Sender.Services
             _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.SmtpHost))
                 throw new NullReferenceException(nameof(EmailSenderOptions.SmtpHost));
-            var smtpLogger = protocolLogger ?? GetProtocolLogger(smtpClient == null ? _senderOptions.ProtocolLog : null);
+            var smtpLogger = protocolLogger ?? GetProtocolLogger(smtpClient == null ? _senderOptions.ProtocolLog : null, _senderOptions.ProtocolLogFileAppend);
             _smtpClient = smtpClient ?? (smtpLogger !=null ? new SmtpClient(smtpLogger) : new SmtpClient());
         }
 
-        public static SmtpSender Create(string smtpHost, ushort smtpPort = 0, string username = null, string password = null, string protocolLog = null)
+        public static SmtpSender Create(string smtpHost, ushort smtpPort = 0, string username = null, string password = null, string protocolLog = null, bool protocolLogFileAppend = false)
         {
             var smtpCredential = new NetworkCredential(username, password);
             var sender = Create(smtpHost, smtpCredential, smtpPort, protocolLog);
             return sender;
         }
 
-        public static SmtpSender Create(string smtpHost, NetworkCredential smtpCredential, ushort smtpPort = 0, string protocolLog = null)
+        public static SmtpSender Create(string smtpHost, NetworkCredential smtpCredential, ushort smtpPort = 0, string protocolLog = null, bool protocolLogFileAppend = false)
         {
-            var senderOptions = new EmailSenderOptions(smtpHost, smtpCredential, smtpPort, protocolLog);
+            var senderOptions = new EmailSenderOptions(smtpHost, smtpCredential, smtpPort, protocolLog, protocolLogFileAppend);
             var sender = Create(senderOptions);
             return sender;
         }
@@ -52,6 +52,14 @@ namespace MailKitSimplified.Sender.Services
         {
             var senderOptions = Options.Create(emailSenderOptions);
             var sender = new SmtpSender(senderOptions, logger);
+            return sender;
+        }
+
+        public SmtpSender SetProtocolLog(string logFilePath, bool append = false)
+        {
+            _senderOptions.ProtocolLog = logFilePath;
+            _senderOptions.ProtocolLogFileAppend = append;
+            var sender = Create(_senderOptions, _logger);
             return sender;
         }
 
@@ -67,26 +75,28 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
-        public SmtpSender SetProtocolLog(string logFilePath)
-        {
-            _senderOptions.ProtocolLog = logFilePath;
-            return this;
-        }
-
         public IEmailWriter WriteEmail => new EmailWriter(this);
 
-        public static IProtocolLogger GetProtocolLogger(string logFilePath = null, IFileSystem fileSystem = null)
+        public static IProtocolLogger GetProtocolLogger(string logFilePath = null, bool append = false, IFileSystem fileSystem = null)
         {
-            if (!string.IsNullOrEmpty(logFilePath))
+            IProtocolLogger protocolLogger = null;
+            if (logFilePath?.Equals("console", StringComparison.OrdinalIgnoreCase) ?? false)
             {
+                protocolLogger = new ProtocolLogger(Console.OpenStandardError());
+            }
+            else if (!string.IsNullOrWhiteSpace(logFilePath))
+            {
+                bool isMockFileSystem = fileSystem != null &&
+                    fileSystem.GetType().Name == "MockFileSystem";
                 var _fileSystem = fileSystem ?? new FileSystem();
                 var directoryName = _fileSystem.Path.GetDirectoryName(logFilePath);
-                _fileSystem.Directory.CreateDirectory(directoryName);
+                if (!string.IsNullOrWhiteSpace(directoryName))
+                    _fileSystem.Directory.CreateDirectory(directoryName);
+                if (isMockFileSystem)
+                    protocolLogger = new ProtocolLogger(Stream.Null);
+                else
+                    protocolLogger = new ProtocolLogger(logFilePath, append);
             }
-            var protocolLogger = logFilePath == null ? null :
-                string.IsNullOrWhiteSpace(logFilePath) ?
-                    new ProtocolLogger(Console.OpenStandardError()) :
-                        new ProtocolLogger(logFilePath);
             return protocolLogger;
         }
 
@@ -213,22 +223,22 @@ namespace MailKitSimplified.Sender.Services
             }
             catch (MailKit.Security.AuthenticationException ex)
             {
-                _logger.LogError(ex, "Failed to authenticate with mail server.");
+                _logger.LogError(ex, $"Failed to authenticate with mail server. {_senderOptions}");
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogError(ex, "Failed to connect to mail server.");
+                _logger.LogError(ex, $"Failed to connect to mail server. {_senderOptions}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send email.");
+                _logger.LogError(ex, $"Failed to send email. {mimeMessage}");
             }
             return isSent;
         }
 
         public override string ToString() => _senderOptions.ToString();
 
-        public async ValueTask DisconnectAsync(CancellationToken cancellationToken = default)
+        public async Task DisconnectAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogTrace("Disconnecting SMTP email client...");
             if (_smtpClient.IsConnected)

@@ -18,15 +18,21 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken = default)
     {
-        await SendAsync(stoppingToken);
         await ReceiveAsync(stoppingToken);
+        var sendTask = DelayedSendAsync(5, stoppingToken);
+        await _imapReceiver.MonitorFolder.IdleAsync(stoppingToken);
+        await sendTask;
     }
 
-    private async Task SendAsync(CancellationToken cancellationToken = default)
+    private async Task DelayedSendAsync(int secondsDelay, CancellationToken cancellationToken = default)
     {
+        await Task.Delay(secondsDelay * 1000);
+        var id = $"{Guid.NewGuid():N}";
         bool isSent = await _smtpSender.WriteEmail
             .From("me@localhost")
-            .To($"{Guid.NewGuid():N}@localhost")
+            .To($"{id}@localhost")
+            .Subject(id)
+            .BodyText("text/plain.")
             .TrySendAsync(cancellationToken);
         _logger.LogInformation("Email {result}.", isSent ? "sent" : "failed to send");
     }

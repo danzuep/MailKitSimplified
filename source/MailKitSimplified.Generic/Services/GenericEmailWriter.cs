@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using MailKitSimplified.Core.Abstractions;
-using MailKitSimplified.Core.Models;
+using MailKitSimplified.Generic.Abstractions;
+using MailKitSimplified.Generic.Models;
 
-namespace MailKitSimplified.Core.Services
+namespace MailKitSimplified.Generic.Services
 {
     public class GenericEmailWriter : IGenericEmailWriter
     {
@@ -12,7 +12,7 @@ namespace MailKitSimplified.Core.Services
 
         private IGenericEmail _email = new GenericEmail();
 
-        private IEmailContact _defaultFrom = null;
+        private IGenericEmailContact _defaultFrom = null;
 
 
         private readonly IGenericEmailSender _emailSender;
@@ -30,32 +30,32 @@ namespace MailKitSimplified.Core.Services
 
         public IGenericEmailWriter DefaultFrom(string emailAddress, string name = null)
         {
-            _defaultFrom = EmailContact.Create(emailAddress, name);
+            _defaultFrom = GenericEmailContact.Create(emailAddress, name);
             _email.From.Add(_defaultFrom);
             return this;
         }
 
         public IGenericEmailWriter From(string emailAddress, string name = null)
         {
-            _email.From.Add(EmailContact.Create(emailAddress, name));
+            _email.From.Add(GenericEmailContact.Create(emailAddress, name));
             return this;
         }
 
         public IGenericEmailWriter To(string emailAddress, string name = null)
         {
-            _email.To.Add(EmailContact.Create(emailAddress, name));
+            _email.To.Add(GenericEmailContact.Create(emailAddress, name));
             return this;
         }
 
         public IGenericEmailWriter Cc(string emailAddress, string name = null)
         {
-            _email.Cc.Add(EmailContact.Create(emailAddress, name));
+            _email.Cc.Add(GenericEmailContact.Create(emailAddress, name));
             return this;
         }
 
         public IGenericEmailWriter Bcc(string emailAddress, string name = null)
         {
-            _email.Bcc.Add(EmailContact.Create(emailAddress, name));
+            _email.Bcc.Add(GenericEmailContact.Create(emailAddress, name));
             return this;
         }
 
@@ -71,7 +71,7 @@ namespace MailKitSimplified.Core.Services
             return this;
         }
 
-        public IGenericEmailWriter Attach(string key, object value)
+        public IGenericEmailWriter Attach(string key, object value = null)
         {
             _email.Attachments.Add(key, value);
             return this;

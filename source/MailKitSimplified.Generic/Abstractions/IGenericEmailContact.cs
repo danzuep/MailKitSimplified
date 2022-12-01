@@ -1,9 +1,9 @@
-﻿namespace MailKitSimplified.Core.Abstractions
+﻿namespace MailKitSimplified.Generic.Abstractions
 {
     /// <summary>
     /// Simple email contact based on the RFC standard.
     /// </summary>
-    public interface IEmailContact
+    public interface IGenericEmailContact
     {
         /// <summary>
         /// The "name" or "display-name" of the mailbox. See
@@ -17,7 +17,7 @@
         /// </summary>
         string EmailAddress { get; set; }
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         /// <summary>
         /// Email contact name and address as a string.
         /// </summary>

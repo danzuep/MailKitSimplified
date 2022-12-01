@@ -16,11 +16,23 @@ namespace MailKitSimplified.Receiver.Abstractions
         IMailFolderReader ReadMail { get; }
 
         /// <summary>
-        /// Connect to a mail folder and read emails fluently.
+        /// Monitor the default mail folder with an email idle client.
         /// </summary>
-        /// <param name="mailFolderName">Mail folder to read from.</param>
-        /// <returns><see cref="IMailReader"/>.</returns>
-        IMailFolderReader ReadFrom(string mailFolderName);
+        IMailFolderMonitor MonitorFolder { get; }
+
+        /// <summary>
+        /// Get disposable access to an <see cref="IMailFolder"/>.
+        /// </summary>
+        IMailFolderClient MailFolderClient { get; }
+
+        /// <summary>
+        /// Connect and authenticate the IMAP client.
+        /// </summary>
+        /// <param name="cancellationToken">Stop connecting the client.</param>
+        /// <returns>Connected <see cref="IImapClient">IMAP client</see>.</returns>
+        /// <exception cref="ImapProtocolException">Connection failed</exception>
+        /// <exception cref="AuthenticationException">Failed to authenticate</exception>
+        ValueTask<IImapClient> ConnectAuthenticatedImapClientAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get a list of the names of all the folders connected to this account.
@@ -30,28 +42,18 @@ namespace MailKitSimplified.Receiver.Abstractions
         ValueTask<IList<string>> GetMailFolderNamesAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Connect and authenticate the IMAP client.
-        /// </summary>
-        /// <param name="cancellationToken">Stop connecting the client.</param>
-        /// <returns>Connected <see cref="IImapClient">IMAP client</see>.</returns>
-        /// <exception cref="ImapProtocolException">Connection failed</exception>
-        /// <exception cref="AuthenticationException">Failed to authenticate</exception>
-        ValueTask<IImapClient> ConnectImapClientAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Connect to the given mail folder.
         /// </summary>
-        /// <param name="mailFolderName">Mail folder name.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <returns>Connected <see cref="IMailFolder"/>.</returns>
-        ValueTask<IMailFolder> ConnectMailFolderAsync(string mailFolderName = null, CancellationToken cancellationToken = default);
+        ValueTask<IMailFolder> ConnectMailFolderAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Connect an <see cref="IMailFolderClient"/> to the mail folder.
+        /// Disconnect from the internal <see cref="IImapClient"/>.
+        /// Note: GetAwaiter().GetResult() requires this to be a Task.
         /// </summary>
-        /// <param name="mailFolderName">Mail folder name.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
-        /// <returns><see cref="IMailFolderClient"/>.</returns>
-        ValueTask<IMailFolderClient> ConnectMailFolderClientAsync(string mailFolderName = null, CancellationToken cancellationToken = default);
+        /// <returns>Disconnected IMAP client.</returns>
+        Task DisconnectAsync(CancellationToken cancellationToken = default);
     }
 }

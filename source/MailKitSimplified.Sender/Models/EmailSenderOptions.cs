@@ -14,11 +14,12 @@ namespace MailKitSimplified.Sender.Models
         public ushort SmtpPort { get; set; } = 0;
         public NetworkCredential SmtpCredential { get; set; } = null;
         public string ProtocolLog { get; set; } = null;
+        public bool ProtocolLogFileAppend { get; set; } = false;
 
         // Constructor required for Configuration mapping.
         public EmailSenderOptions() { }
 
-        public EmailSenderOptions(string smtpHost, NetworkCredential smtpCredential = null, ushort smtpPort = 0, string protocolLog = null)
+        public EmailSenderOptions(string smtpHost, NetworkCredential smtpCredential = null, ushort smtpPort = 0, string protocolLog = null, bool protocolLogFileAppend = false)
         {
             if (string.IsNullOrWhiteSpace(smtpHost))
                 throw new ArgumentNullException(nameof(smtpHost));
@@ -34,6 +35,7 @@ namespace MailKitSimplified.Sender.Models
             SmtpPort = smtpPort;
             SmtpCredential = smtpCredential;
             ProtocolLog = protocolLog;
+            ProtocolLogFileAppend = protocolLogFileAppend;
         }
 
         public override string ToString() => $"{SmtpHost}:{SmtpPort}";

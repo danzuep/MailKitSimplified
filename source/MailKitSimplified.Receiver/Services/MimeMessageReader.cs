@@ -64,14 +64,14 @@ namespace MailKitSimplified.Receiver.Services
             var mailFolder = messageSummary.Folder;
             if (mailFolder == null)
                 throw new NullReferenceException("Mail folder property not available.");
+            bool closeWhenFinished = !mailFolder.IsOpen;
+            if (closeWhenFinished)
+                _ = await mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
             var uniqueId = messageSummary.UniqueId;
-            MimeMessageReader mimeMessageReader;
-            using (var mailFolderClient = new MailFolderClient(mailFolder))
-            {
-                mailFolder = await mailFolderClient.ConnectAsync(false, cancellationToken).ConfigureAwait(false);
-                var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken).ConfigureAwait(false);
-                mimeMessageReader = Create(mimeMessage, mailFolder.FullName, uniqueId.Id);
-            }
+            var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken).ConfigureAwait(false);
+            var mimeMessageReader = Create(mimeMessage, mailFolder.FullName, uniqueId.Id);
+            if (closeWhenFinished)
+                await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
             return mimeMessageReader;
         }
 

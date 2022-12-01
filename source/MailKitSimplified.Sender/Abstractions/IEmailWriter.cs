@@ -222,9 +222,9 @@ namespace MailKitSimplified.Sender.Abstractions
         Task<bool> TrySendAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null);
 
         /// <summary>
-        /// All emails details in an easy-to-read format.
+        /// Email envelope (id, from, to, subject etc.) in a readable format.
         /// </summary>
-        /// <returns>Plain-text email summary.</returns>
+        /// <returns>Email summary in plain text.</returns>
         string ToString();
     }
 }

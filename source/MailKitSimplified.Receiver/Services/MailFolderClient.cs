@@ -8,22 +8,24 @@ using MailKitSimplified.Receiver.Abstractions;
 
 namespace MailKitSimplified.Receiver.Services
 {
-    public class MailFolderClient : IMailFolderClient
+    public sealed class MailFolderClient : IMailFolderClient
     {
-        public string MailFolderName => _mailFolder.FullName;
-        public int MailFolderCount => _mailFolder.Count;
+        public string MailFolderName => _mailFolder?.FullName ?? _imapReceiver.ToString();
+        public int MailFolderCount => _mailFolder?.Count ?? 0;
 
+        private IMailFolder _mailFolder = null;
         private readonly ILogger _logger;
-        private readonly IMailFolder _mailFolder;
+        private readonly IImapReceiver _imapReceiver;
 
-        public MailFolderClient(IMailFolder mailFolder, ILogger<MailFolderClient> logger = null)
+        public MailFolderClient(IImapReceiver imapReceiver, ILogger<MailFolderClient> logger = null)
         {
             _logger = logger ?? NullLogger<MailFolderClient>.Instance;
-            _mailFolder = mailFolder ?? throw new ArgumentNullException(nameof(mailFolder));
+            _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
         }
 
         public async ValueTask<IMailFolder> ConnectAsync(bool enableWrite = false, CancellationToken cancellationToken = default)
         {
+            _mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
             if (!_mailFolder.IsOpen)
             {
                 var folderAccess = enableWrite ? FolderAccess.ReadWrite : FolderAccess.ReadOnly;
@@ -40,17 +42,17 @@ namespace MailKitSimplified.Receiver.Services
 
         public override string ToString() => $"{MailFolderName} ({MailFolderCount})";
 
-        public virtual async ValueTask DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
-            if (_mailFolder.IsOpen)
-                await _mailFolder.CloseAsync().ConfigureAwait(false);
+            if (_mailFolder?.IsOpen ?? false)
+                await _mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
         }
 
-        public virtual void Dispose()
+        public void Dispose()
         {
-            if (_mailFolder.IsOpen)
+            if (_mailFolder?.IsOpen ?? false)
                 lock (_mailFolder.SyncRoot)
-                    _mailFolder.Close();
+                    _mailFolder.Close(false, CancellationToken.None);
         }
     }
 }
