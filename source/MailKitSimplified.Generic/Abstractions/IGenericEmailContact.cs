@@ -3,7 +3,7 @@
     /// <summary>
     /// Simple email contact based on the RFC standard.
     /// </summary>
-    public interface IEmailContact
+    public interface IGenericEmailContact
     {
         /// <summary>
         /// The "name" or "display-name" of the mailbox. See

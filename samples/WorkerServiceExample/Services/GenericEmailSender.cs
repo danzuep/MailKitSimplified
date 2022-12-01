@@ -12,14 +12,14 @@ namespace WorkerServiceExample.Services
     {
         private readonly ILogger<GenericEmailSender> _logger;
         private readonly ISmtpClient _smtpClient;
-        private readonly SmtpOptions _senderOptions;
+        private readonly GenericSmtpOptions _senderOptions;
 
-        public GenericEmailSender(IOptions<SmtpOptions> senderOptions, ILogger<GenericEmailSender>? logger = null, ISmtpClient? smtpClient = null)
+        public GenericEmailSender(IOptions<GenericSmtpOptions> senderOptions, ILogger<GenericEmailSender>? logger = null, ISmtpClient? smtpClient = null)
         {
             _logger = logger ?? NullLogger<GenericEmailSender>.Instance;
             _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.Host))
-                throw new NullReferenceException(nameof(SmtpOptions.Host));
+                throw new NullReferenceException(nameof(GenericSmtpOptions.Host));
             _smtpClient = smtpClient ?? new SmtpClient();
         }
 
@@ -31,7 +31,7 @@ namespace WorkerServiceExample.Services
             string[] hostParts = smtpHost.Split(':');
             if (hostParts.Length == 2 && ushort.TryParse(hostParts[1], out smtpPort))
                 smtpHost = hostParts[0];
-            var emailSenderOptions = new SmtpOptions
+            var emailSenderOptions = new GenericSmtpOptions
             {
                 Host = smtpHost,
                 Port = smtpPort

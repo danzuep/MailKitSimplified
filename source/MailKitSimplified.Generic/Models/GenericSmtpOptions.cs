@@ -2,7 +2,7 @@
 
 namespace MailKitSimplified.Generic.Models
 {
-    public class SmtpOptions
+    public class GenericSmtpOptions
     {
         public const string SectionName = "Smtp";
 

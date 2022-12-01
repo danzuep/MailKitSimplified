@@ -10,15 +10,15 @@ namespace MailKitSimplified.Generic.Services
     {
         public IDictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
 
-        public IList<IEmailContact> From { get; set; } = new List<IEmailContact>();
+        public IList<IGenericEmailContact> From { get; set; } = new List<IGenericEmailContact>();
 
-        public IList<IEmailContact> ReplyTo { get; set; } = new List<IEmailContact>();
+        public IList<IGenericEmailContact> ReplyTo { get; set; } = new List<IGenericEmailContact>();
 
-        public IList<IEmailContact> To { get; set; } = new List<IEmailContact>();
+        public IList<IGenericEmailContact> To { get; set; } = new List<IGenericEmailContact>();
 
-        public IList<IEmailContact> Cc { get; set; } = new List<IEmailContact>();
+        public IList<IGenericEmailContact> Cc { get; set; } = new List<IGenericEmailContact>();
 
-        public IList<IEmailContact> Bcc { get; set; } = new List<IEmailContact>();
+        public IList<IGenericEmailContact> Bcc { get; set; } = new List<IGenericEmailContact>();
 
         public IDictionary<string, object> Attachments { get; set; } = new Dictionary<string, object>();
 

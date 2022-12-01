@@ -8,7 +8,7 @@ using MailKitSimplified.Generic.Abstractions;
 
 namespace MailKitSimplified.Generic.Models
 {
-    public class EmailContact : IEmailContact
+    public class GenericEmailContact : IGenericEmailContact
     {
         public string Name { get; set; }
 
@@ -19,7 +19,7 @@ namespace MailKitSimplified.Generic.Models
         private static readonly char[] _emailReplace = new char[] { '_', '.', '-' };
         private static readonly char[] _emailSeparator = new char[] { ';', ',', ' ', '&', '|' };
 
-        private EmailContact(string emailAddress, string name = null)
+        private GenericEmailContact(string emailAddress, string name = null)
         {
             EmailAddress = emailAddress ?? throw new ArgumentNullException(nameof(emailAddress));
             bool hasNoName = string.IsNullOrWhiteSpace(name) ||
@@ -27,8 +27,8 @@ namespace MailKitSimplified.Generic.Models
             Name = hasNoName ? GetNameFromEmailAddress(emailAddress) : name;
         }
 
-        public static IEmailContact Create(string emailAddress, string name = null) =>
-            new EmailContact(emailAddress, name);
+        public static IGenericEmailContact Create(string emailAddress, string name = null) =>
+            new GenericEmailContact(emailAddress, name);
 
         private static string GetNameFromEmailAddress(string emailAddress)
         {
@@ -37,22 +37,22 @@ namespace MailKitSimplified.Generic.Models
             return name;
         }
 
-        protected static IEmailContact GetContactFromEmailAddress(string emailAddress)
+        protected static IGenericEmailContact GetContactFromEmailAddress(string emailAddress)
         {
             string name = GetNameFromEmailAddress(emailAddress);
             var contact = Create(emailAddress, name);
             return contact;
         }
 
-        public static IEnumerable<IEmailContact> ParseEmailContacts(string value)
+        public static IEnumerable<IGenericEmailContact> ParseEmailContacts(string value)
         {
-            IEnumerable<IEmailContact> contacts = null;
+            IEnumerable<IGenericEmailContact> contacts = null;
             if (!string.IsNullOrEmpty(value))
             {
                 var emailAddresses = value.Split(_emailSeparator, StringSplitOptions.RemoveEmptyEntries);
                 contacts = emailAddresses.Select(email => GetContactFromEmailAddress(email));
             }
-            return contacts ?? Enumerable.Empty<IEmailContact>();
+            return contacts ?? Enumerable.Empty<IGenericEmailContact>();
         }
 
         private static string SpaceReplaceTitleCase(string value, char[] replace)
@@ -109,7 +109,7 @@ namespace MailKitSimplified.Generic.Models
             if (destinationEmailAddresses is null)
                 throw new ArgumentNullException(nameof(destinationEmailAddresses));
             if (logger is null)
-                logger = NullLogger<EmailContact>.Instance;
+                logger = NullLogger<GenericEmailContact>.Instance;
             bool isValid = true;
             int sourceEmailAddressCount = 0, destinationEmailAddressCount = 0;
             foreach (var from in sourceEmailAddresses)
