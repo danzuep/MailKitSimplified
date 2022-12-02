@@ -54,9 +54,9 @@ namespace MailKitSimplified.Receiver
             };
         }
 
-        public MailFolderMonitor SetMessageFilter(MessageSummaryItems messageFilter = MessageSummaryItems.Envelope)
+        public MailFolderMonitor SetMessageSummaryParts(MessageSummaryItems messagePartFilter = MessageSummaryItems.Envelope)
         {
-            _folderMonitorOptions.MessageFilter = messageFilter;
+            _folderMonitorOptions.MessageSummaryParts = messagePartFilter;
             return this;
         }
 
@@ -282,7 +282,7 @@ namespace MailKitSimplified.Receiver
             _logger.LogTrace($"{_imapReceiver} ({_mailFolder.Count}) Fetching new message arrivals, starting from {startIndex}.");
             if (startIndex > _mailFolder.Count)
                 startIndex = _mailFolder.Count;
-            var filter = _folderMonitorOptions.MessageFilter | MessageSummaryItems.UniqueId;
+            var filter = _folderMonitorOptions.MessageSummaryParts | MessageSummaryItems.UniqueId;
             var fetched = await _mailFolder.FetchAsync(startIndex, -1, filter, cancellationToken).ConfigureAwait(false);
             if (_arrival.IsCancellationRequested)
                 _arrival = new CancellationTokenSource();

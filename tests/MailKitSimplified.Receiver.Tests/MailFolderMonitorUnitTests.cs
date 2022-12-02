@@ -28,7 +28,7 @@ namespace MailKitSimplified.Receiver.Tests
                 .ReturnsAsync(_imapClientMock.Object).Verifiable();
             _imapReceiverMock.SetupGet(_ => _.MailFolderClient)
                 .Returns(_mailFolderClientMock.Object).Verifiable();
-            var options = Options.Create(new FolderMonitorOptions { MessageFilter = MessageSummaryItems.Envelope });
+            var options = Options.Create(new FolderMonitorOptions { MessageSummaryParts = MessageSummaryItems.Envelope });
             _imapIdleClient = new MailFolderMonitor(_imapReceiverMock.Object, options, loggerFactory.CreateLogger<MailFolderMonitor>());
         }
 
@@ -44,22 +44,23 @@ namespace MailKitSimplified.Receiver.Tests
 
         private void SetupImapIdleClient()
         {
-            _imapIdleClient.SetProcessMailOnConnect(false)
+            _imapIdleClient.SetMessageSummaryParts()
+                .SetProcessMailOnConnect().SetIdleMinutes().SetMaxRetries()
                 .OnMessageArrival((messageSummary) => OnArrivalAsync(messageSummary))
                 .OnMessageDeparture((messageSummary) => null);
         }
 
         private Task OnArrivalAsync(IMessageSummary messageSummary) => _completedTask;
 
-        //[Fact]
-        //public async Task MonitoryAsync_FromImapReceiver_Verify()
-        //{
-        //    SetupImapIdleClient();
-        //    // Act
-        //    await _imapIdleClient.IdleAsync(It.IsAny<CancellationToken>());
-        //    // Assert
-        //    _imapReceiverMock.Verify(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()), Times.Once);
-        //}
+        [Fact]
+        public async Task MonitoryAsync_FromImapReceiver_Verify()
+        {
+            SetupImapIdleClient();
+            // Act
+            await _imapIdleClient.IdleAsync(It.IsAny<CancellationToken>());
+            // Assert
+            _imapReceiverMock.Verify(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
 
         //[Fact]
         //public async Task MonitoryAsync_ThrowsException()

@@ -71,7 +71,8 @@ var messageSummaries = await imapReceiver.ReadFrom("INBOX")
 To asynchronously monitor the mail folder for incoming messages:
 
 ```csharp
-await new MailFolderMonitor(imapReceiver).SetProcessMailOnConnect(true)
+await new MailFolderMonitor(imapReceiver).SetMessageFilter()
+    .SetProcessMailOnConnect().SetIdleMinutes().SetMaxRetries()
     .OnMessageArrival((messageSummary) => OnArrivalAsync(messageSummary))
     .IdleAsync();
 ```
