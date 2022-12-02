@@ -9,9 +9,9 @@ namespace MailKitSimplified.Receiver.Models
         public const int IdleMinutesImap = 29;
 
         /// <summary>
-        /// Specify whether to process existing messages, default is true.
+        /// Specify whether to process existing messages, default is false.
         /// </summary>
-        public bool ProcessMailOnConnect { get; set; } = true;
+        public bool ProcessMailOnConnect { get; set; } = false;
 
         /// <summary>
         /// Specify which properties of <see cref="IMessageSummary"/> should be populated.

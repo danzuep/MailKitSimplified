@@ -23,7 +23,7 @@ var mimeMessages = await imapReceiver.ReadMail.GetMimeMessagesAsync();
 You can even monitor an email folder for new messages asynchronously, never before has it been this easy!
 
 ```csharp
-await imapReceiver.MonitorFolder.IdleAsync();
+await imapReceiver.MonitorFolder.OnMessageArrival((m) => Console.WriteLine(m.UniqueId)).IdleAsync();
 ```
 
 ## Example Usage [![Development](https://github.com/danzuep/MailKitSimplified/actions/workflows/development.yml/badge.svg)](https://github.com/danzuep/MailKitSimplified/actions/workflows/development.yml) [![Release](https://github.com/danzuep/MailKitSimplified/actions/workflows/release.yml/badge.svg)](https://github.com/danzuep/MailKitSimplified/actions/workflows/release.yml)
@@ -54,25 +54,27 @@ See the [MailKitSimplified.Sender wiki](https://github.com/danzuep/MailKitSimpli
 ```csharp
 using var imapReceiver = ImapReceiver.Create("imap.gmail.com:993")
     .SetCredential("user@gmail.com", "ApplicationP455w0rd")
-    .SetProtocolLog("Logs/ImapClient.txt");
-var mimeMessages = await imapReceiver.ReadFrom("INBOX")
-    .Skip(0).Take(10).GetMimeMessagesAsync();
+    .SetProtocolLog("Logs/ImapClient.txt")
+    .SetFolder("INBOX/Subfolder")
+    .Skip(0).Take(10, true);
+var mimeMessages = await imapReceiver
+    .GetMimeMessagesAsync();
 ```
 
 To only download the email parts you want to use:
 
 ```csharp
-var messageSummaries = await imapReceiver.ReadFrom("INBOX/Subfolder")
+var messageSummaries = await imapReceiver.ReadFrom("INBOX")
     .GetMessageSummariesAsync(MessageSummaryItems.UniqueId);
 ```
 
 To asynchronously monitor the folder for incoming messages:
 
 ```csharp
-var imapIdleClient = imapReceiver.Monitor("INBOX");
-imapIdleClient.MessageArrivalMethod = messageSummary => Process(messageSummary);
-imapIdleClient.MessageDepartureMethod = messageSummary => null;
-await imapIdleClient.IdleAsync();
+await MailFolderMonitor.Create(reciver)
+    .SetProcessMailOnConnect()
+    .OnMessageArrival((m) => OnArrivalAsync(m))
+    .IdleAsync();
 ```
 
 See the [MailKitSimplified.Receiver wiki](https://github.com/danzuep/MailKitSimplified/wiki/Receiver) for more information.

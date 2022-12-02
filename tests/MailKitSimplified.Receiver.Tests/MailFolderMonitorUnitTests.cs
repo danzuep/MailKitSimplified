@@ -44,26 +44,22 @@ namespace MailKitSimplified.Receiver.Tests
 
         private void SetupImapIdleClient()
         {
-            //_imapIdleClient.MessageArrivalMethod = messageSummary => _completedTask;
-            //_imapIdleClient.MessageDepartureMethod = messageSummary => _completedTask;
-            _imapIdleClient.MessageArrivalMethod = (messageSummary) => Process(messageSummary);
-            _imapIdleClient.MessageDepartureMethod = messageSummary => null;
+            _imapIdleClient.SetProcessMailOnConnect(false)
+                .OnMessageArrival((messageSummary) => OnArrivalAsync(messageSummary))
+                .OnMessageDeparture((messageSummary) => null);
         }
 
-        private Task Process(IMessageSummary messageSummary)
+        private Task OnArrivalAsync(IMessageSummary messageSummary) => _completedTask;
+
+        [Fact]
+        public async Task MonitoryAsync_FromImapReceiver_Verify()
         {
-            throw new NotImplementedException();
+            SetupImapIdleClient();
+            // Act
+            await _imapIdleClient.IdleAsync(It.IsAny<CancellationToken>());
+            // Assert
+            _imapReceiverMock.Verify(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
-
-        //[Fact]
-        //public async Task MonitoryAsync_FromImapReceiver_Verify()
-        //{
-        //    SetupImapIdleClient();
-        //    // Act
-        //    await _imapIdleClient.IdleAsync(It.IsAny<CancellationToken>());
-        //    // Assert
-        //    _imapReceiverMock.Verify(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()), Times.Once);
-        //}
 
         //[Fact]
         //public async Task MonitoryAsync_ThrowsException()
