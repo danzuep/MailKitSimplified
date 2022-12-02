@@ -24,9 +24,9 @@ public class Worker : BackgroundService
         var sendTask = DelayedSendAsync(5, stoppingToken);
         await _imapReceiver.MonitorFolder.IdleAsync();
         await sendTask;
-        using var reciver = ImapReceiver.Create("localhost").SetFolder("INBOX");
-        await MailFolderMonitor.Create(reciver).SetProcessMailOnConnect()
-            .OnMessageArrival((m) => Console.WriteLine(m.UniqueId)).IdleAsync();
+        //using var reciver = ImapReceiver.Create("localhost").SetFolder("INBOX");
+        //await new MailFolderMonitor(reciver).SetProcessMailOnConnect()
+        //    .OnMessageArrival((m) => Console.WriteLine(m.UniqueId)).IdleAsync();
     }
 
     private async Task DelayedSendAsync(int secondsDelay, CancellationToken cancellationToken = default)

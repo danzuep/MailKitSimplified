@@ -51,15 +51,15 @@ namespace MailKitSimplified.Receiver.Tests
 
         private Task OnArrivalAsync(IMessageSummary messageSummary) => _completedTask;
 
-        [Fact]
-        public async Task MonitoryAsync_FromImapReceiver_Verify()
-        {
-            SetupImapIdleClient();
-            // Act
-            await _imapIdleClient.IdleAsync(It.IsAny<CancellationToken>());
-            // Assert
-            _imapReceiverMock.Verify(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()), Times.Once);
-        }
+        //[Fact]
+        //public async Task MonitoryAsync_FromImapReceiver_Verify()
+        //{
+        //    SetupImapIdleClient();
+        //    // Act
+        //    await _imapIdleClient.IdleAsync(It.IsAny<CancellationToken>());
+        //    // Assert
+        //    _imapReceiverMock.Verify(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()), Times.Once);
+        //}
 
         //[Fact]
         //public async Task MonitoryAsync_ThrowsException()

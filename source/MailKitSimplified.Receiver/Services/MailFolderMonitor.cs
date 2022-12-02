@@ -54,26 +54,6 @@ namespace MailKitSimplified.Receiver
             };
         }
 
-        public static MailFolderMonitor Create(IImapReceiver imapReceiver, MessageSummaryItems messageFilter = MessageSummaryItems.None, bool processMailOnConnect = true, byte idleMinutes = 9, byte maxRetries = 3, ILogger<MailFolderMonitor> logger = null)
-        {
-            var folderMonitorOptions = new FolderMonitorOptions
-            {
-                MessageFilter = messageFilter,
-                ProcessMailOnConnect = processMailOnConnect,
-                IdleMinutes = idleMinutes,
-                MaxRetries = maxRetries
-            };
-            var mailFolderMonitor = Create(imapReceiver, folderMonitorOptions, logger);
-            return mailFolderMonitor;
-        }
-
-        public static MailFolderMonitor Create(IImapReceiver imapReceiver, FolderMonitorOptions emailReceiverOptions, ILogger<MailFolderMonitor> logger = null)
-        {
-            var options = Options.Create(emailReceiverOptions);
-            var mailFolderMonitor = new MailFolderMonitor(imapReceiver, options, logger);
-            return mailFolderMonitor;
-        }
-
         public MailFolderMonitor SetMessageFilter(MessageSummaryItems messageFilter = MessageSummaryItems.Envelope)
         {
             _folderMonitorOptions.MessageFilter = messageFilter;

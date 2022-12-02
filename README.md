@@ -56,7 +56,7 @@ using var imapReceiver = ImapReceiver.Create("imap.gmail.com:993")
     .SetCredential("user@gmail.com", "ApplicationP455w0rd")
     .SetProtocolLog("Logs/ImapClient.txt")
     .SetFolder("INBOX/Subfolder")
-    .Skip(0).Take(10, true);
+    .Skip(0).Take(10, continuous: true);
 var mimeMessages = await imapReceiver
     .GetMimeMessagesAsync();
 ```
@@ -68,12 +68,11 @@ var messageSummaries = await imapReceiver.ReadFrom("INBOX")
     .GetMessageSummariesAsync(MessageSummaryItems.UniqueId);
 ```
 
-To asynchronously monitor the folder for incoming messages:
+To asynchronously monitor the mail folder for incoming messages:
 
 ```csharp
-await MailFolderMonitor.Create(reciver)
-    .SetProcessMailOnConnect()
-    .OnMessageArrival((m) => OnArrivalAsync(m))
+await new MailFolderMonitor(imapReceiver).SetProcessMailOnConnect(true)
+    .OnMessageArrival((messageSummary) => OnArrivalAsync(messageSummary))
     .IdleAsync();
 ```
 
