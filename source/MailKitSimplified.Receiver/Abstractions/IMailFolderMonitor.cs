@@ -8,14 +8,24 @@ namespace MailKitSimplified.Receiver.Abstractions
     public interface IMailFolderMonitor
     {
         /// <summary>
-        /// Method for processing messages as they are added to the mail folder.
+        /// Asynchronous function for processing messages as they are added to the mail folder.
         /// </summary>
-        Func<IMessageSummary, Task> MessageArrivalMethod { set; }
+        IMailFolderMonitor OnMessageArrival(Func<IMessageSummary, Task> messageArrivalMethod);
 
         /// <summary>
-        /// Method for processing messages as they are removed from the mail folder.
+        /// Asynchronous function for processing messages as they are removed from the mail folder.
         /// </summary>
-        Func<IMessageSummary, Task> MessageDepartureMethod { set; }
+        IMailFolderMonitor OnMessageDeparture(Func<IMessageSummary, Task> messageDepartureMethod);
+
+        /// <summary>
+        /// Synchronous action for processing messages as they are added to the mail folder.
+        /// </summary>
+        IMailFolderMonitor OnMessageArrival(Action<IMessageSummary> messageArrivalMethod);
+
+        /// <summary>
+        /// Synchronous action for processing messages as they are removed from the mail folder.
+        /// </summary>
+        IMailFolderMonitor OnMessageDeparture(Action<IMessageSummary> messageDepartureMethod);
 
         /// <summary>
         /// Idle client that monitors a mail folder for incoming messages.

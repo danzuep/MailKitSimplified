@@ -236,6 +236,8 @@ namespace MailKitSimplified.Sender.Services
             return isSent;
         }
 
+        public ISmtpSender Copy() => MemberwiseClone() as ISmtpSender;
+
         public override string ToString() => _senderOptions.ToString();
 
         public async Task DisconnectAsync(CancellationToken cancellationToken = default)

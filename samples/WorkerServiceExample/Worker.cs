@@ -1,4 +1,6 @@
+using MailKitSimplified.Receiver;
 using MailKitSimplified.Receiver.Abstractions;
+using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Sender.Abstractions;
 
 namespace ExampleNamespace;
@@ -18,6 +20,10 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken = default)
     {
+        using var reciver = ImapReceiver.Create("localhost").SetFolder("INBOX");
+        await new MailFolderMonitor(reciver).SetProcessMailOnConnect()
+            .OnMessageArrival((m) => Console.WriteLine(m.UniqueId)).IdleAsync(stoppingToken);
+
         await ReceiveAsync(stoppingToken);
         var sendTask = DelayedSendAsync(5, stoppingToken);
         await _imapReceiver.MonitorFolder.IdleAsync(stoppingToken);
@@ -26,7 +32,7 @@ public class Worker : BackgroundService
 
     private async Task DelayedSendAsync(int secondsDelay, CancellationToken cancellationToken = default)
     {
-        await Task.Delay(secondsDelay * 1000);
+        await Task.Delay(secondsDelay * 1000, cancellationToken);
         var id = $"{Guid.NewGuid():N}";
         bool isSent = await _smtpSender.WriteEmail
             .From("me@localhost")

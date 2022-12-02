@@ -40,6 +40,8 @@ namespace MailKitSimplified.Receiver.Services
             return _mailFolder;
         }
 
+        public IMailFolderClient Copy() => MemberwiseClone() as IMailFolderClient;
+
         public override string ToString() => $"{MailFolderName} ({MailFolderCount})";
 
         public async ValueTask DisposeAsync()

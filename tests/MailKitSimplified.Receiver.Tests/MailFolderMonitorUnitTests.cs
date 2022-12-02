@@ -9,6 +9,7 @@ namespace MailKitSimplified.Receiver.Tests
     public class MailFolderMonitorUnitTests
     {
         private static readonly Task _completedTask = Task.CompletedTask;
+        private readonly CancellationTokenSource _arrival = new();
         private readonly Mock<IImapClient> _imapClientMock = new();
         private readonly Mock<IMailFolder> _mailFolderMock = new();
         private readonly Mock<IMailFolderClient> _mailFolderClientMock = new();
@@ -20,6 +21,8 @@ namespace MailKitSimplified.Receiver.Tests
             // Arrange
             var loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Trace).AddDebug());
             _imapClientMock.SetupGet(_ => _.Capabilities).Returns(ImapCapabilities.Idle).Verifiable();
+            _imapClientMock.Setup(_ => _.IdleAsync(_arrival.Token, It.IsAny<CancellationToken>()))
+                .Returns(StubIdleAsync);
             _mailFolderClientMock.Setup(_ => _.ConnectAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_mailFolderMock.Object).Verifiable();
             _imapReceiverMock.Setup(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()))
@@ -28,8 +31,15 @@ namespace MailKitSimplified.Receiver.Tests
                 .ReturnsAsync(_imapClientMock.Object).Verifiable();
             _imapReceiverMock.SetupGet(_ => _.MailFolderClient)
                 .Returns(_mailFolderClientMock.Object).Verifiable();
-            var options = Options.Create(new FolderMonitorOptions { MessageFilter = MessageSummaryItems.Envelope });
+            var options = Options.Create(new FolderMonitorOptions { MessageSummaryParts = MessageSummaryItems.Envelope });
             _imapIdleClient = new MailFolderMonitor(_imapReceiverMock.Object, options, loggerFactory.CreateLogger<MailFolderMonitor>());
+        }
+
+        private Task StubIdleAsync()
+        {
+            _imapClientMock.SetupGet(_ => _.IsIdle).Returns(true);
+            _arrival.Cancel();
+            return _completedTask;
         }
 
         [Fact]
@@ -42,27 +52,29 @@ namespace MailKitSimplified.Receiver.Tests
             Assert.DoesNotContain(nameof(MailFolderMonitor), description);
         }
 
-        private void SetupImapIdleClient()
-        {
-            //_imapIdleClient.MessageArrivalMethod = messageSummary => _completedTask;
-            //_imapIdleClient.MessageDepartureMethod = messageSummary => _completedTask;
-            _imapIdleClient.MessageArrivalMethod = (messageSummary) => Process(messageSummary);
-            _imapIdleClient.MessageDepartureMethod = messageSummary => null;
-        }
+        private Task OnArrivalAsync(IMessageSummary _) => _completedTask;
 
-        private Task Process(IMessageSummary messageSummary)
+        [Fact]
+        public async Task IdleAsync_WithNullMethods_ReturnsCompletedTask()
         {
-            throw new NotImplementedException();
+            // Arrange
+            _imapIdleClient.SetMaxRetries(0)
+                .OnMessageArrival((messageSummary) => null)
+                .OnMessageDeparture((messageSummary) => null);
+            // Act
+            await _imapIdleClient.IdleAsync(_arrival.Token);
+            // Assert
+            _imapReceiverMock.Verify(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         //[Fact]
         //public async Task MonitoryAsync_FromImapReceiver_Verify()
         //{
-        //    SetupImapIdleClient();
-        //    // Act
-        //    await _imapIdleClient.IdleAsync(It.IsAny<CancellationToken>());
-        //    // Assert
-        //    _imapReceiverMock.Verify(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()), Times.Once);
+        //    var imapIdleClient = ((MailFolderMonitor)_imapIdleClient.Copy()).SetMessageSummaryParts()
+        //        .SetProcessMailOnConnect().SetIdleMinutes().SetMaxRetries(1)
+        //        .OnMessageArrival((messageSummary) => _completedTask)
+        //        .OnMessageDeparture((messageSummary) => _completedTask);
+        //    await imapIdleClient.IdleAsync(_arrival.Token);
         //}
 
         //[Fact]

@@ -9,15 +9,15 @@ namespace MailKitSimplified.Receiver.Models
         public const int IdleMinutesImap = 29;
 
         /// <summary>
-        /// Specify whether to process existing messages, default is true.
+        /// Specify whether to process existing messages, default is false.
         /// </summary>
-        public bool ProcessMailOnConnect { get; set; } = true;
+        public bool ProcessMailOnConnect { get; set; } = false;
 
         /// <summary>
         /// Specify which properties of <see cref="IMessageSummary"/> should be populated.
         /// <see cref="UniqueId"/> is always included by default.
         /// </summary>
-        public MessageSummaryItems MessageFilter { get; set; } = MessageSummaryItems.None;
+        public MessageSummaryItems MessageSummaryParts { get; set; } = MessageSummaryItems.None;
 
         /// <summary>
         /// Specify length of time to idle for, default is 9 minutes.
@@ -29,6 +29,6 @@ namespace MailKitSimplified.Receiver.Models
         /// </summary>
         public byte MaxRetries { get; set; } = 3;
 
-        public override string ToString() => $"ProcessMailOnConnect={ProcessMailOnConnect}, MessageFilter={MessageFilter}, IdleMinutes={IdleMinutes}, MaxRetries={MaxRetries}.";
+        public override string ToString() => $"ProcessMailOnConnect={ProcessMailOnConnect}, MessageFilter={MessageSummaryParts}, IdleMinutes={IdleMinutes}, MaxRetries={MaxRetries}.";
     }
 }

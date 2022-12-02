@@ -281,12 +281,6 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
-        public IEmailWriter Copy()
-        {
-            var clone = MemberwiseClone() as IEmailWriter;
-            return clone;
-        }
-
         public void Send(CancellationToken cancellationToken = default) =>
             SendAsync(cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult();
 
@@ -309,6 +303,8 @@ namespace MailKitSimplified.Sender.Services
                 _mimeMessage.From.Add(_defaultFrom);
             return isSent;
         }
+
+        public IEmailWriter Copy() => MemberwiseClone() as IEmailWriter;
 
         public override string ToString()
         {

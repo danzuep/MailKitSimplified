@@ -12,16 +12,16 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// Offset to start getting messages from.
         /// </summary>
         /// <param name="skipCount">Offset to start getting messages from.</param>
-        /// <param name="continuous">Whether to keep adding the offset or not.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>
-        IMailReader Skip(int skipCount, bool continuous = false);
+        IMailReader Skip(int skipCount);
 
         /// <summary>
         /// Number of messages to return.
         /// </summary>
         /// <param name="takeCount">Number of messages to return.</param>
+        /// <param name="continuous">Whether to keep adding the offset or not.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>
-        IMailReader Take(int takeCount);
+        IMailReader Take(int takeCount, bool continuous = false);
 
         /// <summary>
         /// Get a list of the message summaries with just the requested MessageSummaryItems.

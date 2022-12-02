@@ -17,7 +17,7 @@ namespace MailKitSimplified.Receiver.Services
             MessageSummaryItems.UniqueId;
 
         private int _skip = 0;
-        private bool _continueSkip = false;
+        private bool _continueTake = false;
         private int _take = 250;
         private readonly IMailFolderClient _mailFolderClient;
 
@@ -26,20 +26,20 @@ namespace MailKitSimplified.Receiver.Services
             _mailFolderClient = mailFolderClient ?? throw new ArgumentNullException(nameof(mailFolderClient));
         }
 
-        public IMailReader Skip(int skipCount, bool continuous = false)
+        public IMailReader Skip(int skipCount)
         {
             if (skipCount < 0)
                 throw new ArgumentOutOfRangeException(nameof(skipCount));
             _skip = skipCount;
-            _continueSkip = continuous;
             return this;
         }
 
-        public IMailReader Take(int takeCount)
+        public IMailReader Take(int takeCount, bool continuous = false)
         {
             if (takeCount < 0)
                 throw new ArgumentOutOfRangeException(nameof(takeCount));
             _take = takeCount;
+            _continueTake = continuous;
             return this;
         }
 
@@ -48,7 +48,7 @@ namespace MailKitSimplified.Receiver.Services
             int startIndex = _skip < mailFolder.Count ? _skip : mailFolder.Count;
             int endIndex = _take > 0 ? startIndex + _take > 0 ? _take - 1 + startIndex : mailFolder.Count : startIndex;
             var messageSummaries = await mailFolder.FetchAsync(startIndex, endIndex, filter, cancellationToken).ConfigureAwait(false);
-            if (_continueSkip)
+            if (_continueTake)
                 _skip = endIndex + 1;
             return messageSummaries;
         }
@@ -124,6 +124,8 @@ namespace MailKitSimplified.Receiver.Services
             }
             return mimeMessages;
         }
+
+        public IMailFolderReader Copy() => MemberwiseClone() as IMailFolderReader;
 
         public override string ToString() => $"{_mailFolderClient} (skip {_skip}, take {_take})";
     }
