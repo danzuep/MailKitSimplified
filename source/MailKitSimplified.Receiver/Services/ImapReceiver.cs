@@ -176,6 +176,8 @@ namespace MailKitSimplified.Receiver.Services
             return mailFolderNames;
         }
 
+        public IImapReceiver Copy() => MemberwiseClone() as IImapReceiver;
+
         public override string ToString() => _receiverOptions.ToString();
 
         public async Task DisconnectAsync(CancellationToken cancellationToken = default)

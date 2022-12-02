@@ -125,6 +125,8 @@ namespace MailKitSimplified.Receiver.Services
             return mimeMessages;
         }
 
+        public IMailFolderReader Copy() => MemberwiseClone() as IMailFolderReader;
+
         public override string ToString() => $"{_mailFolderClient} (skip {_skip}, take {_take})";
     }
 }

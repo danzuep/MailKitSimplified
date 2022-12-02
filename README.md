@@ -34,7 +34,7 @@ The examples above will actually work with no other setup if you use something l
 
 ```csharp
 using var smtpSender = SmtpSender.Create(""smtp.gmail.com:587")
-    .SetCredential("user@gmail.com", "ApplicationP455w0rd")
+    .SetCredential("user@gmail.com", "4pp1icati0nP455w0rd")
     .SetProtocolLog("Logs/SmtpClient.txt");
 await smtpSender.WriteEmail
     .From("my.name@example.com")
@@ -53,7 +53,7 @@ See the [MailKitSimplified.Sender wiki](https://github.com/danzuep/MailKitSimpli
 
 ```csharp
 using var imapReceiver = ImapReceiver.Create("imap.gmail.com:993")
-    .SetCredential("user@gmail.com", "ApplicationP455w0rd")
+    .SetCredential("user@gmail.com", "4pp1icati0nP455w0rd")
     .SetProtocolLog("Logs/ImapClient.txt")
     .SetFolder("INBOX/Subfolder")
     .Skip(0).Take(10, continuous: true);
@@ -71,7 +71,7 @@ var messageSummaries = await imapReceiver.ReadFrom("INBOX")
 To asynchronously monitor the mail folder for incoming messages:
 
 ```csharp
-await new MailFolderMonitor(imapReceiver).SetMessageFilter()
+await new MailFolderMonitor(imapReceiver).SetMessageSummaryParts()
     .SetProcessMailOnConnect().SetIdleMinutes().SetMaxRetries()
     .OnMessageArrival((messageSummary) => OnArrivalAsync(messageSummary))
     .IdleAsync();
