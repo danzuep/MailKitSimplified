@@ -1,7 +1,9 @@
+using MailKit;
 using MailKitSimplified.Receiver;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Sender.Abstractions;
+using MailKitSimplified.Sender.Services;
 
 namespace ExampleNamespace;
 
@@ -20,9 +22,11 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken = default)
     {
-        using var reciver = ImapReceiver.Create("localhost").SetFolder("INBOX");
-        await new MailFolderMonitor(reciver).SetProcessMailOnConnect()
-            .OnMessageArrival((m) => Console.WriteLine(m.UniqueId)).IdleAsync(stoppingToken);
+        using var imapReceiver = ImapReceiver.Create("localhost").SetFolder("INBOX");
+        await new MailFolderMonitor(imapReceiver).SetProcessMailOnConnect()
+            .OnMessageArrival((m) => Console.WriteLine(m.UniqueId))
+            .OnMessageDeparture((m) => Console.WriteLine(m.UniqueId))
+            .IdleAsync(stoppingToken);
 
         await ReceiveAsync(stoppingToken);
         var sendTask = DelayedSendAsync(5, stoppingToken);
@@ -46,7 +50,7 @@ public class Worker : BackgroundService
     private async Task ReceiveAsync(CancellationToken cancellationToken = default)
     {
         var emails = await _imapReceiver.ReadMail
-            .Skip(0).Take(10)
+            .Skip(0).Take(10, continuous: true)
             .GetMessageSummariesAsync(cancellationToken);
         _logger.LogInformation("Email(s) received: {emails}.", emails.Select(m => m.UniqueId));
     }
