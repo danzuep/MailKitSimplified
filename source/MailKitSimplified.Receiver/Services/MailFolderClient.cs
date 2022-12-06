@@ -1,5 +1,4 @@
-﻿using MimeKit;
-using MailKit;
+﻿using MailKit;
 using MailKit.Search;
 using System;
 using System.Threading;
@@ -14,7 +13,6 @@ namespace MailKitSimplified.Receiver.Services
 {
     public sealed class MailFolderClient : IMailFolderClient
     {
-        public IMailFolder MailFolder => _mailFolder;
         public string MailFolderName => _mailFolder?.FullName ?? _imapReceiver.ToString();
         public int MailFolderCount => _mailFolder?.Count ?? 0;
 
@@ -46,9 +44,6 @@ namespace MailKitSimplified.Receiver.Services
             return _mailFolder;
         }
 
-        /// <summary>Query the server for message IDs.</summary>
-        /// <param name="keywords">Keywords to search for.</param>
-        /// <returns>The first 250 <see cref="UniqueId"/>s.</returns>
         public async Task<IList<UniqueId>> SearchAsync(SearchQuery searchQuery, CancellationToken cancellationToken = default)
         {
             _ = await ConnectAsync(false, cancellationToken).ConfigureAwait(false);
@@ -78,17 +73,6 @@ namespace MailKitSimplified.Receiver.Services
             var query = subjectQuery.Or(bodyQuery);
             var uniqueIds = await SearchAsync(query, cancellationToken).ConfigureAwait(false);
             return uniqueIds;
-        }
-
-        /// <summary>Asynchronously get the specified message.</summary>
-        /// <param name="uniqueId">The UID of the message.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <param name="progress">Progress reporting mechanism.</param>
-        /// <returns><see cref="MimeMessage"/> result.</returns>
-        public async Task<MimeMessage> GetMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default, ITransferProgress progress = null)
-        {
-            var mimeMessage = await _mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
-            return mimeMessage;
         }
 
         public IMailFolderClient Copy() => MemberwiseClone() as IMailFolderClient;
