@@ -78,13 +78,12 @@ namespace MailKitSimplified.Receiver.Extensions
 
         /// <summary>
         /// Quote the original message and add a new message above it.
-        /// Example alternative style: \"border-left: 1px #ccc solid; margin: 0 0 0 .8em; padding-left: 1em;\".
         /// </summary>
         /// <param name="original"><see cref="MimeMessage"/> to quote.</param>
         /// <param name="message">New message to add above it.</param>
         /// <param name="htmlBorder">HTML border style.</param>
         /// <returns>Quoted message text.</returns>
-        public static string QuoteForReply(this MimeMessage original, string message = "", string htmlBorder = "border-top: solid #CCC 1px; padding-left: 1px")
+        public static string QuoteForReply(this MimeMessage original, string message = "")
         {
             if (original == null)
                 throw new ArgumentNullException(nameof(original));
@@ -128,16 +127,16 @@ namespace MailKitSimplified.Receiver.Extensions
             }
             else
             {
+                string GetHtml(InternetAddressList contacts) =>
+                    contacts.Mailboxes.Select(a => $"\"{a.Name}\" &lt{a.Address}&gt").ToEnumeratedString("; ");
                 stringBuilder.AppendLine("<div>");
                 stringBuilder.AppendLine(message);
-                stringBuilder.AppendLine("</div><br />");
-                stringBuilder.AppendLine($"<blockquote style=\"{htmlBorder}\">");
-                stringBuilder.AppendLine("<div><p>"); //<hr />
-                stringBuilder.AppendLine($"<b>From:</b> {original.From}<br />");
+                stringBuilder.AppendLine("</div><br /><blockquote><hr /><div>");
+                stringBuilder.AppendLine($"<b>From:</b> {GetHtml(original.From)}<br />");
                 stringBuilder.AppendLine($"<b>Sent:</b> {original.Date}<br />");
-                stringBuilder.AppendLine($"<b>To:</b> {original.To}<br />");
+                stringBuilder.AppendLine($"<b>To:</b> {GetHtml(original.To)}<br />");
                 if (original.Cc.Count > 0)
-                    stringBuilder.AppendLine($"<b>Cc:</b> {original.Cc}<br />");
+                    stringBuilder.AppendLine($"<b>Cc:</b> {GetHtml(original.Cc)}<br />");
                 stringBuilder.AppendLine($"<b>Subject:</b> {original.Subject}<br />");
                 if (original.Attachments?.Any() ?? false)
                 {
@@ -148,68 +147,13 @@ namespace MailKitSimplified.Receiver.Extensions
                 }
                 stringBuilder.AppendLine($"<b>Message ID:</b> {original.MessageId}<br />");
                 if (original.ResentFrom.Count > 0)
-                    stringBuilder.AppendLine($"<b>Resent From:</b> {original.ResentFrom}<br />");
-                stringBuilder.AppendLine("</p></div><br />");
+                    stringBuilder.AppendLine($"<b>Resent From:</b> {GetHtml(original.ResentFrom)}<br />");
+                stringBuilder.AppendLine("</div><br />");
                 stringBuilder.AppendLine(original.HtmlBody ?? string.Empty);
                 stringBuilder.AppendLine("</blockquote>");
             }
             var result = stringBuilder.ToString();
             return result;
-        }
-
-        public static StringBuilder QuoteForReply(this Envelope envelope, bool isHtml = true, string message = "", string bodyText = "", string htmlBorder = "border:none;border-top:solid #E1E1E1 1.0pt;padding:3.0pt 0cm 0cm 0cm")
-        {
-            var stringBuilder = new StringBuilder();
-            if (!isHtml)
-            {
-                stringBuilder.AppendLine(message);
-                envelope.QuoteTextPlain(stringBuilder);
-                if (!string.IsNullOrEmpty(bodyText))
-                    stringBuilder.AppendLine(bodyText);
-            }
-            else
-            {
-                stringBuilder.AppendLine("<div>");
-                stringBuilder.AppendLine(message);
-                stringBuilder.AppendLine("</div><br />");
-                stringBuilder.AppendLine($"<div style=\"{htmlBorder}\">");
-                envelope.QuoteTextHtml(stringBuilder);
-                stringBuilder.AppendLine(bodyText ?? string.Empty);
-                stringBuilder.AppendLine("</div>");
-            }
-            stringBuilder.AppendLine();
-            return stringBuilder;
-        }
-
-        private static StringBuilder QuoteTextPlain(this Envelope envelope, StringBuilder stringBuilder)
-        {
-            stringBuilder.AppendLine();
-            stringBuilder.AppendLine("-------- Original Message --------");
-            stringBuilder.AppendLine($"From: {envelope.From}");
-            stringBuilder.AppendLine($"Sent: {envelope.Date}");
-            stringBuilder.AppendLine($"To: {envelope.To}");
-            if (envelope.Cc.Count > 0)
-                stringBuilder.AppendLine($"Cc: {envelope.Cc}");
-            if (envelope.Bcc.Count > 0)
-                stringBuilder.AppendLine($"Bcc: {envelope.Bcc}");
-            stringBuilder.AppendLine($"Subject: {envelope.Subject}");
-            stringBuilder.AppendLine();
-            return stringBuilder;
-        }
-
-        private static StringBuilder QuoteTextHtml(this Envelope envelope, StringBuilder stringBuilder)
-        {
-            stringBuilder.AppendLine("<div><p><hr />");
-            stringBuilder.AppendLine($"<b>From:</b> {envelope.From}<br />");
-            stringBuilder.AppendLine($"<b>Sent:</b> {envelope.Date}<br />");
-            stringBuilder.AppendLine($"<b>To:</b> {envelope.To}<br />");
-            if (envelope.Cc.Count > 0)
-                stringBuilder.AppendLine($"<b>Cc:</b> {envelope.Cc}<br />");
-            if (envelope.Bcc.Count > 0)
-                stringBuilder.AppendLine($"<b>Bcc:</b> {envelope.Bcc}<br />");
-            stringBuilder.AppendLine($"<b>Subject:</b> {envelope.Subject}<br />");
-            stringBuilder.AppendLine("</p></div><br />");
-            return stringBuilder;
         }
     }
 }
