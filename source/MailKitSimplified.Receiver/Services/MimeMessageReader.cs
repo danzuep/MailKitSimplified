@@ -1,4 +1,5 @@
 ﻿using MimeKit;
+using MimeKit.IO;
 using MimeKit.Text;
 using MailKit;
 using MailKit.Net.Imap;
@@ -10,7 +11,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using MailKitSimplified.Receiver.Extensions;
-using MimeKit.IO;
 
 namespace MailKitSimplified.Receiver.Services
 {
@@ -141,50 +141,21 @@ namespace MailKitSimplified.Receiver.Services
             var sender = _mimeMessage.Sender ?? From.FirstOrDefault();
             var name = sender != null ? !string.IsNullOrEmpty(sender.Name) ?
                 sender.Name : sender.Address : "someone";
-
-            return string.Format("On {0}, {1} wrote:", Sent.ToString("f"), name);
+            return $"On {Sent:f}, {name} wrote:";
         }
 
-        internal static string QuoteText(string text, string prefix = "")
+        public void Save(string name = "message.eml", bool useDosFormat = false)
         {
-            using (var quoted = new StringWriter())
+            if (useDosFormat)
             {
-                if (!string.IsNullOrEmpty(prefix))
-                {
-                    quoted.WriteLine(prefix);
-                }
-
-                if (!string.IsNullOrEmpty(text))
-                {
-                    using (var reader = new StringReader(text))
-                    {
-                        string line;
-
-                        while ((line = reader.ReadLine()) != null)
-                        {
-                            quoted.Write("> ");
-                            quoted.WriteLine(line);
-                        }
-                    }
-                }
-
-                return quoted.ToString();
+                var format = FormatOptions.Default.Clone();
+                format.NewLineFormat = NewLineFormat.Dos;
+                _mimeMessage.WriteTo(format, name);
             }
-        }
-
-        public static async Task<Stream> WriteToStreamAsync(MimeEntity entity, Stream stream, CancellationToken cancellationToken = default)
-        {
-            if (entity is MessagePart messagePart)
+            else
             {
-                await messagePart.Message.WriteToAsync(stream, cancellationToken);
+                _mimeMessage.WriteTo(name);
             }
-            else if (entity is MimePart mimePart && mimePart.Content != null)
-            {
-                await mimePart.Content.DecodeToAsync(stream, cancellationToken);
-            }
-            // rewind the stream so the next process can read it from the beginning
-            stream.Position = 0;
-            return stream;
         }
 
         private async Task<MimeMessage> CloneStreamReferences(bool persistent, CancellationToken cancellationToken = default)

@@ -2,6 +2,7 @@ using MailKit;
 using MailKit.Search;
 using MailKitSimplified.Receiver;
 using MailKitSimplified.Receiver.Abstractions;
+using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Services;
@@ -23,9 +24,10 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken = default)
     {
-        using var mailFolderClient = new MailFolderClient(_imapReceiver);
-        var uids1 = await mailFolderClient.SearchAsync(SearchQuery.SubjectContains("Hi"), stoppingToken);
-        var uids2 = await mailFolderClient.SearchKeywordsAsync(new string[] { "Hi" }, stoppingToken);
+        var uids = await _imapReceiver.MailFolderClient.SearchAsync(SearchQuery.SubjectContains("Welcome"), stoppingToken);
+
+        var mimeMessages = await _imapReceiver.ReadMail.Take(1).GetMimeMessagesAsync(stoppingToken);
+        var replyMessage = mimeMessages.FirstOrDefault().QuoteForReply("Reply here.");
 
         await new MailFolderMonitor(_imapReceiver).SetProcessMailOnConnect()
             .OnMessageArrival((m) => Console.WriteLine(m.UniqueId))
