@@ -1,3 +1,5 @@
+using MailKit;
+using MailKit.Search;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Services;
 
@@ -7,7 +9,7 @@ namespace MailKitSimplified.Receiver.Tests
     {
         private readonly Mock<IMailFolder> _mailFolderMock = new();
         private readonly Mock<IImapReceiver> _imapReceiverMock = new();
-        private readonly IMailFolderClient _mailFolderClient;
+        private readonly MailFolderClient _mailFolderClient;
 
         public MailFolderClientUnitTests()
         {
@@ -33,6 +35,16 @@ namespace MailKitSimplified.Receiver.Tests
         {
             using var mailFolderClient = new MailFolderClient(_imapReceiverMock.Object);
             await mailFolderClient.DisposeAsync();
+            Assert.IsAssignableFrom<IMailFolderClient>(mailFolderClient);
+        }
+
+        [Fact]
+        public void Copy_ReturnsMailFolderClient()
+        {
+            // Act
+            var mailFolderClient = _mailFolderClient.Copy();
+            // Assert
+            Assert.NotNull(mailFolderClient);
             Assert.IsAssignableFrom<IMailFolderClient>(mailFolderClient);
         }
 
@@ -78,6 +90,45 @@ namespace MailKitSimplified.Receiver.Tests
             // Assert
             Assert.NotNull(mailFolder);
             Assert.IsAssignableFrom<IMailFolder>(mailFolder);
+        }
+
+        [Fact]
+        public async Task SearchAsync_WithSingleQuery_ReturnsUniqueIds()
+        {
+            // Arrange
+            _mailFolderMock.Setup(_ => _.SearchAsync(It.IsAny<SearchQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<UniqueId>()).Verifiable();
+            // Act
+            var uniqueIds = await _mailFolderClient.SearchAsync(SearchQuery.Recent, CancellationToken.None);
+            // Assert
+            Assert.NotNull(uniqueIds);
+            Assert.IsAssignableFrom<IList<UniqueId>>(uniqueIds);
+        }
+
+        [Fact]
+        public async Task SearchKeywordsAsync_ReturnsUniqueIds()
+        {
+            // Arrange
+            _mailFolderMock.Setup(_ => _.SearchAsync(It.IsAny<SearchQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<UniqueId>()).Verifiable();
+            // Act
+            var uniqueIds = await _mailFolderClient.SearchKeywordsAsync(new List<string>(), CancellationToken.None);
+            // Assert
+            Assert.NotNull(uniqueIds);
+            Assert.IsAssignableFrom<IList<UniqueId>>(uniqueIds);
+        }
+
+        [Fact]
+        public async Task SearchBetweenDatesAsync_ReturnsUniqueIds()
+        {
+            // Arrange
+            _mailFolderMock.Setup(_ => _.SearchAsync(It.IsAny<SearchQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<UniqueId>()).Verifiable();
+            // Act
+            var uniqueIds = await _mailFolderClient.SearchBetweenDatesAsync(DateTime.Now, null, CancellationToken.None);
+            // Assert
+            Assert.NotNull(uniqueIds);
+            Assert.IsAssignableFrom<IList<UniqueId>>(uniqueIds);
         }
     }
 }

@@ -42,6 +42,17 @@ namespace MailKitSimplified.Receiver.Tests
             return _completedTask;
         }
 
+
+        [Fact]
+        public void Copy_VerifyReturnsShallowCopy()
+        {
+            // Act
+            var shallowCopy = _imapIdleClient.Copy();
+            // Assert
+            Assert.NotNull(shallowCopy);
+            Assert.IsAssignableFrom<IMailFolderMonitor>(shallowCopy);
+        }
+
         [Fact]
         public void ToString_Verify()
         {
@@ -52,7 +63,7 @@ namespace MailKitSimplified.Receiver.Tests
             Assert.DoesNotContain(nameof(MailFolderMonitor), description);
         }
 
-        private Task OnArrivalAsync(IMessageSummary _) => _completedTask;
+        private static Task OnArrivalAsync(IMessageSummary _) => _completedTask;
 
         [Fact]
         public async Task IdleAsync_WithNullMethods_ReturnsCompletedTask()

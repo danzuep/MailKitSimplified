@@ -1,15 +1,20 @@
-﻿using MailKit;
+﻿using MimeKit;
+using MailKit;
+using MailKit.Search;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
+using MailKitSimplified.Receiver.Extensions;
 
 namespace MailKitSimplified.Receiver.Services
 {
     public sealed class MailFolderClient : IMailFolderClient
     {
+        public IMailFolder MailFolder => _mailFolder;
         public string MailFolderName => _mailFolder?.FullName ?? _imapReceiver.ToString();
         public int MailFolderCount => _mailFolder?.Count ?? 0;
 
@@ -25,7 +30,8 @@ namespace MailKitSimplified.Receiver.Services
 
         public async ValueTask<IMailFolder> ConnectAsync(bool enableWrite = false, CancellationToken cancellationToken = default)
         {
-            _mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
+            if (_mailFolder == null)
+                _mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
             if (!_mailFolder.IsOpen)
             {
                 var folderAccess = enableWrite ? FolderAccess.ReadWrite : FolderAccess.ReadOnly;
@@ -38,6 +44,51 @@ namespace MailKitSimplified.Receiver.Services
                 await _mailFolder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
             }
             return _mailFolder;
+        }
+
+        /// <summary>Query the server for message IDs.</summary>
+        /// <param name="keywords">Keywords to search for.</param>
+        /// <returns>The first 250 <see cref="UniqueId"/>s.</returns>
+        public async Task<IList<UniqueId>> SearchAsync(SearchQuery searchQuery, CancellationToken cancellationToken = default)
+        {
+            _ = await ConnectAsync(false, cancellationToken).ConfigureAwait(false);
+            var uniqueIds = await _mailFolder.SearchAsync(searchQuery, cancellationToken).ConfigureAwait(false);
+            return uniqueIds;
+        }
+
+        /// <summary>Query just the arrival dates of messages on the server.</summary>
+        /// <param name="deliveredAfter">Search for messages after this date.</param>
+        /// <param name="deliveredBefore">Search for messages before this date.</param>
+        /// <returns>The first 250 <see cref="UniqueId"/>s.</returns>
+        public async Task<IList<UniqueId>> SearchBetweenDatesAsync(DateTime deliveredAfter, DateTime? deliveredBefore = null, CancellationToken cancellationToken = default)
+        {
+            DateTime before = deliveredBefore != null ? deliveredBefore.Value : DateTime.Now;
+            var query = SearchQuery.DeliveredAfter(deliveredAfter).And(SearchQuery.DeliveredBefore(before));
+            var uniqueIds = await SearchAsync(query, cancellationToken).ConfigureAwait(false);
+            return uniqueIds;
+        }
+
+        /// <summary>Query the server for message IDs with matching keywords in the subject or body text.</summary>
+        /// <param name="keywords">Keywords to search for.</param>
+        /// <returns>The first 250 <see cref="UniqueId"/>s.</returns>
+        public async Task<IList<UniqueId>> SearchKeywordsAsync(IEnumerable<string> keywords, CancellationToken cancellationToken = default)
+        {
+            var subjectQuery = keywords.EnumerateOr(SearchQuery.SubjectContains);
+            var bodyQuery = keywords.EnumerateOr(SearchQuery.BodyContains);
+            var query = subjectQuery.Or(bodyQuery);
+            var uniqueIds = await SearchAsync(query, cancellationToken).ConfigureAwait(false);
+            return uniqueIds;
+        }
+
+        /// <summary>Asynchronously get the specified message.</summary>
+        /// <param name="uniqueId">The UID of the message.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <param name="progress">Progress reporting mechanism.</param>
+        /// <returns><see cref="MimeMessage"/> result.</returns>
+        public async Task<MimeMessage> GetMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default, ITransferProgress progress = null)
+        {
+            var mimeMessage = await _mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
+            return mimeMessage;
         }
 
         public IMailFolderClient Copy() => MemberwiseClone() as IMailFolderClient;

@@ -8,7 +8,7 @@ namespace MailKitSimplified.Receiver.Tests
         private readonly Mock<IMailFolder> _mailFolderMock = new();
         private readonly Mock<IMailFolderClient> _mailFolderClientMock = new();
         private readonly Mock<IImapReceiver> _imapReceiverMock = new();
-        private readonly IMailFolderReader _mailFolderReader;
+        private readonly MailFolderReader _mailFolderReader;
 
         public MailFolderReaderUnitTests()
         {
@@ -18,10 +18,23 @@ namespace MailKitSimplified.Receiver.Tests
             _mailFolderReader = new MailFolderReader(_mailFolderClientMock.Object);
         }
 
+
+        [Fact]
+        public void Copy_ReturnsShallowCopy()
+        {
+            // Act
+            var shallowCopy = _mailFolderReader.Copy();
+            // Assert
+            Assert.NotNull(shallowCopy);
+            Assert.IsAssignableFrom<IMailFolderReader>(shallowCopy);
+        }
+
         [Fact]
         public void ToString_ReturnsOverriddenToString()
         {
+            // Act
             var description = _mailFolderReader.ToString();
+            // Assert
             Assert.False(string.IsNullOrWhiteSpace(description));
             Assert.DoesNotContain(nameof(MailFolderReader), description);
         }

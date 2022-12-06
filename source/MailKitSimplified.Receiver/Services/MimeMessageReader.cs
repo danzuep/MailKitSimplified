@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using MailKitSimplified.Receiver.Extensions;
+using MimeKit.IO;
 
 namespace MailKitSimplified.Receiver.Services
 {
@@ -70,6 +71,8 @@ namespace MailKitSimplified.Receiver.Services
             var uniqueId = messageSummary.UniqueId;
             var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken).ConfigureAwait(false);
             var mimeMessageReader = Create(mimeMessage, mailFolder.FullName, uniqueId.Id);
+            if (mailFolder.Access == FolderAccess.ReadWrite)
+                await mailFolder.AddFlagsAsync(uniqueId, MessageFlags.Seen, true, cancellationToken);
             if (closeWhenFinished)
                 await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
             return mimeMessageReader;
@@ -183,6 +186,23 @@ namespace MailKitSimplified.Receiver.Services
             stream.Position = 0;
             return stream;
         }
+
+        private async Task<MimeMessage> CloneStreamReferences(bool persistent, CancellationToken cancellationToken = default)
+        {
+            using (var memory = new MemoryBlockStream())
+            {
+                _mimeMessage.WriteTo(memory);
+                memory.Position = 0;
+                var result = await MimeMessage.LoadAsync(memory, persistent, cancellationToken).ConfigureAwait(false);
+                return result;
+            }
+        }
+
+        public async Task<MimeMessage> Copy(CancellationToken cancellationToken = default) =>
+            await CloneStreamReferences(true, cancellationToken).ConfigureAwait(false);
+
+        public async Task<MimeMessage> Clone(CancellationToken ct = default) =>
+            await CloneStreamReferences(false, ct).ConfigureAwait(false);
 
         public override string ToString()
         {

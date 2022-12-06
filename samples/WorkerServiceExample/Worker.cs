@@ -22,8 +22,10 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken = default)
     {
-        using var imapReceiver = ImapReceiver.Create("localhost").SetFolder("INBOX");
-        await new MailFolderMonitor(imapReceiver).SetProcessMailOnConnect()
+        using var mailFolderClient = new MailFolderClient(_imapReceiver);
+        var uids = await mailFolderClient.SearchKeywordsAsync(new string[] { "Hi" }, stoppingToken);
+
+        await new MailFolderMonitor(_imapReceiver).SetProcessMailOnConnect()
             .OnMessageArrival((m) => Console.WriteLine(m.UniqueId))
             .OnMessageDeparture((m) => Console.WriteLine(m.UniqueId))
             .IdleAsync(stoppingToken);

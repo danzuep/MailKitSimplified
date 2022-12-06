@@ -18,7 +18,7 @@ namespace MailKitSimplified.Receiver.Tests
         private const string _localhost = "localhost";
         private const int _defaultPort = 143;
         private readonly Mock<IImapClient> _imapClientMock = new();
-        private readonly IImapReceiver _imapReceiver;
+        private readonly ImapReceiver _imapReceiver;
 
         public ImapReceiverUnitTests()
         {
@@ -166,6 +166,17 @@ namespace MailKitSimplified.Receiver.Tests
             Assert.NotNull(mailFolderNames);
             Assert.IsAssignableFrom<IList<string>>(mailFolderNames);
             _imapClientMock.Verify(_ => _.GetFoldersAsync(It.IsAny<FolderNamespace>(), It.IsAny<StatusItems>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+        }
+
+
+        [Fact]
+        public void Copy_VerifyReturnsShallowCopy()
+        {
+            // Act
+            var shallowCopy = _imapReceiver.Copy();
+            // Assert
+            Assert.NotNull(shallowCopy);
+            Assert.IsAssignableFrom<ImapReceiver>(shallowCopy);
         }
 
         [Fact]

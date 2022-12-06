@@ -22,7 +22,7 @@ namespace MailKitSimplified.Sender.Tests
         private const int _defaultPort = 25;
         private readonly MockFileSystem _fileSystem = new();
         private readonly Mock<ISmtpClient> _smtpSenderMock = new();
-        private readonly ISmtpSender _smtpSender;
+        private readonly SmtpSender _smtpSender;
 
         public SmtpSenderUnitTests()
         {
@@ -164,6 +164,16 @@ namespace MailKitSimplified.Sender.Tests
         {
             var valid = SmtpSender.ValidateEmailAddresses(new string[] { }, new string[] { }, NullLogger.Instance);
             Assert.False(valid);
+        }
+
+        [Fact]
+        public void Copy_VerifyReturnsShallowCopy()
+        {
+            // Act
+            var shallowCopy = _smtpSender.Copy();
+            // Assert
+            Assert.NotNull(shallowCopy);
+            Assert.IsAssignableFrom<ISmtpSender>(shallowCopy);
         }
 
         [Fact]
