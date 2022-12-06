@@ -144,8 +144,10 @@ namespace MailKitSimplified.Receiver.Services
             return $"On {Sent:f}, {name} wrote:";
         }
 
-        public void Save(string name = "message.eml", bool useDosFormat = false)
+        public void Save(string name = null, bool useDosFormat = false)
         {
+            if (string.IsNullOrWhiteSpace(name))
+                name = $"{_mimeMessage.MessageId}.eml";
             if (useDosFormat)
             {
                 var format = FormatOptions.Default.Clone();

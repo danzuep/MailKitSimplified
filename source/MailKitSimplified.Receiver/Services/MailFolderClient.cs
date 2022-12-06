@@ -84,7 +84,7 @@ namespace MailKitSimplified.Receiver.Services
             if (selector == null)
                 throw new ArgumentNullException(nameof(selector));
             var query = EnumerateOr(keywords.Select(selector).ToList());
-            return query ?? SearchQuery.Seen.And(SearchQuery.NotSeen);
+            return query ?? SearchQuery.All;
         }
 
         /// <summary>Query the server for message IDs with matching keywords in the subject or body text.</summary>

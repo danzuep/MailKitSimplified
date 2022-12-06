@@ -29,14 +29,14 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="filter"><see cref="MessageSummaryItems"/> to download.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <returns>List of <see cref="IMessageSummary"/> items.</returns>
-        ValueTask<IList<IMessageSummary>> GetMessageSummariesAsync(MessageSummaryItems filter, CancellationToken cancellationToken = default);
+        Task<IList<IMessageSummary>> GetMessageSummariesAsync(MessageSummaryItems filter, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get a list of the message summaries with basic MessageSummaryItems.
         /// </summary>
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <returns>List of <see cref="IMessageSummary"/> items.</returns>
-        ValueTask<IList<IMessageSummary>> GetMessageSummariesAsync(CancellationToken cancellationToken = default);
+        Task<IList<IMessageSummary>> GetMessageSummariesAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get a list of <see cref="MimeMessage"/>s.
@@ -44,6 +44,6 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <param name="transferProgress">Current email download progress</param>
         /// <returns>List of all <see cref="MimeMessage"/> items.</returns>
-        ValueTask<IList<MimeMessage>> GetMimeMessagesAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null);
+        Task<IList<MimeMessage>> GetMimeMessagesAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null);
     }
 }

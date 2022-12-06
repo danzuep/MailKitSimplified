@@ -39,7 +39,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// </summary>
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <returns>Names of all connected mail folders.</returns>
-        ValueTask<IList<string>> GetMailFolderNamesAsync(CancellationToken cancellationToken = default);
+        Task<IList<string>> GetMailFolderNamesAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Connect to the given mail folder.

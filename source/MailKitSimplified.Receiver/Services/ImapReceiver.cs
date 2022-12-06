@@ -145,7 +145,7 @@ namespace MailKitSimplified.Receiver.Services
             return mailFolder;
         }
 
-        public async ValueTask<IList<string>> GetMailFolderNamesAsync(CancellationToken cancellationToken = default)
+        public async Task<IList<string>> GetMailFolderNamesAsync(CancellationToken cancellationToken = default)
         {
             _ = await ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
             var mailFolderNames = new List<string>();
