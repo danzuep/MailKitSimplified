@@ -1,4 +1,7 @@
-﻿using System;
+﻿using MailKit;
+using MailKit.Net.Imap;
+using MailKit.Security;
+using System;
 using System.Net;
 using System.Linq;
 using System.Threading;
@@ -7,9 +10,6 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging.Abstractions;
-using MailKit;
-using MailKit.Net.Imap;
-using MailKit.Security;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Receiver.Extensions;

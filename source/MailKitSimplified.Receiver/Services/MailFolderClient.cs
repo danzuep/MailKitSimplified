@@ -1,14 +1,13 @@
 ﻿using MailKit;
 using MailKit.Search;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
-using MailKitSimplified.Receiver.Extensions;
-using System.Linq;
 
 namespace MailKitSimplified.Receiver.Services
 {

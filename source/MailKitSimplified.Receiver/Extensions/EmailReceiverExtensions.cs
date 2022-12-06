@@ -1,17 +1,13 @@
 ﻿using MimeKit;
 using MailKit;
-using MailKit.Search;
 using System;
+using System.IO;
 using System.Text;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Net.Mail;
-using static System.Net.Mime.MediaTypeNames;
-using System.IO;
-using System.Reflection;
 
 namespace MailKitSimplified.Receiver.Extensions
 {

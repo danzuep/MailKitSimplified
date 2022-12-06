@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Helpers;
 using MailKitSimplified.Sender.Extensions;
+
 namespace MailKitSimplified.Sender.Services
 {
     public class EmailWriter : IEmailWriter
