@@ -17,8 +17,8 @@ namespace MailKitSimplified.Receiver.Services
             MessageSummaryItems.UniqueId;
 
         private int _skip = 0;
+        private int _take = _all;
         private bool _continueTake = false;
-        private int _take = 250;
         private static readonly int _all = -1;
         private readonly IMailFolderClient _mailFolderClient;
 
