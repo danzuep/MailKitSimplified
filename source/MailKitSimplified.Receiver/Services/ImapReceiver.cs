@@ -123,16 +123,24 @@ namespace MailKitSimplified.Receiver.Services
         {
             if (!_imapClient.IsAuthenticated)
             {
-                // Pre-emptively disable XOAUTH2 authentication since we don't have an OAuth2 token.
-                // _imapClient.AuthenticationMechanisms.Remove("XOAUTH2");
                 var ntlm = _imapClient.AuthenticationMechanisms.Contains("NTLM") ?
                     new SaslMechanismNtlm(_receiverOptions.ImapCredential) : null;
+                var oauth2 = _imapClient.AuthenticationMechanisms.Contains("XOAUTH2") ?
+                    new SaslMechanismOAuth2(_receiverOptions.ImapCredential) : null;
                 if (ntlm?.Workstation != null)
                     await _imapClient.AuthenticateAsync(ntlm, cancellationToken).ConfigureAwait(false);
+                else if (oauth2?.Credentials != null)
+                    await _imapClient.AuthenticateAsync(oauth2, cancellationToken).ConfigureAwait(false);
                 else
                     await _imapClient.AuthenticateAsync(_receiverOptions.ImapCredential, cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace($"IMAP client authenticated with {_receiverOptions.ImapHost}.");
             }
+        }
+
+        public void RemoveAuthenticationMechanism(string authenticationMechanismsName)
+        {
+            if (_imapClient.AuthenticationMechanisms.Contains(authenticationMechanismsName))
+                _imapClient.AuthenticationMechanisms.Remove(authenticationMechanismsName);
         }
 
         /// <exception cref="FolderNotFoundException">No mail folder has the specified name</exception>

@@ -1,6 +1,7 @@
 ﻿using MimeKit;
 using MailKit;
 using MailKit.Net.Smtp;
+using MailKit.Security;
 using System;
 using System.IO;
 using System.Net;
@@ -100,19 +101,49 @@ namespace MailKitSimplified.Sender.Services
             return protocolLogger;
         }
 
-        public async ValueTask<ISmtpClient> ConnectSmtpClientAsync(CancellationToken cancellationToken = default)
+        public async ValueTask<ISmtpClient> ConnectSmtpClientAsync(CancellationToken cancellationToken = default) =>
+            await GetConnectedAuthenticatedAsync(cancellationToken).ConfigureAwait(false);
+
+        internal async ValueTask<ISmtpClient> GetConnectedAuthenticatedAsync(CancellationToken cancellationToken = default)
+        {
+            await ConnectAsync(cancellationToken).ConfigureAwait(false);
+            await AuthenticateAsync(cancellationToken).ConfigureAwait(false);
+            return _smtpClient;
+        }
+
+        internal async ValueTask ConnectAsync(CancellationToken cancellationToken = default)
         {
             if (!_smtpClient.IsConnected && !string.IsNullOrEmpty(_senderOptions.SmtpHost))
             {
                 await _smtpClient.ConnectAsync(_senderOptions.SmtpHost, _senderOptions.SmtpPort, cancellationToken: cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace($"SMTP client connected to {_senderOptions.SmtpHost}.");
+                if (_smtpClient.Capabilities.HasFlag(SmtpCapabilities.Size))
+                    _logger.LogDebug($"The SMTP server has a size restriction on messages: {_smtpClient.MaxSize}.");
             }
+        }
+
+        internal async ValueTask AuthenticateAsync(CancellationToken cancellationToken = default)
+        {
             if (_senderOptions.SmtpCredential != null && !_smtpClient.IsAuthenticated)
             {
-                await _smtpClient.AuthenticateAsync(_senderOptions.SmtpCredential, cancellationToken).ConfigureAwait(false);
+                var ntlm = _smtpClient.AuthenticationMechanisms.Contains("NTLM") ?
+                    new SaslMechanismNtlm(_senderOptions.SmtpCredential) : null;
+                var oauth2 = _smtpClient.AuthenticationMechanisms.Contains("XOAUTH2") ?
+                    new SaslMechanismOAuth2(_senderOptions.SmtpCredential) : null;
+                if (ntlm?.Workstation != null)
+                    await _smtpClient.AuthenticateAsync(ntlm, cancellationToken).ConfigureAwait(false);
+                else if (oauth2?.Credentials != null)
+                    await _smtpClient.AuthenticateAsync(oauth2, cancellationToken).ConfigureAwait(false);
+                else
+                    await _smtpClient.AuthenticateAsync(_senderOptions.SmtpCredential, cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace($"SMTP client authenticated with {_senderOptions.SmtpHost}.");
             }
-            return _smtpClient;
+        }
+
+        public void RemoveAuthenticationMechanism(string authenticationMechanismsName)
+        {
+            if (_smtpClient.AuthenticationMechanisms.Contains(authenticationMechanismsName))
+                _smtpClient.AuthenticationMechanisms.Remove(authenticationMechanismsName);
         }
 
         public static bool ValidateEmailAddresses(IEnumerable<string> sourceEmailAddresses, IEnumerable<string> destinationEmailAddresses, ILogger logger)
@@ -221,7 +252,7 @@ namespace MailKitSimplified.Sender.Services
                 await SendAsync(mimeMessage, cancellationToken, transferProgress).ConfigureAwait(false);
                 isSent = true;
             }
-            catch (MailKit.Security.AuthenticationException ex)
+            catch (AuthenticationException ex)
             {
                 _logger.LogError(ex, $"Failed to authenticate with mail server. {_senderOptions}");
             }

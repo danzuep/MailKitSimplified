@@ -21,19 +21,21 @@ namespace MailKitSimplified.Sender.Tests
         private const string _localhost = "localhost";
         private const int _defaultPort = 25;
         private readonly MockFileSystem _fileSystem = new();
-        private readonly Mock<ISmtpClient> _smtpSenderMock = new();
+        private readonly Mock<ISmtpClient> _smtpClientMock = new();
         private readonly SmtpSender _smtpSender;
 
         public SmtpSenderUnitTests()
         {
             var loggerMock = new Mock<ILogger<SmtpSender>>();
             var protocolLoggerMock = new Mock<IProtocolLogger>();
-            _smtpSenderMock.Setup(_ => _.ConnectAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<SecureSocketOptions>(), It.IsAny<CancellationToken>())).Verifiable();
-            _smtpSenderMock.Setup(_ => _.AuthenticateAsync(It.IsAny<ICredentials>(), It.IsAny<CancellationToken>())).Verifiable();
-            _smtpSenderMock.Setup(_ => _.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
+            _smtpClientMock.Setup(_ => _.ConnectAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<SecureSocketOptions>(), It.IsAny<CancellationToken>())).Verifiable();
+            _smtpClientMock.Setup(_ => _.AuthenticateAsync(It.IsAny<ICredentials>(), It.IsAny<CancellationToken>())).Verifiable();
+            _smtpClientMock.SetupGet(_ => _.AuthenticationMechanisms).Returns(new HashSet<string>()).Verifiable();
+            _smtpClientMock.Setup(_ => _.AuthenticateAsync(It.IsAny<SaslMechanism>(), It.IsAny<CancellationToken>())).Verifiable();
+            _smtpClientMock.Setup(_ => _.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
                 .ReturnsAsync("Mail accepted").Verifiable();
             var smtpSenderOptions = Options.Create(new EmailSenderOptions(_localhost, new NetworkCredential()));
-            _smtpSender = new SmtpSender(smtpSenderOptions, loggerMock.Object, protocolLoggerMock.Object, _smtpSenderMock.Object);
+            _smtpSender = new SmtpSender(smtpSenderOptions, loggerMock.Object, protocolLoggerMock.Object, _smtpClientMock.Object);
         }
 
         [Fact]
@@ -95,8 +97,8 @@ namespace MailKitSimplified.Sender.Tests
             // Assert
             Assert.NotNull(smtpClient);
             Assert.IsAssignableFrom<ISmtpClient>(smtpClient);
-            _smtpSenderMock.Verify(_ => _.ConnectAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<SecureSocketOptions>(), It.IsAny<CancellationToken>()), Times.Once);
-            _smtpSenderMock.Verify(_ => _.AuthenticateAsync(It.IsAny<ICredentials>(), It.IsAny<CancellationToken>()), Times.Once);
+            _smtpClientMock.Verify(_ => _.ConnectAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<SecureSocketOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+            _smtpClientMock.Verify(_ => _.AuthenticateAsync(It.IsAny<ICredentials>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -130,7 +132,7 @@ namespace MailKitSimplified.Sender.Tests
             // Act
             await _smtpSender.SendAsync(new MimeMessage(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>());
             // Assert
-            _smtpSenderMock.Verify(_ => _.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()), Times.Once);
+            _smtpClientMock.Verify(_ => _.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()), Times.Once);
         }
 
         [Fact]
@@ -138,7 +140,7 @@ namespace MailKitSimplified.Sender.Tests
         {
             var isSent = await _smtpSender.TrySendAsync(new MimeMessage(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>());
             Assert.True(isSent);
-            _smtpSenderMock.Verify(_ => _.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()), Times.Once);
+            _smtpClientMock.Verify(_ => _.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()), Times.Once);
         }
 
         [Fact]
