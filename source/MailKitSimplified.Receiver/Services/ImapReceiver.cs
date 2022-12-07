@@ -85,6 +85,12 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
+        public ImapReceiver SetCustomAuthentication(Func<IImapClient, Task> customAuthenticationMethod)
+        {
+            _customAuthenticationMethod = customAuthenticationMethod;
+            return this;
+        }
+
         public IMailFolderReader ReadFrom(string mailFolderName)
         {
             _receiverOptions.MailFolderName = mailFolderName;
@@ -102,19 +108,6 @@ namespace MailKitSimplified.Receiver.Services
         public IMailFolderReader ReadMail => new MailFolderReader(MailFolderClient);
 
         public IMailFolderMonitor MonitorFolder => new MailFolderMonitor(this);
-
-        public IImapReceiver CustomAuthentication(Func<IImapClient, Task> customAuthenticationMethod)
-        {
-            _customAuthenticationMethod = customAuthenticationMethod;
-            return this;
-        }
-
-        public IImapReceiver CustomAuthentication(Action<IImapClient> customAuthenticationMethod) =>
-            CustomAuthentication((imapClient) =>
-            {
-                customAuthenticationMethod(imapClient);
-                return Task.CompletedTask;
-            });
 
         public async ValueTask<IImapClient> ConnectAuthenticatedImapClientAsync(CancellationToken cancellationToken = default)
         {

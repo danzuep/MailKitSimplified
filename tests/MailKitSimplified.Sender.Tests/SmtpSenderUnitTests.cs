@@ -12,6 +12,7 @@ using MailKitSimplified.Sender.Services;
 using MailKitSimplified.Sender.Models;
 using MailKitSimplified.Sender.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
+using MailKit.Net.Imap;
 
 namespace MailKitSimplified.Sender.Tests
 {
@@ -73,10 +74,13 @@ namespace MailKitSimplified.Sender.Tests
         [Fact]
         public void CreateSmtpSender_WithFluentMethods_ReturnsSmtpSender()
         {
+            // Act
             using var smtpSender = SmtpSender.Create(_localhost)
                 .SetPort(It.IsAny<ushort>())
                 .SetCredential(It.IsAny<string>(), It.IsAny<string>())
-                .SetProtocolLog(It.IsAny<string>());
+                .SetProtocolLog(It.IsAny<string>())
+                .SetCustomAuthentication(It.IsAny<Func<ISmtpClient, Task>>());
+            // Assert
             Assert.NotNull(smtpSender);
             Assert.IsAssignableFrom<ISmtpSender>(smtpSender);
         }

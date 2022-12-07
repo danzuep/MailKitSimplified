@@ -78,6 +78,12 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
+        public SmtpSender SetCustomAuthentication(Func<ISmtpClient, Task> customAuthenticationMethod)
+        {
+            _customAuthenticationMethod = customAuthenticationMethod;
+            return this;
+        }
+
         public IEmailWriter WriteEmail => new EmailWriter(this);
 
         public static IProtocolLogger GetProtocolLogger(string logFilePath = null, bool append = false, IFileSystem fileSystem = null)
@@ -102,19 +108,6 @@ namespace MailKitSimplified.Sender.Services
             }
             return protocolLogger;
         }
-
-        public ISmtpSender CustomAuthentication(Func<ISmtpClient, Task> customAuthenticationMethod)
-        {
-            _customAuthenticationMethod = customAuthenticationMethod;
-            return this;
-        }
-
-        public ISmtpSender CustomAuthentication(Action<ISmtpClient> customAuthenticationMethod) =>
-            CustomAuthentication((imapClient) =>
-            {
-                customAuthenticationMethod(imapClient);
-                return Task.CompletedTask;
-            });
 
         public async ValueTask<ISmtpClient> ConnectSmtpClientAsync(CancellationToken cancellationToken = default) =>
             await GetConnectedAuthenticatedAsync(cancellationToken).ConfigureAwait(false);

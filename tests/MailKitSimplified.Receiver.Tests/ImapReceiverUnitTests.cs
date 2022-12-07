@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
+using MailKit.Net.Smtp;
 
 namespace MailKitSimplified.Receiver.Tests
 {
@@ -73,7 +74,8 @@ namespace MailKitSimplified.Receiver.Tests
                 .SetPort(It.IsAny<ushort>())
                 .SetCredential(It.IsAny<string>(), It.IsAny<string>())
                 .SetProtocolLog(It.IsAny<string>())
-                .SetFolder(It.IsAny<string>());
+                .SetFolder(It.IsAny<string>())
+                .SetCustomAuthentication(It.IsAny<Func<IImapClient, Task>>());
             Assert.NotNull(imapReceiver);
             Assert.IsAssignableFrom<IImapReceiver>(imapReceiver);
         }
