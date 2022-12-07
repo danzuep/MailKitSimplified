@@ -80,6 +80,7 @@ namespace MailKitSimplified.Sender.Tests
                 .SetCredential(It.IsAny<string>(), It.IsAny<string>())
                 .SetProtocolLog(It.IsAny<string>())
                 .SetCustomAuthentication(It.IsAny<Func<ISmtpClient, Task>>());
+            smtpSender.RemoveAuthenticationMechanism("XOAUTH2");
             // Assert
             Assert.NotNull(smtpSender);
             Assert.IsAssignableFrom<ISmtpSender>(smtpSender);

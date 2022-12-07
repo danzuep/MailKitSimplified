@@ -76,6 +76,7 @@ namespace MailKitSimplified.Receiver.Tests
                 .SetProtocolLog(It.IsAny<string>())
                 .SetFolder(It.IsAny<string>())
                 .SetCustomAuthentication(It.IsAny<Func<IImapClient, Task>>());
+            imapReceiver.RemoveAuthenticationMechanism("XOAUTH2");
             Assert.NotNull(imapReceiver);
             Assert.IsAssignableFrom<IImapReceiver>(imapReceiver);
         }
