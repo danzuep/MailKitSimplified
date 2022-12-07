@@ -19,6 +19,7 @@ namespace MailKitSimplified.Receiver.Services
         private int _skip = 0;
         private bool _continueTake = false;
         private int _take = 250;
+        private static readonly int _all = -1;
         private readonly IMailFolderClient _mailFolderClient;
 
         public MailFolderReader(IMailFolderClient mailFolderClient)
@@ -36,7 +37,7 @@ namespace MailKitSimplified.Receiver.Services
 
         public IMailReader Take(int takeCount, bool continuous = false)
         {
-            if (takeCount < 0)
+            if (takeCount < -1)
                 throw new ArgumentOutOfRangeException(nameof(takeCount));
             _take = takeCount;
             _continueTake = continuous;
@@ -45,8 +46,10 @@ namespace MailKitSimplified.Receiver.Services
 
         private async Task<IList<IMessageSummary>> GetMessageSummariesAsync(IMailFolder mailFolder, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default)
         {
+            if (_take == 0)
+                return Array.Empty<IMessageSummary>();
             int startIndex = _skip < mailFolder.Count ? _skip : mailFolder.Count;
-            int endIndex = _take > 0 ? startIndex + _take > 0 ? _take - 1 + startIndex : mailFolder.Count : startIndex;
+            int endIndex = _take < 1 ? _all : startIndex + _take - 1;
             var messageSummaries = await mailFolder.FetchAsync(startIndex, endIndex, filter, cancellationToken).ConfigureAwait(false);
             if (_continueTake)
                 _skip = endIndex + 1;

@@ -21,20 +21,22 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken = default)
     {
-        var uids = await _imapReceiver.MailFolderClient.SearchAsync(SearchQuery.SubjectContains("Welcome"), stoppingToken);
+        //var uids = await _imapReceiver.MailFolderClient.SearchAsync(SearchQuery.SubjectContains("Welcome"), stoppingToken);
 
-        var mimeMessages = await _imapReceiver.ReadMail.Take(1).GetMimeMessagesAsync(stoppingToken);
-        var replyMessage = mimeMessages.FirstOrDefault().QuoteForReply("Reply here.");
+        var messageSummaries = await _imapReceiver.ReadMail.Take(-1)
+            .GetMessageSummariesAsync(MailKit.MessageSummaryItems.UniqueId, stoppingToken);
+        _logger.LogInformation($"Got {messageSummaries.Count} summaries.");
+        //var replyMessage = mimeMessages.FirstOrDefault().QuoteForReply("Reply here.");
 
-        await new MailFolderMonitor(_imapReceiver).SetProcessMailOnConnect()
-            .OnMessageArrival((m) => Console.WriteLine(m.UniqueId))
-            .OnMessageDeparture((m) => Console.WriteLine(m.UniqueId))
-            .IdleAsync(stoppingToken);
+        //await new MailFolderMonitor(_imapReceiver).SetProcessMailOnConnect()
+        //    .OnMessageArrival((m) => Console.WriteLine(m.UniqueId))
+        //    .OnMessageDeparture((m) => Console.WriteLine(m.UniqueId))
+        //    .IdleAsync(stoppingToken);
 
-        await ReceiveAsync(stoppingToken);
-        var sendTask = DelayedSendAsync(5, stoppingToken);
-        await _imapReceiver.MonitorFolder.IdleAsync(stoppingToken);
-        await sendTask;
+        //await ReceiveAsync(stoppingToken);
+        //var sendTask = DelayedSendAsync(5, stoppingToken);
+        //await _imapReceiver.MonitorFolder.IdleAsync(stoppingToken);
+        //await sendTask;
     }
 
     private async Task DelayedSendAsync(int secondsDelay, CancellationToken cancellationToken = default)

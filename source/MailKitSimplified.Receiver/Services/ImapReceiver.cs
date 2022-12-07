@@ -124,7 +124,7 @@ namespace MailKitSimplified.Receiver.Services
             if (!_imapClient.IsAuthenticated)
             {
                 // Pre-emptively disable XOAUTH2 authentication since we don't have an OAuth2 token.
-                _imapClient.AuthenticationMechanisms.Remove("XOAUTH2");
+                // _imapClient.AuthenticationMechanisms.Remove("XOAUTH2");
                 var ntlm = _imapClient.AuthenticationMechanisms.Contains("NTLM") ?
                     new SaslMechanismNtlm(_receiverOptions.ImapCredential) : null;
                 if (ntlm?.Workstation != null)
