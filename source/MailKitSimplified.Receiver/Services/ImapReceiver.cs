@@ -18,6 +18,8 @@ namespace MailKitSimplified.Receiver.Services
 {
     public sealed class ImapReceiver : IImapReceiver
     {
+        private Func<IImapClient, Task> _customAuthenticationMethod;
+
         private readonly ILogger<ImapReceiver> _logger;
         private readonly IImapClient _imapClient;
         private readonly EmailReceiverOptions _receiverOptions;
@@ -101,6 +103,19 @@ namespace MailKitSimplified.Receiver.Services
 
         public IMailFolderMonitor MonitorFolder => new MailFolderMonitor(this);
 
+        public IImapReceiver CustomAuthentication(Func<IImapClient, Task> customAuthenticationMethod)
+        {
+            _customAuthenticationMethod = customAuthenticationMethod;
+            return this;
+        }
+
+        public IImapReceiver CustomAuthentication(Action<IImapClient> customAuthenticationMethod) =>
+            CustomAuthentication((imapClient) =>
+            {
+                customAuthenticationMethod(imapClient);
+                return Task.CompletedTask;
+            });
+
         public async ValueTask<IImapClient> ConnectAuthenticatedImapClientAsync(CancellationToken cancellationToken = default)
         {
             await ConnectImapClientAsync(cancellationToken).ConfigureAwait(false);
@@ -119,20 +134,26 @@ namespace MailKitSimplified.Receiver.Services
             }
         }
 
+        /// <summary>
+        /// Authenticating via a SASL mechanism may be a multi-step process.
+        /// <see href="http://www.mimekit.net/docs/html/T_MailKit_Security_SaslMechanism.htm"/>
+        /// <seealso href="http://www.mimekit.net/docs/html/T_MailKit_Security_SaslMechanismOAuth2.htm"/>
+        /// </summary>
         internal async ValueTask AuthenticateImapClientAsync(CancellationToken cancellationToken = default)
         {
             if (!_imapClient.IsAuthenticated)
             {
-                var ntlm = _imapClient.AuthenticationMechanisms.Contains("NTLM") ?
-                    new SaslMechanismNtlm(_receiverOptions.ImapCredential) : null;
-                var oauth2 = _imapClient.AuthenticationMechanisms.Contains("XOAUTH2") ?
-                    new SaslMechanismOAuth2(_receiverOptions.ImapCredential) : null;
-                if (ntlm?.Workstation != null)
-                    await _imapClient.AuthenticateAsync(ntlm, cancellationToken).ConfigureAwait(false);
-                else if (oauth2?.Credentials != null)
-                    await _imapClient.AuthenticateAsync(oauth2, cancellationToken).ConfigureAwait(false);
+                if (_customAuthenticationMethod != null) // for XOAUTH2 and OAUTHBEARER
+                    await _customAuthenticationMethod(_imapClient).ConfigureAwait(false);
                 else
-                    await _imapClient.AuthenticateAsync(_receiverOptions.ImapCredential, cancellationToken).ConfigureAwait(false);
+                {
+                    var ntlm = _imapClient.AuthenticationMechanisms.Contains("NTLM") ?
+                        new SaslMechanismNtlm(_receiverOptions.ImapCredential) : null;
+                    if (ntlm?.Workstation != null)
+                        await _imapClient.AuthenticateAsync(ntlm, cancellationToken).ConfigureAwait(false);
+                    else
+                        await _imapClient.AuthenticateAsync(_receiverOptions.ImapCredential, cancellationToken).ConfigureAwait(false);
+                }
                 _logger.LogTrace($"IMAP client authenticated with {_receiverOptions.ImapHost}.");
             }
         }

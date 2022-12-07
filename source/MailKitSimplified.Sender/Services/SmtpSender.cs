@@ -21,6 +21,8 @@ namespace MailKitSimplified.Sender.Services
 {
     public sealed class SmtpSender : ISmtpSender
     {
+        private Func<ISmtpClient, Task> _customAuthenticationMethod;
+
         private readonly ILogger<SmtpSender> _logger;
         private readonly ISmtpClient _smtpClient;
         private readonly EmailSenderOptions _senderOptions;
@@ -101,6 +103,19 @@ namespace MailKitSimplified.Sender.Services
             return protocolLogger;
         }
 
+        public ISmtpSender CustomAuthentication(Func<ISmtpClient, Task> customAuthenticationMethod)
+        {
+            _customAuthenticationMethod = customAuthenticationMethod;
+            return this;
+        }
+
+        public ISmtpSender CustomAuthentication(Action<ISmtpClient> customAuthenticationMethod) =>
+            CustomAuthentication((imapClient) =>
+            {
+                customAuthenticationMethod(imapClient);
+                return Task.CompletedTask;
+            });
+
         public async ValueTask<ISmtpClient> ConnectSmtpClientAsync(CancellationToken cancellationToken = default) =>
             await GetConnectedAuthenticatedAsync(cancellationToken).ConfigureAwait(false);
 
@@ -122,20 +137,26 @@ namespace MailKitSimplified.Sender.Services
             }
         }
 
+        /// <summary>
+        /// Authenticating via a SASL mechanism may be a multi-step process.
+        /// <see href="http://www.mimekit.net/docs/html/T_MailKit_Security_SaslMechanism.htm"/>
+        /// <seealso href="http://www.mimekit.net/docs/html/T_MailKit_Security_SaslMechanismOAuth2.htm"/>
+        /// </summary>
         internal async ValueTask AuthenticateAsync(CancellationToken cancellationToken = default)
         {
             if (_senderOptions.SmtpCredential != null && !_smtpClient.IsAuthenticated)
             {
-                var ntlm = _smtpClient.AuthenticationMechanisms.Contains("NTLM") ?
-                    new SaslMechanismNtlm(_senderOptions.SmtpCredential) : null;
-                var oauth2 = _smtpClient.AuthenticationMechanisms.Contains("XOAUTH2") ?
-                    new SaslMechanismOAuth2(_senderOptions.SmtpCredential) : null;
-                if (ntlm?.Workstation != null)
-                    await _smtpClient.AuthenticateAsync(ntlm, cancellationToken).ConfigureAwait(false);
-                else if (oauth2?.Credentials != null)
-                    await _smtpClient.AuthenticateAsync(oauth2, cancellationToken).ConfigureAwait(false);
+                if (_customAuthenticationMethod != null) // for XOAUTH2 and OAUTHBEARER
+                    await _customAuthenticationMethod(_smtpClient).ConfigureAwait(false);
                 else
-                    await _smtpClient.AuthenticateAsync(_senderOptions.SmtpCredential, cancellationToken).ConfigureAwait(false);
+                {
+                    var ntlm = _smtpClient.AuthenticationMechanisms.Contains("NTLM") ?
+                        new SaslMechanismNtlm(_senderOptions.SmtpCredential) : null;
+                    if (ntlm?.Workstation != null)
+                        await _smtpClient.AuthenticateAsync(ntlm, cancellationToken).ConfigureAwait(false);
+                    else
+                        await _smtpClient.AuthenticateAsync(_senderOptions.SmtpCredential, cancellationToken).ConfigureAwait(false);
+                }
                 _logger.LogTrace($"SMTP client authenticated with {_senderOptions.SmtpHost}.");
             }
         }
