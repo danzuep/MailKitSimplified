@@ -29,7 +29,6 @@
   <ItemGroup>
     <PackageReference Include="MailKit" Version="3.4.3" />
     <PackageReference Include="MimeKit" Version="3.4.3" />
-    <PackageReference Include="MailKitSimplified.Generic" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />

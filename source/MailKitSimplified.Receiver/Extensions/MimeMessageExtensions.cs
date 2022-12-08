@@ -1,12 +1,10 @@
 ﻿using MimeKit;
 using MimeKit.Text;
-using MailKit;
 using System;
 using System.IO;
 using System.Text;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
@@ -34,10 +32,11 @@ namespace MailKitSimplified.Receiver.Extensions
             if (original == null)
                 throw new ArgumentNullException(nameof(original));
 
-            var mimeMessage = new MimeMessage();
-
             // Set the subject with prefix check
-            mimeMessage.Subject = GetPrefixedSubject(original.Subject, subjectPrefix);
+            var mimeMessage = new MimeMessage
+            {
+                Subject = GetPrefixedSubject(original.Subject, subjectPrefix)
+            };
 
             // Construct the In-Reply-To and References headers
             mimeMessage.AddMessageIdReferences(original);
@@ -164,11 +163,14 @@ namespace MailKitSimplified.Receiver.Extensions
 
         /// <summary>
         /// Quote the original message and add a new message above it.
+        /// var bodyText = await original.GetBodyTextAsync();
         /// </summary>
         /// <param name="original"><see cref="MimeMessage"/> to quote.</param>
         /// <param name="message">New message to add above it.</param>
-        /// <param name="htmlBorder">HTML border style.</param>
+        /// <param name="includeMessageId">Include Message-ID.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Quoted message text.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
         internal static string QuoteForReply(this MimeMessage original, string message = "", bool includeMessageId = false, CancellationToken cancellationToken = default)
         {
             if (original == null)
@@ -243,46 +245,6 @@ namespace MailKitSimplified.Receiver.Extensions
             }
             var result = stringBuilder.ToString();
             return result;
-        }
-
-        /// <summary>
-        /// Downloads the text/html part of the body if it exists, otherwise downloads the text/plain part.
-        /// </summary>
-        /// <param name="messageSummary"><see cref="IMessageSummary"/> body to download.</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns><see cref="TextPart"/> of the message body <see cref="MimeEntity"/>.</returns>
-        public static async Task<string> GetBodyTextAsync(this IMessageSummary messageSummary, CancellationToken cancellationToken = default)
-        {
-            MimeEntity textEntity = null;
-            bool peekFolder = !messageSummary?.Folder?.IsOpen ?? false;
-            if (peekFolder)
-                await messageSummary.Folder.OpenAsync(FolderAccess.ReadOnly, cancellationToken);
-            if (messageSummary?.HtmlBody != null)
-                textEntity = await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, messageSummary.HtmlBody, cancellationToken);
-            else if (messageSummary?.TextBody != null)
-                textEntity = await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, messageSummary.TextBody, cancellationToken);
-            if (peekFolder)
-                await messageSummary.Folder.CloseAsync(false, cancellationToken);
-            var textPart = textEntity as TextPart;
-            return textPart?.Text ?? string.Empty;
-        }
-
-        /// <summary>
-        /// Downloads detials for all attachments linked to this message.
-        /// </summary>
-        /// <param name="messageSummary"><see cref="IMessageSummary"/> attachments to download.</param>
-        /// <param name="fileTypeSuffix">Optional attachment name file type suffix filter.</param>
-        /// <param name="getAllNonText">Optional non-text media type filter.</param>
-        /// <returns>Message body parts filtered down to just the attachments.</returns>
-        public static IEnumerable<BodyPartBasic> GetMailAttachmentDetails(this IMessageSummary messageSummary, IList<string> fileTypeSuffix = null, bool getAllNonText = false)
-        {
-            IEnumerable<BodyPartBasic> attachments = Array.Empty<BodyPartBasic>();
-            if (messageSummary?.Body is BodyPartMultipart multipart)
-            {
-                var attachmentParts = multipart.BodyParts.OfType<BodyPartBasic>().Where(p => p.IsAttachment || (getAllNonText && !p.ContentType.MediaType.ToLower().Contains("text")));
-                attachments = fileTypeSuffix?.Count > 0 ? attachmentParts.Where(a => fileTypeSuffix.Any(s => a.FileName?.EndsWith(s, StringComparison.OrdinalIgnoreCase) ?? false)) : attachmentParts;
-            }
-            return attachments.ToList();
         }
     }
 }
