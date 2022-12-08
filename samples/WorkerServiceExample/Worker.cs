@@ -40,23 +40,16 @@ public class Worker : BackgroundService
         var uids = await _imapReceiver.MailFolderClient.SearchAsync(SearchQuery.NotSeen, cancellationToken);
         //var mimeMessages = await _imapReceiver.ReadMail.GetMimeMessagesAsync(uids);
         //var messageSummaries = await _imapReceiver.ReadMail.GetMessageSummariesAsync(uids, MessageSummaryItems.Envelope);
-        _logger.LogInformation($"Received {uids.Count} UID(s): {uids}.");
-        var mimeMessage = await _imapReceiver.ReadMail.GetMimeMessageAsync(uids.LastOrDefault());
-        var mimeReply = mimeMessage.GetReplyMessage("Reply here.");
-        mimeReply.From.Add(new MailboxAddress("", "from@localhost"));
-        mimeReply.To.Add(new MailboxAddress("", "zuepaw@gmail.com"));
-        _logger.LogInformation($"Reply Built. To: {mimeReply.To}.");
-        await _smtpSender.SendAsync(mimeReply, cancellationToken);
-        //foreach (var uid in uids)
-        //{
-        //    if (cancellationToken.IsCancellationRequested) break;
-        //    var mimeMessage = await _imapReceiver.ReadMail.GetMimeMessageAsync(uid);
-        //    var mimeReply = mimeMessage.GetReplyMessage("Reply here.");
-        //    mimeReply.From.Add(new MailboxAddress("", "from@localhost"));
-        //    mimeReply.To.Add(new MailboxAddress("", "zuepaw@gmail.com"));
-        //    _logger.LogInformation($"Reply Built. To: {mimeReply.To}.");
-        //    await _smtpSender.SendAsync(mimeReply, cancellationToken);
-        //}
+        foreach (var uid in uids)
+        {
+            if (cancellationToken.IsCancellationRequested) break;
+            var mimeMessage = await _imapReceiver.ReadMail.GetMimeMessageAsync(uid);
+            var mimeReply = mimeMessage.GetReplyMessage("Reply here.");
+            mimeReply.From.Add(new MailboxAddress("", "from@localhost"));
+            mimeReply.To.Add(new MailboxAddress("", "to@localhost"));
+            _logger.LogInformation($"Reply Built. To: {mimeReply.To}.");
+            //await _smtpSender.SendAsync(mimeReply, cancellationToken);
+        }
     }
 
     private async Task DelayedSendAsync(int secondsDelay, CancellationToken cancellationToken = default)

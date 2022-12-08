@@ -18,33 +18,8 @@ namespace MailKitSimplified.Receiver.Extensions
         public static readonly string RE = "RE: ";
         public static readonly string FW = "FW: ";
 
-        public static MimeMessage GetReplyMessage(this MimeMessage original, string message, string from, string replyTo = null) =>
-            original.GetReplyMessage(message, ParseMailboxAddress(from), replyTo == null ? null : ParseMailboxAddress(replyTo));
-
-        public static MimeMessage GetReplyMessage(this MimeMessage original, string message, IEnumerable<MailboxAddress> from, IEnumerable<MailboxAddress> replyTo = null)
-        {
-            var mimeMessage = original.GetReplyMessage(message, addRecipients: true);
-            mimeMessage.From.AddRange(from);
-            if (replyTo != null)
-                mimeMessage.ReplyTo.AddRange(replyTo);
-            return mimeMessage;
-        }
-
-        public static MimeMessage GetForwardMessage(this MimeMessage original, string message, string from, string to, string replyTo = null) =>
-            original.GetForwardMessage(message, ParseMailboxAddress(from), ParseMailboxAddress(to), replyTo == null ? null : ParseMailboxAddress(replyTo));
-
-        public static MimeMessage GetForwardMessage(this MimeMessage original, string message, IEnumerable<MailboxAddress> from, IEnumerable<MailboxAddress> to, IEnumerable<MailboxAddress> replyTo = null)
-        {
-            var mimeMessage = original.GetForwardMessage(message);
-            mimeMessage.From.AddRange(from);
-            mimeMessage.To.AddRange(to);
-            if (replyTo != null)
-                mimeMessage.ReplyTo.AddRange(replyTo);
-            return mimeMessage;
-        }
-
         public static MimeMessage GetForwardMessage(this MimeMessage original, string message) =>
-            original.GetMimeMessageResponse(RE, message, includeAttachments: true);
+            original.GetMimeMessageResponse(FW, message, includeAttachments: true);
 
         public static MimeMessage GetReplyMessage(this MimeMessage original, string message, bool addRecipients = false)
         {
