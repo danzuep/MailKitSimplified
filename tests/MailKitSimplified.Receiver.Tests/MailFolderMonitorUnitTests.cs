@@ -31,7 +31,7 @@ namespace MailKitSimplified.Receiver.Tests
                 .ReturnsAsync(_imapClientMock.Object).Verifiable();
             _imapReceiverMock.SetupGet(_ => _.MailFolderClient)
                 .Returns(_mailFolderClientMock.Object).Verifiable();
-            var options = Options.Create(new FolderMonitorOptions { MessageSummaryParts = MessageSummaryItems.Envelope });
+            var options = Options.Create(new FolderMonitorOptions { MessageSummaryItems = MessageSummaryItems.Envelope });
             _imapIdleClient = new MailFolderMonitor(_imapReceiverMock.Object, options, loggerFactory.CreateLogger<MailFolderMonitor>());
         }
 
@@ -70,6 +70,11 @@ namespace MailKitSimplified.Receiver.Tests
         {
             // Arrange
             _imapIdleClient.SetMaxRetries(0)
+                .SetIdleMinutes()
+                .SetIgnoreExistingMailOnConnect()
+                .SetMessageSummaryItems()
+                .OnMessageArrival((messageSummary) => Console.Write(messageSummary.UniqueId))
+                .OnMessageDeparture((messageSummary) => Console.Write(messageSummary.UniqueId))
                 .OnMessageArrival((messageSummary) => null)
                 .OnMessageDeparture((messageSummary) => null);
             // Act

@@ -14,10 +14,14 @@ namespace MailKitSimplified.Receiver.Models
         public bool ProcessMailOnConnect { get; set; } = false;
 
         /// <summary>
-        /// Specify which properties of <see cref="IMessageSummary"/> should be populated.
-        /// <see cref="UniqueId"/> is always included by default.
+        /// Specify whether to ignore existing messages, processing emails on connect is enabled by default.
         /// </summary>
-        public MessageSummaryItems MessageSummaryParts { get; set; } = MessageSummaryItems.None;
+        public bool IgnoreExistingMailOnConnect { get; set; } = false;
+
+        /// <summary>
+        /// Specify which properties of <see cref="IMessageSummary"/> should be populated other than <see cref="UniqueId"/>.
+        /// </summary>
+        public MessageSummaryItems MessageSummaryItems { get; set; } = MessageSummaryItems.None;
 
         /// <summary>
         /// Specify length of time to idle for, default is 9 minutes.
@@ -29,6 +33,6 @@ namespace MailKitSimplified.Receiver.Models
         /// </summary>
         public byte MaxRetries { get; set; } = 3;
 
-        public override string ToString() => $"ProcessMailOnConnect={ProcessMailOnConnect}, MessageFilter={MessageSummaryParts}, IdleMinutes={IdleMinutes}, MaxRetries={MaxRetries}.";
+        public override string ToString() => $"MessageSummaryItems={MessageSummaryItems}, IgnoreExisting={IgnoreExistingMailOnConnect}, IdleMinutes={IdleMinutes}, MaxRetries={MaxRetries}.";
     }
 }

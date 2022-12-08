@@ -8,6 +8,20 @@ namespace MailKitSimplified.Receiver.Abstractions
     public interface IMailFolderMonitor
     {
         /// <summary>
+        /// Ignore existing messages, processing emails on connect is enabled by default.
+        /// </summary>
+        /// <param name="ignoreExisting">Whether to ignore existing emails or not.</param>
+        /// <returns><see cref="IMailFolderMonitor"/> that will ignore existing emails.</returns>
+        IMailFolderMonitor SetIgnoreExistingMailOnConnect(bool ignoreExisting = true);
+
+        /// <summary>
+        /// Specify which properties of <see cref="IMessageSummary"/> should be populated other than <see cref="UniqueId"/>.
+        /// </summary>
+        /// <param name="itemSelection">Message summary items to include.</param>
+        /// <returns><see cref="IMailFolderMonitor"/> with <see cref="MessageSummaryItems"/> configured.</returns>
+        IMailFolderMonitor SetMessageSummaryItems(MessageSummaryItems itemSelection = MessageSummaryItems.Envelope);
+
+        /// <summary>
         /// Asynchronous function for processing messages as they are added to the mail folder.
         /// </summary>
         IMailFolderMonitor OnMessageArrival(Func<IMessageSummary, Task> messageArrivalMethod);

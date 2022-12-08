@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Models;
+using MailKitSimplified.Receiver.Services;
 
 namespace MailKitSimplified.Receiver
 {
@@ -54,18 +55,6 @@ namespace MailKitSimplified.Receiver
             };
         }
 
-        public MailFolderMonitor SetMessageSummaryParts(MessageSummaryItems messagePartFilter = MessageSummaryItems.Envelope)
-        {
-            _folderMonitorOptions.MessageSummaryParts = messagePartFilter;
-            return this;
-        }
-
-        public MailFolderMonitor SetProcessMailOnConnect(bool processMailOnConnect = true)
-        {
-            _folderMonitorOptions.ProcessMailOnConnect = processMailOnConnect;
-            return this;
-        }
-
         public MailFolderMonitor SetIdleMinutes(byte idleMinutes = FolderMonitorOptions.IdleMinutesImap)
         {
             _folderMonitorOptions.IdleMinutes = idleMinutes;
@@ -75,6 +64,18 @@ namespace MailKitSimplified.Receiver
         public MailFolderMonitor SetMaxRetries(byte maxRetries = 1)
         {
             _folderMonitorOptions.MaxRetries = maxRetries;
+            return this;
+        }
+
+        public IMailFolderMonitor SetIgnoreExistingMailOnConnect(bool ignoreExisting = true)
+        {
+            _folderMonitorOptions.IgnoreExistingMailOnConnect = ignoreExisting;
+            return this;
+        }
+
+        public IMailFolderMonitor SetMessageSummaryItems(MessageSummaryItems itemSelection = MessageSummaryItems.Envelope | MessageSummaryItems.BodyStructure)
+        {
+            _folderMonitorOptions.MessageSummaryItems = itemSelection;
             return this;
         }
 
@@ -279,13 +280,13 @@ namespace MailKitSimplified.Receiver
             _logger.LogTrace($"{_imapReceiver} ({_mailFolder.Count}) Fetching new message arrivals, starting from {startIndex}.");
             if (startIndex > _mailFolder.Count)
                 startIndex = _mailFolder.Count;
-            var filter = _folderMonitorOptions.MessageSummaryParts | MessageSummaryItems.UniqueId;
+            var filter = _folderMonitorOptions.MessageSummaryItems | MessageSummaryItems.UniqueId;
             var fetched = await _mailFolder.FetchAsync(startIndex, -1, filter, cancellationToken).ConfigureAwait(false);
             if (_arrival.IsCancellationRequested)
                 _arrival = new CancellationTokenSource();
             var newMail = _messageCache.TryAddUniqueRange(fetched);
-            if (!firstConnection || (firstConnection && _folderMonitorOptions.ProcessMailOnConnect))
-                newMail.ActionEach((mail) => _arrivalQueue.Enqueue(mail), cancellationToken);
+            if (!firstConnection || (firstConnection && !_folderMonitorOptions.IgnoreExistingMailOnConnect))
+                newMail.ActionEach(_arrivalQueue.Enqueue, cancellationToken);
             return newMail.Count;
         }
 

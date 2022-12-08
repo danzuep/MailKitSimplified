@@ -1,5 +1,6 @@
 ﻿using MimeKit;
 using MailKit;
+using MailKit.Search;
 using System;
 using System.IO;
 using System.Text;
@@ -150,6 +151,30 @@ namespace MailKitSimplified.Receiver.Extensions
             }
             var result = stringBuilder.ToString();
             return result;
+        }
+
+        /// <summary>Recursively combine and return an 'Or' query.</summary>
+        /// <param name="queries">List of queries to combine.</param>
+        /// <returns>Queries combined with an 'Or' statement.</returns>
+        public static SearchQuery EnumerateOr(this IList<SearchQuery> queries)
+        {
+            SearchQuery query = queries.FirstOrDefault();
+            if (queries?.Count > 1)
+            {
+                queries.Remove(query);
+                return query.Or(EnumerateOr(queries));
+            }
+            return query;
+        }
+
+        public static SearchQuery MatchAny(this IEnumerable<string> keywords, Func<string, SearchQuery> selector)
+        {
+            if (keywords == null)
+                throw new ArgumentNullException(nameof(keywords));
+            if (selector == null)
+                throw new ArgumentNullException(nameof(selector));
+            var query = EnumerateOr(keywords.Select(selector).ToList());
+            return query ?? SearchQuery.All;
         }
     }
 }

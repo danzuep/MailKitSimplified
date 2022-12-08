@@ -1,3 +1,4 @@
+using MailKit;
 using MailKit.Search;
 using MailKitSimplified.Receiver;
 using MailKitSimplified.Receiver.Abstractions;
@@ -19,24 +20,23 @@ public class Worker : BackgroundService
         _imapReceiver = imapReceiver;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken = default)
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        //var uids = await _imapReceiver.MailFolderClient.SearchAsync(SearchQuery.SubjectContains("Welcome"), stoppingToken);
+        var uids = await _imapReceiver.MailFolderClient
+            .SearchAsync(SearchQuery.All, cancellationToken);
+        var mimeMessage = await _imapReceiver.ReadMail
+            .GetMimeMessageAsync(uids.FirstOrDefault());
+        var replyBody = mimeMessage.QuoteForReply("Reply here.");
+        _logger.LogInformation(replyBody);
 
-        var messageSummaries = await _imapReceiver.ReadMail.Take(-1)
-            .GetMessageSummariesAsync(MailKit.MessageSummaryItems.UniqueId, stoppingToken);
-        _logger.LogInformation($"Got {messageSummaries.Count} summaries.");
-        //var replyMessage = mimeMessages.FirstOrDefault().QuoteForReply("Reply here.");
+        await ReceiveAsync(cancellationToken);
 
-        //await new MailFolderMonitor(_imapReceiver).SetProcessMailOnConnect()
-        //    .OnMessageArrival((m) => Console.WriteLine(m.UniqueId))
-        //    .OnMessageDeparture((m) => Console.WriteLine(m.UniqueId))
-        //    .IdleAsync(stoppingToken);
-
-        //await ReceiveAsync(stoppingToken);
-        //var sendTask = DelayedSendAsync(5, stoppingToken);
-        //await _imapReceiver.MonitorFolder.IdleAsync(stoppingToken);
-        //await sendTask;
+        var sendTask = DelayedSendAsync(5, cancellationToken);
+        await _imapReceiver.MonitorFolder
+            .OnMessageArrival((m) => Console.WriteLine(m.UniqueId))
+            .OnMessageDeparture((m) => Console.WriteLine(m.UniqueId))
+            .IdleAsync(cancellationToken);
+        await sendTask;
     }
 
     private async Task DelayedSendAsync(int secondsDelay, CancellationToken cancellationToken = default)
@@ -54,9 +54,9 @@ public class Worker : BackgroundService
 
     private async Task ReceiveAsync(CancellationToken cancellationToken = default)
     {
-        var emails = await _imapReceiver.ReadMail
-            .Skip(0).Take(10, continuous: true)
-            .GetMessageSummariesAsync(cancellationToken);
-        _logger.LogInformation("Email(s) received: {emails}.", emails.Select(m => m.UniqueId));
+        var messageSummaries = await _imapReceiver.ReadMail
+            .Skip(0).Take(250, continuous: true)
+            .GetMessageSummariesAsync(MessageSummaryItems.UniqueId, cancellationToken);
+        _logger.LogInformation($"Received {messageSummaries.Count} email(s): {messageSummaries.Select(m => m.UniqueId)}.");
     }
 }

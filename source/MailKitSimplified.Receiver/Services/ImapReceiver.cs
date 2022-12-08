@@ -91,6 +91,12 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
+        public IMailFolderClient GetFolder(string mailFolderName)
+        {
+            _receiverOptions.MailFolderName = mailFolderName;
+            return MailFolderClient;
+        }
+
         public IMailFolderReader ReadFrom(string mailFolderName)
         {
             _receiverOptions.MailFolderName = mailFolderName;

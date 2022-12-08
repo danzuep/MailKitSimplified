@@ -138,6 +138,14 @@ namespace MailKitSimplified.Receiver.Tests
         }
 
         [Fact]
+        public void GetFolder_WithAnyMailFolderName_VerifyType()
+        {
+            var mailFolderClient = ImapReceiver.Create(_localhost).GetFolder("INBOX");
+            Assert.NotNull(mailFolderClient);
+            Assert.IsAssignableFrom<IMailFolderClient>(mailFolderClient);
+        }
+
+        [Fact]
         public void ReadFrom_WithAnyMailFolderName_VerifyType()
         {
             var mailFolderReader = ImapReceiver.Create(_localhost).ReadFrom("INBOX");

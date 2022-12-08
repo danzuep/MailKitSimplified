@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
+using MailKitSimplified.Receiver.Extensions;
 
 namespace MailKitSimplified.Receiver.Services
 {
@@ -63,38 +64,14 @@ namespace MailKitSimplified.Receiver.Services
             return uniqueIds;
         }
 
-        /// <summary>Recursively combine and return an 'Or' query.</summary>
-        /// <param name="queries">List of queries to combine.</param>
-        /// <returns>Queries combined with an 'Or' statement.</returns>
-        private static SearchQuery EnumerateOr(IList<SearchQuery> queries)
-        {
-            SearchQuery query = queries.FirstOrDefault();
-            if (queries?.Count > 1)
-            {
-                queries.Remove(query);
-                return query.Or(EnumerateOr(queries));
-            }
-            return query;
-        }
-
-        private static SearchQuery EnumerateOr(IEnumerable<string> keywords, Func<string, SearchQuery> selector)
-        {
-            if (keywords == null)
-                throw new ArgumentNullException(nameof(keywords));
-            if (selector == null)
-                throw new ArgumentNullException(nameof(selector));
-            var query = EnumerateOr(keywords.Select(selector).ToList());
-            return query ?? SearchQuery.All;
-        }
-
         /// <summary>Query the server for message IDs with matching keywords in the subject or body text.</summary>
         /// <param name="keywords">Keywords to search for.</param>
         /// <returns>The first 250 <see cref="UniqueId"/>s.</returns>
         public async Task<IList<UniqueId>> SearchKeywordsAsync(IEnumerable<string> keywords, CancellationToken cancellationToken = default)
         {
-            var subjectQuery = EnumerateOr(keywords, SearchQuery.SubjectContains);
-            var bodyQuery = EnumerateOr(keywords, SearchQuery.BodyContains);
-            var query = subjectQuery.Or(bodyQuery);
+            var subjectMatch = keywords.MatchAny(SearchQuery.SubjectContains);
+            var bodyMatch = keywords.MatchAny(SearchQuery.BodyContains);
+            var query = subjectMatch.Or(bodyMatch);
             var uniqueIds = await SearchAsync(query, cancellationToken).ConfigureAwait(false);
             return uniqueIds;
         }
