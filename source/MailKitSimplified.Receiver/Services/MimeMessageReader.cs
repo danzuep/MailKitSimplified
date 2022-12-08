@@ -78,7 +78,7 @@ namespace MailKitSimplified.Receiver.Services
             return mimeMessageReader;
         }
 
-        public static string DecodeHtmlBody(string html)
+        public static string DecodeHtmlBody(string html, CancellationToken cancellationToken = default)
         {
             if (html == null)
                 return string.Empty;
@@ -95,6 +95,7 @@ namespace MailKitSimplified.Receiver.Services
 
                     while (tokenizer.ReadNextToken(out HtmlToken token))
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         switch (token.Kind)
                         {
                             case HtmlTokenKind.Data:
@@ -134,6 +135,36 @@ namespace MailKitSimplified.Receiver.Services
                 }
                 return writer.ToString();
             }
+        }
+
+        public static IList<string> DecodeHtmlHrefs(string html, CancellationToken cancellationToken = default)
+        {
+            if (html == null)
+                return null;
+
+            var hrefs = new List<string>();
+            using (var reader = new StringReader(html))
+            {
+                var tokenizer = new HtmlTokenizer(reader)
+                {
+                    DecodeCharacterReferences = true
+                };
+
+                while (tokenizer.ReadNextToken(out HtmlToken token))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (token.Kind == HtmlTokenKind.Tag &&
+                        token is HtmlTagToken tag &&
+                        tag.Id == HtmlTagId.A &&
+                        tag.Attributes != null &&
+                        tag.Attributes.Any())
+                    {
+                        hrefs.AddRange(tag.Attributes.Select(a => a.Value));
+                    }
+                }
+            }
+
+            return hrefs;
         }
 
         internal string GetOnDateSenderWrote()

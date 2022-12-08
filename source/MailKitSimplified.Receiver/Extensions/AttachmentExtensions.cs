@@ -1,5 +1,4 @@
 ﻿using MimeKit;
-using MailKit;
 using System;
 using System.IO;
 using System.Linq;
@@ -34,25 +33,10 @@ namespace MailKitSimplified.Receiver.Extensions
         public static IEnumerable<string> GetAttachmentNames(this IEnumerable<MimeEntity> mimeEntities) =>
             mimeEntities?.Select(a => a.GetAttachmentName()) ?? Array.Empty<string>();
 
-        public static IEnumerable<BodyPartBasic> GetMailAttachmentDetails(this IMessageSummary message, IList<string> suffix, bool getAllNonText = false)
-        {
-            IEnumerable<BodyPartBasic> attachments = Array.Empty<BodyPartBasic>();
-            if (message?.Body is BodyPartMultipart multipart)
-            {
-                var attachmentParts = multipart.BodyParts.OfType<BodyPartBasic>()
-                    .Where(p => (getAllNonText && !p.ContentType.MediaType.ToLowerInvariant().Contains("text")) || p.IsAttachment);
-                attachments = suffix?.Count > 0 ? attachmentParts.Where(a => suffix.Any(s => a.FileName?
-                    .EndsWith(s, StringComparison.OrdinalIgnoreCase) ?? false)) : attachmentParts;
-            }
-            return attachments.ToList();
-        }
-
-        public static IEnumerable<MimeEntity> GetFilteredAttachments(this IEnumerable<MimeEntity> mimeEntities, IEnumerable<string> mediaTypes)
-        {
-            return mediaTypes == null || mimeEntities == null ? Array.Empty<MimeEntity>() :
-                mimeEntities.Where(a => a.IsAttachment && a is MimePart att && mediaTypes.Any(s =>
+        public static IEnumerable<MimeEntity> GetFilteredAttachments(this IEnumerable<MimeEntity> mimeEntities, IEnumerable<string> fileTypeSuffix) =>
+            fileTypeSuffix == null || mimeEntities == null ? Array.Empty<MimeEntity>() :
+                mimeEntities.Where(a => a.IsAttachment && a is MimePart att && fileTypeSuffix.Any(s =>
                     att.FileName?.EndsWith(s, StringComparison.OrdinalIgnoreCase) ?? false));
-        }
 
         public static async Task<MemoryStream> GetMimeEntityStream(this MimeEntity mimeEntity, CancellationToken ct = default)
         {

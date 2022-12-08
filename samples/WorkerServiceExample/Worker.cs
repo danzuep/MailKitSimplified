@@ -4,6 +4,7 @@ using MailKitSimplified.Receiver;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Sender.Abstractions;
+using MimeKit;
 
 namespace ExampleNamespace;
 
@@ -22,21 +23,40 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        var uids = await _imapReceiver.MailFolderClient
-            .SearchAsync(SearchQuery.All, cancellationToken);
-        var mimeMessage = await _imapReceiver.ReadMail
-            .GetMimeMessageAsync(uids.FirstOrDefault());
-        var replyBody = mimeMessage.QuoteForReply("Reply here.");
-        _logger.LogInformation(replyBody);
+        await GetRepliesAsync(cancellationToken);
 
-        await ReceiveAsync(cancellationToken);
+        //await ReceiveAsync(cancellationToken);
 
-        var sendTask = DelayedSendAsync(5, cancellationToken);
-        await _imapReceiver.MonitorFolder
-            .OnMessageArrival((m) => Console.WriteLine(m.UniqueId))
-            .OnMessageDeparture((m) => Console.WriteLine(m.UniqueId))
-            .IdleAsync(cancellationToken);
-        await sendTask;
+        //var sendTask = DelayedSendAsync(5, cancellationToken);
+        //await _imapReceiver.MonitorFolder
+        //    .OnMessageArrival((m) => Console.WriteLine(m.UniqueId))
+        //    .OnMessageDeparture((m) => Console.WriteLine(m.UniqueId))
+        //    .IdleAsync(cancellationToken);
+        //await sendTask;
+    }
+
+    private async Task GetRepliesAsync(CancellationToken cancellationToken = default)
+    {
+        var uids = await _imapReceiver.MailFolderClient.SearchAsync(SearchQuery.NotSeen, cancellationToken);
+        //var mimeMessages = await _imapReceiver.ReadMail.GetMimeMessagesAsync(uids);
+        //var messageSummaries = await _imapReceiver.ReadMail.GetMessageSummariesAsync(uids, MessageSummaryItems.Envelope);
+        _logger.LogInformation($"Received {uids.Count} UID(s): {uids}.");
+        var mimeMessage = await _imapReceiver.ReadMail.GetMimeMessageAsync(uids.LastOrDefault());
+        var mimeReply = mimeMessage.GetReplyMessage("Reply here.");
+        mimeReply.From.Add(new MailboxAddress("", "from@localhost"));
+        mimeReply.To.Add(new MailboxAddress("", "zuepaw@gmail.com"));
+        _logger.LogInformation($"Reply Built. To: {mimeReply.To}.");
+        await _smtpSender.SendAsync(mimeReply, cancellationToken);
+        //foreach (var uid in uids)
+        //{
+        //    if (cancellationToken.IsCancellationRequested) break;
+        //    var mimeMessage = await _imapReceiver.ReadMail.GetMimeMessageAsync(uid);
+        //    var mimeReply = mimeMessage.GetReplyMessage("Reply here.");
+        //    mimeReply.From.Add(new MailboxAddress("", "from@localhost"));
+        //    mimeReply.To.Add(new MailboxAddress("", "zuepaw@gmail.com"));
+        //    _logger.LogInformation($"Reply Built. To: {mimeReply.To}.");
+        //    await _smtpSender.SendAsync(mimeReply, cancellationToken);
+        //}
     }
 
     private async Task DelayedSendAsync(int secondsDelay, CancellationToken cancellationToken = default)

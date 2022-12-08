@@ -1,7 +1,6 @@
 ﻿using MailKit;
 using MailKit.Search;
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;

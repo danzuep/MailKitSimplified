@@ -14,7 +14,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Models;
-using MailKitSimplified.Receiver.Services;
 
 namespace MailKitSimplified.Receiver
 {

@@ -152,10 +152,9 @@ namespace MailKitSimplified.Sender.Services
                 HtmlBody = mimeMessage.HtmlBody
             };
             var linkedResources = mimeMessage.BodyParts
-                .Where(part => !part.IsAttachment &&
-                    part.ContentId != null &&
-                    mimeMessage.HtmlBody != null &&
-                    mimeMessage.HtmlBody.Contains(part.ContentId));
+                .Where(part => !part.IsAttachment && part.ContentId != null &&
+                    ((mimeMessage.HtmlBody?.Contains(part.ContentId) ?? false) ||
+                    (mimeMessage.TextBody?.Contains(part.ContentId) ?? false)));
             foreach (var resource in linkedResources)
                 builder.LinkedResources.Add(resource);
             foreach (var attachment in mimeMessage.Attachments)
