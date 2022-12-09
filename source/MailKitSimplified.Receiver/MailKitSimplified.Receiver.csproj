@@ -13,6 +13,7 @@
     <Title>Simple MailKit IMAP Receiver</Title>
     <PackageTags>IMAP; email; MailKit; simple; easy; fluent; receiver; C#; .NET; ASP.NET</PackageTags>
     <Description>Easy, fluent way to receive emails with MailKit.</Description>
+    <PackageIcon>email-envelope-postage-stamp.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +22,10 @@
       <PackagePath>\</PackagePath>
     </None>
     <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\resources\email-envelope-postage-stamp.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
