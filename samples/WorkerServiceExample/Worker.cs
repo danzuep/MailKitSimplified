@@ -23,7 +23,7 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        await GetRepliesAsync(cancellationToken);
+        await GetMessageSummaryRepliesAsync(cancellationToken);
 
         //await ReceiveAsync(cancellationToken);
 
@@ -35,11 +35,26 @@ public class Worker : BackgroundService
         //await sendTask;
     }
 
-    private async Task GetRepliesAsync(CancellationToken cancellationToken = default)
+    private async Task GetMessageSummaryRepliesAsync(CancellationToken cancellationToken = default)
     {
-        var uids = await _imapReceiver.MailFolderClient.SearchAsync(SearchQuery.NotSeen, cancellationToken);
+        var messageSummaries = await _imapReceiver.ReadMail
+            .Skip(30).Take(3).GetMessageSummariesAsync();
+        foreach (var messageSummary in messageSummaries)
+        {
+            if (cancellationToken.IsCancellationRequested) break;
+            var mimeReply = await messageSummary.GetReplyMessageAsync("Reply here.");
+            mimeReply.From.Add(new MailboxAddress("", "from@localhost"));
+            mimeReply.To.Add(new MailboxAddress("", "to@localhost"));
+            _logger.LogInformation($"Reply: \r\n{mimeReply.HtmlBody}");
+            //await _smtpSender.SendAsync(mimeReply, cancellationToken);
+        }
+    }
+
+    private async Task GetMimeMessageRepliesAsync(CancellationToken cancellationToken = default)
+    {
+        var uids = await _imapReceiver.MailFolderClient
+            .SearchAsync(SearchQuery.NotSeen, cancellationToken);
         //var mimeMessages = await _imapReceiver.ReadMail.GetMimeMessagesAsync(uids);
-        //var messageSummaries = await _imapReceiver.ReadMail.GetMessageSummariesAsync(uids, MessageSummaryItems.Envelope);
         foreach (var uid in uids)
         {
             if (cancellationToken.IsCancellationRequested) break;

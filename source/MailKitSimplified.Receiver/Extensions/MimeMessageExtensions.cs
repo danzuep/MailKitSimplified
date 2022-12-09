@@ -13,8 +13,8 @@ namespace MailKitSimplified.Receiver.Extensions
     [ExcludeFromCodeCoverage]
     public static class MimeMessageExtensions
     {
-        public static readonly string RE = "RE: ";
-        public static readonly string FW = "FW: ";
+        private static readonly string RE = MessageSummaryExtensions.RE;
+        private static readonly string FW = MessageSummaryExtensions.FW;
 
         public static MimeMessage GetForwardMessage(this MimeMessage original, string message) =>
             original.GetMimeMessageResponse(FW, message, includeAttachments: true);
@@ -35,7 +35,7 @@ namespace MailKitSimplified.Receiver.Extensions
             // Set the subject with prefix check
             var mimeMessage = new MimeMessage
             {
-                Subject = GetPrefixedSubject(original.Subject, subjectPrefix)
+                Subject = MessageSummaryExtensions.GetPrefixedSubject(original.Subject, subjectPrefix)
             };
 
             // Construct the In-Reply-To and References headers
@@ -55,15 +55,7 @@ namespace MailKitSimplified.Receiver.Extensions
                     .Select(f => new MailboxAddress(string.Empty, f));
         }
 
-        private static string GetPrefixedSubject(string originalSubject, string prefix = "")
-        {
-            string subject = originalSubject ?? string.Empty;
-            if (!string.IsNullOrEmpty(prefix) && !subject.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                subject = $"{prefix}{originalSubject}";
-            return subject;
-        }
-
-        private static InternetAddressList BuildReplyAddresses(this MimeMessage original, bool replyToAll = false)
+        internal static InternetAddressList BuildReplyAddresses(this MimeMessage original, bool replyToAll = false)
         {
             if (original == null)
                 throw new ArgumentNullException(nameof(original));
@@ -146,21 +138,6 @@ namespace MailKitSimplified.Receiver.Extensions
             return mimeBody;
         }
 
-        public static MimeEntity BuildMultipart(this MimeEntity mimeBody, params MimeEntity[] mimeEntities)
-        {
-            if (mimeEntities == null || mimeEntities.Length == 0)
-                return mimeBody;
-
-            var multipart = new Multipart();
-            if (mimeBody != null)
-                multipart.Add(mimeBody);
-            foreach (var mimeEntity in mimeEntities)
-                if (mimeEntity != null)
-                    multipart.Add(mimeEntity);
-
-            return multipart;
-        }
-
         /// <summary>
         /// Quote the original message and add a new message above it.
         /// var bodyText = await original.GetBodyTextAsync();
@@ -171,7 +148,7 @@ namespace MailKitSimplified.Receiver.Extensions
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Quoted message text.</returns>
         /// <exception cref="ArgumentNullException"></exception>
-        internal static string QuoteForReply(this MimeMessage original, string message = "", bool includeMessageId = false, CancellationToken cancellationToken = default)
+        internal static string QuoteForReply(this MimeMessage original, string message, bool includeMessageId = false, CancellationToken cancellationToken = default)
         {
             if (original == null)
                 throw new ArgumentNullException(nameof(original));
