@@ -17,7 +17,7 @@ Receiving emails with MailKitSimplified.Receiver is as easy as:
 
 ```csharp
 using var imapReceiver = ImapReceiver.Create("localhost");
-var mimeMessages = await imapReceiver.ReadMail.Take(250).GetMimeMessagesAsync();
+var mimeMessages = await imapReceiver.ReadMail.GetMimeMessagesAsync();
 ```
 
 You can even monitor an email folder for new messages asynchronously, never before has it been this easy!
