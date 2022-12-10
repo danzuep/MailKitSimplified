@@ -29,6 +29,8 @@ public class Worker : BackgroundService
 
         //var sendTask = DelayedSendAsync(5, cancellationToken);
         //await _imapReceiver.MonitorFolder
+        //    .SetMessageSummaryItems()
+        //    .SetIgnoreExistingMailOnConnect()
         //    .OnMessageArrival((m) => Console.WriteLine(m.UniqueId))
         //    .OnMessageDeparture((m) => Console.WriteLine(m.UniqueId))
         //    .IdleAsync(cancellationToken);

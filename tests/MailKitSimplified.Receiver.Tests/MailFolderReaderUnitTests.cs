@@ -1,3 +1,4 @@
+using MailKit.Search;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Services;
 
@@ -92,7 +93,7 @@ namespace MailKitSimplified.Receiver.Tests
             _mailFolderMock.Setup(_ => _.GetMessageAsync(It.IsAny<int>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
                 .ReturnsAsync(new MimeMessage()).Verifiable();
             // Act
-            var mimeMessages = await _mailFolderReader.Skip(0).Take(1)
+            var mimeMessages = await _mailFolderReader.Skip(0).Take(1).Query(SearchQuery.NotSeen)
                 .GetMimeMessagesAsync(It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>());
             // Assert
             Assert.NotNull(mimeMessages);

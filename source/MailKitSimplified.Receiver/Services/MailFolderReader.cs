@@ -1,5 +1,6 @@
 ﻿using MimeKit;
 using MailKit;
+using MailKit.Search;
 using System;
 using System.Linq;
 using System.Threading;
@@ -20,6 +21,7 @@ namespace MailKitSimplified.Receiver.Services
         private int _take = _all;
         private bool _continueTake = false;
         private static readonly int _all = -1;
+        private SearchQuery _searchQuery = SearchQuery.All;
         private readonly IMailFolderClient _mailFolderClient;
 
         public MailFolderReader(IMailFolderClient mailFolderClient)
@@ -41,6 +43,12 @@ namespace MailKitSimplified.Receiver.Services
                 throw new ArgumentOutOfRangeException(nameof(takeCount));
             _take = takeCount;
             _continueTake = continuous;
+            return this;
+        }
+
+        public IMailReader Query(SearchQuery searchQuery)
+        {
+            _searchQuery = searchQuery;
             return this;
         }
 
@@ -74,12 +82,26 @@ namespace MailKitSimplified.Receiver.Services
             var mimeMessages = new List<MimeMessage>();
             var mailFolder = await _mailFolderClient.ConnectAsync(false, cancellationToken).ConfigureAwait(false);
             _ = await mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
-            int startIndex = _skip < mailFolder.Count ? _skip : mailFolder.Count;
-            int endIndex = startIndex + _take > mailFolder.Count ? mailFolder.Count : startIndex + _take;
-            for (int index = startIndex; index < endIndex; index++)
+            if (_take == _all)
             {
-                var mimeMessage = await mailFolder.GetMessageAsync(index, cancellationToken, transferProgress).ConfigureAwait(false);
-                mimeMessages.Add(mimeMessage);
+                var uids = await mailFolder.SearchAsync(_searchQuery, cancellationToken).ConfigureAwait(false);
+                foreach (var uid in uids.OrderByDescending(u => u.Id))
+                {
+                    if (cancellationToken.IsCancellationRequested) break;
+                    var mimeMessage = await mailFolder.GetMessageAsync(uid, cancellationToken, transferProgress).ConfigureAwait(false);
+                    mimeMessages.Add(mimeMessage);
+                }
+            }
+            else
+            {
+                int startIndex = _skip < mailFolder.Count ? _skip : mailFolder.Count;
+                int endIndex = startIndex + _take > mailFolder.Count ? mailFolder.Count : startIndex + _take;
+                for (int index = startIndex; index < endIndex; index++)
+                {
+                    if (cancellationToken.IsCancellationRequested) break;
+                    var mimeMessage = await mailFolder.GetMessageAsync(index, cancellationToken, transferProgress).ConfigureAwait(false);
+                    mimeMessages.Add(mimeMessage);
+                }
             }
             await _mailFolderClient.DisposeAsync().ConfigureAwait(false);
             return mimeMessages;
@@ -117,11 +139,9 @@ namespace MailKitSimplified.Receiver.Services
                 var mailFolder = await _mailFolderClient.ConnectAsync(false, cancellationToken).ConfigureAwait(false);
                 foreach (var uniqueId in uniqueIds)
                 {
+                    if (cancellationToken.IsCancellationRequested) break;
                     var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken).ConfigureAwait(false);
-                    if (mimeMessage != null)
-                        mimeMessages.Add(mimeMessage);
-                    if (cancellationToken.IsCancellationRequested)
-                        break;
+                    if (mimeMessage != null) mimeMessages.Add(mimeMessage);
                 }
                 await _mailFolderClient.DisposeAsync().ConfigureAwait(false);
             }

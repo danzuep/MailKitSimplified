@@ -3,6 +3,7 @@ using MailKit;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using MailKit.Search;
 
 namespace MailKitSimplified.Receiver.Abstractions
 {
@@ -22,6 +23,13 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="continuous">Whether to keep adding the offset or not.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>
         IMailReader Take(int takeCount, bool continuous = false);
+
+        /// <summary>
+        /// A specialized query for searching messages in a <see cref="IMailFolder"/>.
+        /// </summary>
+        /// <param name="searchQuery">What to search for, e.g. SearchQuery.NotSeen.</param>
+        /// <returns>Fluent <see cref="IMailReader"/>.</returns>
+        IMailReader Query(SearchQuery searchQuery);
 
         /// <summary>
         /// Get a list of the message summaries with just the requested MessageSummaryItems.
