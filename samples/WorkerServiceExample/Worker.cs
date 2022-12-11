@@ -1,10 +1,9 @@
+using MimeKit;
 using MailKit;
 using MailKit.Search;
-using MailKitSimplified.Receiver;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Sender.Abstractions;
-using MimeKit;
 
 namespace ExampleNamespace;
 

@@ -15,7 +15,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="filter"><see cref="MessageSummaryItems"/> to download.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <returns>Collection of <see cref="IMessageSummary"/> items.</returns>
-        Task<IEnumerable<IMessageSummary>> GetMessageSummariesAsync(IEnumerable<UniqueId> uniqueIds, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default);
+        Task<IList<IMessageSummary>> GetMessageSummariesAsync(IEnumerable<UniqueId> uniqueIds, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get a <see cref="MimeMessage"/> by unique ID.
