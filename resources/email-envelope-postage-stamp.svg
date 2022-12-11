@@ -7,8 +7,8 @@
    inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
    viewBox="0 0 2285.8228 1534.311"
    inkscape:export-filename="email-envelope-postage-stamp.png"
-   inkscape:export-xdpi="96"
-   inkscape:export-ydpi="96"
+   inkscape:export-xdpi="8.0088062"
+   inkscape:export-ydpi="8.0088062"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -23,7 +23,7 @@
      inkscape:zoom="0.31430838"
      borderopacity="1"
      inkscape:current-layer="layer1"
-     inkscape:cx="916.29756"
+     inkscape:cx="919.47914"
      inkscape:guide-bbox="true"
      inkscape:window-maximized="1"
      showgrid="false"
@@ -39,7 +39,7 @@
      inkscape:pageshadow="2"
      pagecolor="#ffffff"
      gridtolerance="10"
-     inkscape:cy="890.84485"
+     inkscape:cy="894.02643"
      inkscape:window-height="974"
      inkscape:showpageshadow="2"
      inkscape:pagecheckerboard="0"
@@ -444,7 +444,7 @@
         </dc:subject>
       </cc:Work>
       <cc:License
-         rdf:about="http://creativecommons.org/licenses/publicdomain/">
+         rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
         <cc:permits
            rdf:resource="http://creativecommons.org/ns#Reproduction" />
         <cc:permits
