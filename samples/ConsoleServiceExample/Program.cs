@@ -41,9 +41,9 @@ logger.LogDebug("Email(s) received: {ids}.", messageSummaries.Select(m => m.Uniq
 var mimeMessages = await imapReceiver.ReadMail.Skip(0).Take(1).GetMimeMessagesAsync();
 logger.LogDebug("Email(s) received: {ids}.", mimeMessages.Select(m => m.MessageId).ToEnumeratedString());
 
-var imapIdleClient = imapReceiver.MonitorFolder;
-imapIdleClient.MessageArrivalMethod = (m) => OnArrivalAsync(m);
-await imapIdleClient.IdleAsync();
+var imapIdleClient = imapReceiver.MonitorFolder
+    .OnMessageArrival((m) => OnArrivalAsync(m))
+    .IdleAsync();
 
 Task OnArrivalAsync(IMessageSummary m)
 {

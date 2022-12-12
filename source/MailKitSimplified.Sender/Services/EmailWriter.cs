@@ -18,6 +18,7 @@ using MailKitSimplified.Sender.Extensions;
 
 namespace MailKitSimplified.Sender.Services
 {
+    /// <inheritdoc cref="IEmailWriter" />
     public class EmailWriter : IEmailWriter
     {
         public MimeMessage MimeMessage => _mimeMessage;
@@ -28,6 +29,7 @@ namespace MailKitSimplified.Sender.Services
         private readonly ISmtpSender _emailClient;
         private readonly IFileSystem _fileSystem;
 
+        /// <inheritdoc cref="IEmailWriter" />
         public EmailWriter(ISmtpSender emailClient, ILogger<EmailWriter> logger = null, IFileSystem fileSystem = null)
         {
             _logger = logger ?? NullLogger<EmailWriter>.Instance;

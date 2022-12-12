@@ -11,8 +11,8 @@
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
     <Authors>danzuep</Authors>
     <Title>Simple MailKit IMAP Receiver</Title>
-    <PackageTags>IMAP; email; MailKit; simple; easy; fluent; receiver; C#; .NET; ASP.NET</PackageTags>
-    <Description>Easy, fluent way to receive emails with MailKit.</Description>
+    <PackageTags>IMAP; MailKit; email; receiver; receive email; reply; forward; simply; easily; simple; easy; fluent; C#; .NET</PackageTags>
+    <Description>Easy, fluent way to receive, forward, and reply to emails with MailKit.</Description>
     <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
@@ -41,7 +41,7 @@
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
-    <PackageReference Include="System.IO.Abstractions" Version="18.0.1" />
+    <PackageReference Include="System.IO.Abstractions" Version="19.0.1" />
   </ItemGroup>
 
   <ItemGroup>

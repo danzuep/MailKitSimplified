@@ -19,6 +19,7 @@ using MailKitSimplified.Sender.Models;
 
 namespace MailKitSimplified.Sender.Services
 {
+    /// <inheritdoc cref="ISmtpSender" />
     public sealed class SmtpSender : ISmtpSender
     {
         private Func<ISmtpClient, Task> _customAuthenticationMethod;
@@ -27,6 +28,7 @@ namespace MailKitSimplified.Sender.Services
         private readonly ISmtpClient _smtpClient;
         private readonly EmailSenderOptions _senderOptions;
 
+        /// <inheritdoc cref="ISmtpSender" />
         public SmtpSender(IOptions<EmailSenderOptions> senderOptions, ILogger<SmtpSender> logger = null, IProtocolLogger protocolLogger = null, ISmtpClient smtpClient = null)
         {
             _logger = logger ?? NullLogger<SmtpSender>.Instance;
