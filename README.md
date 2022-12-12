@@ -23,8 +23,7 @@ var mimeMessages = await imapReceiver.ReadMail.GetMimeMessagesAsync();
 You can even monitor an email folder for new messages asynchronously, never before has it been this easy!
 
 ```csharp
-await imapReceiver.MonitorFolder.OnMessageArrival((m) =>
-    Console.WriteLine(m.UniqueId)).IdleAsync();
+await imapReceiver.MonitorFolder.OnMessageArrival((m) => Console.WriteLine(m.UniqueId)).IdleAsync();
 ```
 
 ## Example Usage [![Development](https://github.com/danzuep/MailKitSimplified/actions/workflows/development.yml/badge.svg)](https://github.com/danzuep/MailKitSimplified/actions/workflows/development.yml) [![Release](https://github.com/danzuep/MailKitSimplified/actions/workflows/release.yml/badge.svg)](https://github.com/danzuep/MailKitSimplified/actions/workflows/release.yml)
@@ -66,14 +65,14 @@ To only download the email parts you want to use:
 
 ```csharp
 var messageSummaries = await imapReceiver.ReadFrom("INBOX")
-    .GetMessageSummariesAsync(MessageSummaryItems.UniqueId);
+    .GetMessageSummariesAsync(MessageSummaryItems.Envelope);
 ```
 
 To asynchronously monitor the mail folder for incoming messages (using OnArrivalAsync):
 
 ```csharp
-await new MailFolderMonitor(imapReceiver).SetMessageSummaryParts()
-    .SetProcessMailOnConnect().SetIdleMinutes().SetMaxRetries()
+await imapReceiver.MonitorFolder
+    .SetMessageSummaryItems().SetIgnoreExistingMailOnConnect()
     .OnMessageArrival((messageSummary) => OnArrivalAsync(messageSummary))
     .IdleAsync();
 ```
