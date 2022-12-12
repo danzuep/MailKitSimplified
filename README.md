@@ -23,12 +23,20 @@ var mimeMessages = await imapReceiver.ReadMail.GetMimeMessagesAsync();
 You can even monitor an email folder for new messages asynchronously, never before has it been this easy!
 
 ```csharp
-await imapReceiver.MonitorFolder.OnMessageArrival((m) => Console.WriteLine(m.UniqueId)).IdleAsync();
+await imapReceiver.MonitorFolder.OnMessageArrival(m => Console.WriteLine(m.UniqueId)).IdleAsync();
 ```
+
+Once you've got either a mime message or a message summary, replying is now equally as intuitive.
+
+```csharp
+var mimeReply = mimeMessages.GetReplyMessage("<p>Reply here.</p>");
+```
+
+You're welcome. 🥲
 
 ## Example Usage [![Development](https://github.com/danzuep/MailKitSimplified/actions/workflows/development.yml/badge.svg)](https://github.com/danzuep/MailKitSimplified/actions/workflows/development.yml) [![Release](https://github.com/danzuep/MailKitSimplified/actions/workflows/release.yml/badge.svg)](https://github.com/danzuep/MailKitSimplified/actions/workflows/release.yml)
 
-The examples above will actually work with no other setup if you use something like [smtp4dev](https://github.com/rnwood/smtp4dev), but below are some more realistic examples.
+The examples above will actually work with no other setup if you use something like [smtp4dev](https://github.com/rnwood/smtp4dev), but below are some more realistic examples. The cancellation token is recommended but not required.
 
 ### Sending Mail
 
@@ -44,7 +52,7 @@ await smtpSender.WriteEmail
     .BodyHtml("<p>Hi</p>")
     .Attach("appsettings.json")
     .TryAttach(@"Logs\ImapClient.txt")
-    .SendAsync();
+    .SendAsync(cancellationToken);
 ```
 
 See the [MailKitSimplified.Sender wiki](https://github.com/danzuep/MailKitSimplified/wiki/Sender) for more information.
@@ -58,23 +66,43 @@ using var imapReceiver = ImapReceiver.Create("imap.example.com:993")
     .SetFolder("INBOX/Subfolder");
 var mimeMessages = await imapReceiver.ReadMail
     .Skip(0).Take(10, continuous: true)
-    .GetMimeMessagesAsync();
+    .GetMimeMessagesAsync(cancellationToken);
 ```
 
 To only download the email parts you want to use:
 
 ```csharp
-var messageSummaries = await imapReceiver.ReadFrom("INBOX")
-    .GetMessageSummariesAsync(MessageSummaryItems.Envelope);
+var messageSummaries = await imapReceiver.ReadMail
+    .GetMessageSummariesAsync(cancellationToken);
 ```
 
-To asynchronously monitor the mail folder for incoming messages (using OnArrivalAsync):
+To query unread emails from the IMAP server and specify which message parts to download:
+
+```csharp
+var messageSummaries = await imapReceiver.ReadFrom("INBOX")
+    .Query(SearchQuery.NotSeen)
+    .Items(MailFolderReader.CoreMessageItems)
+    .GetMessageSummariesAsync(cancellationToken);
+```
+
+To asynchronously monitor the mail folder for incoming messages:
 
 ```csharp
 await imapReceiver.MonitorFolder
     .SetMessageSummaryItems().SetIgnoreExistingMailOnConnect()
     .OnMessageArrival((messageSummary) => OnArrivalAsync(messageSummary))
-    .IdleAsync();
+    .IdleAsync(cancellationToken);
+```
+
+To asynchronously forward message summaries as they arrive:
+
+```csharp
+async Task OnArrivalAsync(IMessageSummary messageSummary)
+{
+    var mimeReply = await messageSummary.GetForwardMessageAsync("<p>Reply here.</p>");
+    mimeReply.From.Add("from@example.com");
+    mimeReply.To.Add("to@example.com");
+}
 ```
 
 See the [MailKitSimplified.Receiver wiki](https://github.com/danzuep/MailKitSimplified/wiki/Receiver) for more information.
