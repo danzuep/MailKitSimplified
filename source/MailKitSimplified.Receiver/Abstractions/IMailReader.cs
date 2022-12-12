@@ -1,9 +1,9 @@
 ﻿using MimeKit;
 using MailKit;
+using MailKit.Search;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using MailKit.Search;
 
 namespace MailKitSimplified.Receiver.Abstractions
 {
@@ -25,11 +25,18 @@ namespace MailKitSimplified.Receiver.Abstractions
         IMailReader Take(int takeCount, bool continuous = false);
 
         /// <summary>
-        /// A specialized query for searching messages in a <see cref="IMailFolder"/>.
+        /// Set a query for searching messages in a <see cref="IMailFolder"/>.
         /// </summary>
         /// <param name="searchQuery">What to search for, e.g. SearchQuery.NotSeen.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>
         IMailReader Query(SearchQuery searchQuery);
+
+        /// <summary>
+        /// Set a which message summary parts to fetch.
+        /// </summary>
+        /// <param name="messageSummaryItems">Message summary item filter.</param>
+        /// <returns>Fluent <see cref="IMailReader"/>.</returns>
+        IMailReader Items(MessageSummaryItems messageSummaryItems);
 
         /// <summary>
         /// Get a list of the message summaries with just the requested MessageSummaryItems.

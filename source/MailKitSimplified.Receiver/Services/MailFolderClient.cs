@@ -44,6 +44,12 @@ namespace MailKitSimplified.Receiver.Services
             return _mailFolder;
         }
 
+        /// <summary>
+        /// Query the server for the unique IDs of messages with properties that match the search filters.
+        /// </summary>
+        /// <param name="searchQuery">Mail folder search query.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The first 250 <see cref="UniqueId"/>s.</returns>
         public async Task<IList<UniqueId>> SearchAsync(SearchQuery searchQuery, CancellationToken cancellationToken = default)
         {
             _ = await ConnectAsync(false, cancellationToken).ConfigureAwait(false);

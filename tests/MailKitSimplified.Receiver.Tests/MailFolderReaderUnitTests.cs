@@ -7,16 +7,17 @@ namespace MailKitSimplified.Receiver.Tests
     public class MailFolderReaderUnitTests
     {
         private readonly Mock<IMailFolder> _mailFolderMock = new();
-        private readonly Mock<IMailFolderClient> _mailFolderClientMock = new();
         private readonly Mock<IImapReceiver> _imapReceiverMock = new();
         private readonly MailFolderReader _mailFolderReader;
 
         public MailFolderReaderUnitTests()
         {
             // Arrange
-            _mailFolderClientMock.Setup(_ => _.ConnectAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            _mailFolderMock.Setup(_ => _.OpenAsync(It.IsAny<FolderAccess>(), It.IsAny<CancellationToken>())).Verifiable();
+            _mailFolderMock.Setup(_ => _.CloseAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).Verifiable();
+            _imapReceiverMock.Setup(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_mailFolderMock.Object).Verifiable();
-            _mailFolderReader = new MailFolderReader(_mailFolderClientMock.Object);
+            _mailFolderReader = new MailFolderReader(_imapReceiverMock.Object);
         }
 
 
@@ -93,7 +94,7 @@ namespace MailKitSimplified.Receiver.Tests
             _mailFolderMock.Setup(_ => _.GetMessageAsync(It.IsAny<int>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
                 .ReturnsAsync(new MimeMessage()).Verifiable();
             // Act
-            var mimeMessages = await _mailFolderReader.Skip(0).Take(1).Query(SearchQuery.NotSeen)
+            var mimeMessages = await _mailFolderReader.Skip(0).Take(1).Items(MailFolderReader.CoreMessageItems).Query(SearchQuery.NotSeen)
                 .GetMimeMessagesAsync(It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>());
             // Assert
             Assert.NotNull(mimeMessages);

@@ -111,7 +111,7 @@ namespace MailKitSimplified.Receiver.Services
 
         public IMailFolderClient MailFolderClient => new MailFolderClient(this);
 
-        public IMailFolderReader ReadMail => new MailFolderReader(MailFolderClient);
+        public IMailFolderReader ReadMail => new MailFolderReader(this);
 
         public IMailFolderMonitor MonitorFolder => new MailFolderMonitor(this);
 
