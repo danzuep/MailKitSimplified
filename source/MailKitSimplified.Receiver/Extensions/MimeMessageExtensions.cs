@@ -21,9 +21,11 @@ namespace MailKitSimplified.Receiver.Extensions
         /// </summary>
         /// <param name="original">MimeMessage original to forward.</param>
         /// <param name="message">Forward message text/html body.</param>
+        /// <param name="includeMessageId">Whether to quote the Message-ID or not.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>MimeMessage forward ready for From and To addresses.</returns>
-        public static MimeMessage GetForwardMessage(this MimeMessage original, string message) =>
-            original.GetMimeMessageResponse(FW, message, includeAttachments: true);
+        public static MimeMessage GetForwardMessage(this MimeMessage original, string message, bool includeMessageId = false, CancellationToken cancellationToken = default) =>
+            original.GetMimeMessageResponse(FW, message, includeAttachments: true, includeMessageId: includeMessageId, cancellationToken: cancellationToken);
 
         /// <summary>
         /// Get a MimeMessage reply from a MimeMessage original.
@@ -32,16 +34,18 @@ namespace MailKitSimplified.Receiver.Extensions
         /// <param name="message">Reply message text/html body.</param>
         /// <param name="addRecipients">Whether to reply to sender or not.</param>
         /// <param name="replyToAll">Whether to reply to all original recipients or not.</param>
+        /// <param name="includeMessageId">Whether to quote the Message-ID or not.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>MimeMessage reply ready for From (and To) addresses.</returns>
-        public static MimeMessage GetReplyMessage(this MimeMessage original, string message, bool addRecipients = true, bool replyToAll = false)
+        public static MimeMessage GetReplyMessage(this MimeMessage original, string message, bool addRecipients = true, bool replyToAll = false, bool includeMessageId = false, CancellationToken cancellationToken = default)
         {
-            var mimeMessage = original.GetMimeMessageResponse(RE, message, includeAttachments: false);
+            var mimeMessage = original.GetMimeMessageResponse(RE, message, includeAttachments: false, includeMessageId: includeMessageId, cancellationToken: cancellationToken);
             if (addRecipients)
                 mimeMessage.To.AddRange(original.BuildReplyAddresses(replyToAll));
             return mimeMessage;
         }
 
-        internal static MimeMessage GetMimeMessageResponse(this MimeMessage original, string subjectPrefix = "", string bodyPrefix = "", bool includeAttachments = true, bool includeEmbedded = true)
+        internal static MimeMessage GetMimeMessageResponse(this MimeMessage original, string subjectPrefix = "", string bodyPrefix = "", bool includeAttachments = true, bool includeEmbedded = true, bool includeMessageId = false, bool forceHtml = true, CancellationToken cancellationToken = default)
         {
             if (original == null)
                 throw new ArgumentNullException(nameof(original));
@@ -56,7 +60,7 @@ namespace MailKitSimplified.Receiver.Extensions
             mimeMessage.AddMessageIdReferences(original);
 
             // Quote the original message text with optional linked resources and attachments
-            mimeMessage.Body = original.BuildMessageBody(bodyPrefix, includeAttachments, includeEmbedded);
+            mimeMessage.Body = original.BuildMessageBody(bodyPrefix, includeAttachments, includeEmbedded, includeMessageId, forceHtml, cancellationToken);
 
             return mimeMessage;
         }
@@ -143,13 +147,13 @@ namespace MailKitSimplified.Receiver.Extensions
             return builder;
         }
 
-        internal static MimeEntity BuildMessageBody(this MimeMessage original, string prependText = "", bool includeAttachments = true, bool includeEmbedded = true, bool setHtml = true)
+        internal static MimeEntity BuildMessageBody(this MimeMessage original, string prependText = "", bool includeAttachments = true, bool includeEmbedded = true, bool includeMessageId = false, bool forceHtml = true, CancellationToken cancellationToken = default)
         {
             if (original == null)
                 return new TextPart();
             MimeEntity mimeBody;
-            bool isHtml = setHtml || original.HtmlBody != null;
-            var replyText = original.QuoteForReply(prependText);
+            bool isHtml = forceHtml || original.HtmlBody != null;
+            var replyText = original.QuoteForReply(prependText, includeMessageId, cancellationToken);
             if (includeEmbedded || includeAttachments)
             {
                 var builder = original.GetBuilder(includeAttachments, includeEmbedded);

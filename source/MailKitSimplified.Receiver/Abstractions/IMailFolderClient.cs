@@ -23,6 +23,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="searchQuery">Mail folder search query.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The first 250 <see cref="UniqueId"/>s.</returns>
+        [Obsolete("Consider using IMailReader.Query() instead.")]
         Task<IList<UniqueId>> SearchAsync(SearchQuery searchQuery, CancellationToken cancellationToken = default);
 
         /// <summary>

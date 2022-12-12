@@ -34,9 +34,7 @@ public class Worker : BackgroundService
     {
         var stopwatch = Stopwatch.StartNew();
         var messageSummaries = await _imapReceiver.ReadMail
-            .Skip(31).Take(1)
-            .Items(MessageSummaryItems.Envelope)
-            //.Query(SearchQuery.NotSeen)
+            .Skip(31).Take(1).Items(MessageSummaryItems.Envelope)
             .GetMessageSummariesAsync(cancellationToken);
         stopwatch.Stop();
         _logger.LogInformation($"Received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
@@ -52,6 +50,18 @@ public class Worker : BackgroundService
         }
     }
 
+    private async Task GetMimeMessageRepliesAsync(CancellationToken cancellationToken = default)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var mimeMessages = await _imapReceiver.ReadMail
+            .Take(1).Query(SearchQuery.NotSeen)
+            .GetMimeMessagesAsync(cancellationToken);
+        stopwatch.Stop();
+        _logger.LogInformation($"Received {mimeMessages.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s.");
+        var mimeReply = mimeMessages.Single().GetReplyMessage("Reply here.", addRecipients: false, includeMessageId: true, cancellationToken: cancellationToken);
+        _logger.LogInformation($"Reply: \r\n{mimeReply.HtmlBody}");
+    }
+
     private async Task ReceiveAsync(CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
@@ -65,7 +75,7 @@ public class Worker : BackgroundService
     {
         var stopwatch = Stopwatch.StartNew();
         var messageSummaries = await _imapReceiver.ReadMail.Query(MailFolderReader.QueryMessageId(""))
-            .GetMessageSummariesAsync(MessageSummaryItems.Envelope, cancellationToken);
+            .GetMessageSummariesAsync(MailFolderReader.CoreMessageItems, cancellationToken);
         stopwatch.Stop();
         _logger.LogInformation($"Received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
     }
