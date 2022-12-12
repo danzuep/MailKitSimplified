@@ -42,6 +42,7 @@ var mimeMessages = await imapReceiver.ReadMail.Skip(0).Take(1).GetMimeMessagesAs
 logger.LogDebug("Email(s) received: {ids}.", mimeMessages.Select(m => m.MessageId).ToEnumeratedString());
 
 var imapIdleClient = imapReceiver.MonitorFolder
+    .SetMessageSummaryItems().SetIgnoreExistingMailOnConnect()
     .OnMessageArrival((m) => OnArrivalAsync(m))
     .IdleAsync();
 

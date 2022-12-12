@@ -82,10 +82,38 @@ namespace MailKitSimplified.Receiver.Extensions
         /// <exception cref="ArgumentNullException">Email address is null.</exception>
         public static void Add(this InternetAddressList addressList, string emailAddress)
         {
-            if (string.IsNullOrEmpty(emailAddress))
-                throw new ArgumentNullException(nameof(emailAddress));
             var emailAddresses = ParseMailboxAddress(emailAddress);
-            addressList.AddRange(emailAddresses);
+            addressList?.AddRange(emailAddresses);
+        }
+
+        /// <summary>
+        /// Adds the specified address(es) to the end of the address list.
+        /// Multiple addresses can be separated with ';', ',', ' ', or '|'.
+        /// </summary>
+        /// <param name="mimeMessage">MimeMessage to modify.</param>
+        /// <param name="emailAddress">Email address(es) to add.</param>
+        /// <exception cref="ArgumentNullException">Mime message is null.</exception>
+        public static MimeMessage From(this MimeMessage mimeMessage, string emailAddress)
+        {
+            if (mimeMessage == null)
+                throw new ArgumentNullException(nameof(mimeMessage));
+            mimeMessage.From.Add(emailAddress);
+            return mimeMessage;
+        }
+
+        /// <summary>
+        /// Adds the specified address(es) to the end of the address list.
+        /// Multiple addresses can be separated with ';', ',', ' ', or '|'.
+        /// </summary>
+        /// <param name="mimeMessage">MimeMessage to modify.</param>
+        /// <param name="emailAddress">Email address(es) to add.</param>
+        /// <exception cref="ArgumentNullException">Mime message is null.</exception>
+        public static MimeMessage To(this MimeMessage mimeMessage, string emailAddress)
+        {
+            if (mimeMessage == null)
+                throw new ArgumentNullException(nameof(mimeMessage));
+            mimeMessage.To.Add(emailAddress);
+            return mimeMessage;
         }
 
         internal static InternetAddressList BuildReplyAddresses(this MimeMessage original, bool replyToAll = false)

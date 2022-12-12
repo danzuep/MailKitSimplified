@@ -58,7 +58,9 @@ public class Worker : BackgroundService
             .GetMimeMessagesAsync(cancellationToken);
         stopwatch.Stop();
         _logger.LogInformation($"Received {mimeMessages.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s.");
-        var mimeReply = mimeMessages.Single().GetReplyMessage("Reply here.", addRecipients: false, includeMessageId: true, cancellationToken: cancellationToken);
+        var mimeReply = mimeMessages.Single()
+            .GetReplyMessage("Reply here.", addRecipients: false, includeMessageId: true, cancellationToken: cancellationToken)
+            .From("from@localhost").To("to@localhost");
         _logger.LogInformation($"Reply: \r\n{mimeReply.HtmlBody}");
     }
 
