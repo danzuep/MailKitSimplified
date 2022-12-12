@@ -18,18 +18,36 @@ namespace MailKitSimplified.Receiver.Extensions
         internal static readonly string RE = "RE: ";
         internal static readonly string FW = "FW: ";
 
-        public static async Task<MimeMessage> GetForwardMessageAsync(this IMessageSummary original, string message) =>
-            await original.GetMimeMessageResponseAsync(FW, message, includeAttachments: true);
+        /// <summary>
+        /// Get a MimeMessage forward from an IMessageSummary original.
+        /// </summary>
+        /// <param name="original">IMessageSummary original to forward.</param>
+        /// <param name="message">Forward message text/html body.</param>
+        /// <param name="includeMessageId">Whether to quote the Message-ID or not.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>MimeMessage forward ready for From and To addresses.</returns>
+        public static async Task<MimeMessage> GetForwardMessageAsync(this IMessageSummary original, string message, bool includeMessageId = false, CancellationToken cancellationToken = default) =>
+            await original.GetMimeMessageResponseAsync(FW, message, includeAttachments: true, includeMessageId: includeMessageId, cancellationToken: cancellationToken);
 
-        public static async Task<MimeMessage> GetReplyMessageAsync(this IMessageSummary original, string message, bool addRecipients = false)
+        /// <summary>
+        /// Get a MimeMessage reply from an IMessageSummary original.
+        /// </summary>
+        /// <param name="original">IMessageSummary original to reply to.</param>
+        /// <param name="message">Reply message text/html body.</param>
+        /// <param name="addRecipients">Whether to reply to sender or not.</param>
+        /// <param name="replyToAll">Whether to reply to all original recipients or not.</param>
+        /// <param name="includeMessageId">Whether to quote the Message-ID or not.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>MimeMessage reply ready for From (and To) addresses.</returns>
+        public static async Task<MimeMessage> GetReplyMessageAsync(this IMessageSummary original, string message, bool addRecipients = true, bool replyToAll = false, bool includeMessageId = false, CancellationToken cancellationToken = default)
         {
-            var mimeMessage = await original.GetMimeMessageResponseAsync(RE, message, includeAttachments: false);
+            var mimeMessage = await original.GetMimeMessageResponseAsync(RE, message, includeAttachments: false, includeMessageId: includeMessageId, cancellationToken: cancellationToken);
             if (addRecipients)
-                mimeMessage.To.AddRange(original.BuildReplyAddresses(replyToAll: false));
+                mimeMessage.To.AddRange(original.BuildReplyAddresses(replyToAll));
             return mimeMessage;
         }
 
-        internal static async Task<MimeMessage> GetMimeMessageResponseAsync(this IMessageSummary original, string subjectPrefix = "", string bodyPrefix = "", bool includeAttachments = true, bool includeEmbedded = true)
+        internal static async Task<MimeMessage> GetMimeMessageResponseAsync(this IMessageSummary original, string subjectPrefix = "", string bodyPrefix = "", bool includeAttachments = true, bool includeEmbedded = true, bool includeMessageId = false, bool setHtml = true, CancellationToken cancellationToken = default)
         {
             if (original == null)
                 throw new ArgumentNullException(nameof(original));
@@ -46,7 +64,7 @@ namespace MailKitSimplified.Receiver.Extensions
             mimeMessage.AddMessageIdReferences(original);
 
             // Quote the original message text with optional linked resources and attachments
-            mimeMessage.Body = await original.BuildMessageBodyAsync(bodyPrefix, includeAttachments, includeEmbedded).ConfigureAwait(false);
+            mimeMessage.Body = await original.BuildMessageBodyAsync(bodyPrefix, includeAttachments, includeEmbedded, includeMessageId, setHtml, cancellationToken).ConfigureAwait(false);
 
             return mimeMessage;
         }
@@ -106,7 +124,7 @@ namespace MailKitSimplified.Receiver.Extensions
             return multipart;
         }
 
-        internal static async Task<MimeEntity> BuildMessageBodyAsync(this IMessageSummary original, string prependText = "", bool includeAttachments = true, bool includeEmbedded = true, bool setHtml = true, CancellationToken cancellationToken = default)
+        internal static async Task<MimeEntity> BuildMessageBodyAsync(this IMessageSummary original, string prependText = "", bool includeAttachments = true, bool includeEmbedded = true, bool includeMessageId = false, bool setHtml = true, CancellationToken cancellationToken = default)
         {
             if (original == null)
                 return new TextPart();
@@ -116,7 +134,7 @@ namespace MailKitSimplified.Receiver.Extensions
                 await original.Folder.OpenAsync(FolderAccess.ReadOnly, cancellationToken);
             bool isHtml = setHtml || original.HtmlBody != null;
             var bodyText = await original.GetBodyTextAsync(cancellationToken).ConfigureAwait(false);
-            var replyText = original.QuoteForReply(bodyText, prependText);
+            var replyText = original.QuoteForReply(bodyText, prependText, includeMessageId, cancellationToken);
             var format = isHtml ? TextFormat.Html : TextFormat.Plain;
             var textPart = new TextPart(format) { Text = replyText };
             var mimeAttachments = await original.GetAttachmentsAsync(includeAttachments, includeEmbedded, cancellationToken).ConfigureAwait(false);
@@ -154,7 +172,7 @@ namespace MailKitSimplified.Receiver.Extensions
                 stringBuilder.AppendLine();
                 stringBuilder.AppendLine("---------- Original Message ----------");
                 if (includeMessageId)
-                    stringBuilder.AppendLine($"> Message-ID: <{original.Envelope.MessageId}>");
+                    stringBuilder.AppendLine($"> Message ID: {original.Envelope.MessageId}");
                 stringBuilder.AppendLine($"> Sent: {original.Envelope.Date}");
                 stringBuilder.AppendLine($"> From: {original.Envelope.From}");
                 stringBuilder.AppendLine($"> To: {original.Envelope.To}");
@@ -191,7 +209,7 @@ namespace MailKitSimplified.Receiver.Extensions
                 stringBuilder.AppendLine(message ?? string.Empty);
                 stringBuilder.AppendLine("</div><br /><blockquote><hr /><div>");
                 if (includeMessageId)
-                    stringBuilder.AppendLine($"<b>Message-ID:</b> &lt;{original.Envelope.MessageId}&gt;<br />");
+                    stringBuilder.AppendLine($"<b>Message ID:</b> {original.Envelope.MessageId}<br />");
                 stringBuilder.AppendLine($"<b>Sent:</b> {original.Envelope.Date}<br />");
                 stringBuilder.AppendLine($"<b>From:</b> {GetHtml(original.Envelope.From)}<br />");
                 stringBuilder.AppendLine($"<b>To:</b> {GetHtml(original.Envelope.To)}<br />");
@@ -211,6 +229,21 @@ namespace MailKitSimplified.Receiver.Extensions
             }
             var result = stringBuilder.ToString();
             return result;
+        }
+
+        public static async Task<MimeMessage> GetMimeMessageAsync(this IMessageSummary original, CancellationToken cancellationToken = default, ITransferProgress progress = null)
+        {
+            if (original?.Folder == null)
+                return new MimeMessage();
+
+            bool peekFolder = !original.Folder.IsOpen;
+            if (peekFolder)
+                await original.Folder.OpenAsync(FolderAccess.ReadOnly, cancellationToken);
+            var mimeMessage = await original.Folder.GetMessageAsync(original.UniqueId, cancellationToken, progress).ConfigureAwait(false);
+            if (peekFolder)
+                await original.Folder.CloseAsync(false, cancellationToken);
+
+            return mimeMessage;
         }
 
         /// <summary>

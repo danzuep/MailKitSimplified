@@ -16,14 +16,28 @@ namespace MailKitSimplified.Receiver.Extensions
         private static readonly string RE = MessageSummaryExtensions.RE;
         private static readonly string FW = MessageSummaryExtensions.FW;
 
+        /// <summary>
+        /// Get a MimeMessage forward from a MimeMessage original.
+        /// </summary>
+        /// <param name="original">MimeMessage original to forward.</param>
+        /// <param name="message">Forward message text/html body.</param>
+        /// <returns>MimeMessage forward ready for From and To addresses.</returns>
         public static MimeMessage GetForwardMessage(this MimeMessage original, string message) =>
             original.GetMimeMessageResponse(FW, message, includeAttachments: true);
 
-        public static MimeMessage GetReplyMessage(this MimeMessage original, string message, bool addRecipients = false)
+        /// <summary>
+        /// Get a MimeMessage reply from a MimeMessage original.
+        /// </summary>
+        /// <param name="original">MimeMessage original to reply to.</param>
+        /// <param name="message">Reply message text/html body.</param>
+        /// <param name="addRecipients">Whether to reply to sender or not.</param>
+        /// <param name="replyToAll">Whether to reply to all original recipients or not.</param>
+        /// <returns>MimeMessage reply ready for From (and To) addresses.</returns>
+        public static MimeMessage GetReplyMessage(this MimeMessage original, string message, bool addRecipients = true, bool replyToAll = false)
         {
             var mimeMessage = original.GetMimeMessageResponse(RE, message, includeAttachments: false);
             if (addRecipients)
-                mimeMessage.To.AddRange(original.BuildReplyAddresses(replyToAll: false));
+                mimeMessage.To.AddRange(original.BuildReplyAddresses(replyToAll));
             return mimeMessage;
         }
 
@@ -47,12 +61,27 @@ namespace MailKitSimplified.Receiver.Extensions
             return mimeMessage;
         }
 
-        public static IEnumerable<MailboxAddress> ParseMailboxAddress(string value)
+        internal static IEnumerable<MailboxAddress> ParseMailboxAddress(string value)
         {
             char[] separator = new char[] { ';', ',', ' ', '|' };
             return string.IsNullOrEmpty(value) ? Array.Empty<MailboxAddress>() :
                 value.Split(separator, StringSplitOptions.RemoveEmptyEntries)
                     .Select(f => new MailboxAddress(string.Empty, f));
+        }
+
+        /// <summary>
+        /// Adds the specified address(es) to the end of the address list.
+        /// Multiple addresses can be separated with ';', ',', ' ', or '|'.
+        /// </summary>
+        /// <param name="addressList">Address list to add to.</param>
+        /// <param name="emailAddress">Email address(es) to add.</param>
+        /// <exception cref="ArgumentNullException">Email address is null.</exception>
+        public static void Add(this InternetAddressList addressList, string emailAddress)
+        {
+            if (string.IsNullOrEmpty(emailAddress))
+                throw new ArgumentNullException(nameof(emailAddress));
+            var emailAddresses = ParseMailboxAddress(emailAddress);
+            addressList.AddRange(emailAddresses);
         }
 
         internal static InternetAddressList BuildReplyAddresses(this MimeMessage original, bool replyToAll = false)
