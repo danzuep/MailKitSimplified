@@ -1,0 +1,50 @@
+﻿<UserControl x:Class="EmailWpfApp.Views.DecryptView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:VM="clr-namespace:EmailWpfApp.ViewModels"
+             mc:Ignorable="d" 
+             d:DesignHeight="50" d:DesignWidth="300">
+    <UserControl.DataContext>
+        <VM:DecryptViewModel />
+    </UserControl.DataContext>
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ResourceDictionary.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <StatusBar Style="{StaticResource StatusBarStyle}">
+            <StatusBarItem Content="{Binding StatusText}" />
+        </StatusBar>
+        <StackPanel Background="{StaticResource BackgroundBrush}">
+            <DockPanel FocusManager.FocusedElement="{Binding ElementName=View_UserInputTextBox}">
+                <Label
+                    Style="{StaticResource LabelStyle}"
+                    Content="Text to decrypt: " />
+                <Button
+                    Style="{StaticResource ButtonStyle}"
+                    Command="{Binding UserCommand}"
+                    DockPanel.Dock="Right"
+                    Content="Decrypt" />
+                <TextBox
+                    Name="View_UserInputTextBox"
+                    Text="{Binding UserInputTextBox, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    MinWidth="150">
+                    <TextBox.InputBindings>
+                        <KeyBinding Command="{Binding UserCommand}" Key="Return" />
+                    </TextBox.InputBindings>
+                </TextBox>
+            </DockPanel>
+            <TextBlock
+                Style="{StaticResource TextBlockStyle}"
+                Text="{Binding ResultTextBox}"
+                MinHeight="15" />
+        </StackPanel>
+    </DockPanel>
+</UserControl>
