@@ -1,4 +1,5 @@
 ﻿using MailKit;
+using MailKitSimplified.Receiver.Models;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,6 +8,20 @@ namespace MailKitSimplified.Receiver.Abstractions
 {
     public interface IMailFolderMonitor
     {
+        /// <summary>
+        /// Specify length of time to idle for, default is 9 minutes.
+        /// </summary>
+        /// <param name="idleMinutes"></param>
+        /// <returns><see cref="IMailFolderMonitor"/> with <see cref="FolderMonitorOptions.IdleMinutes"/> configured.</returns>
+        IMailFolderMonitor SetIdleMinutes(byte idleMinutes = FolderMonitorOptions.IdleMinutesImap);
+
+        /// <summary>
+        /// Specify number of times to retry on failure, default is 3 times.
+        /// </summary>
+        /// <param name="maxRetries"></param>
+        /// <returns><see cref="IMailFolderMonitor"/> with <see cref="FolderMonitorOptions.MaxRetries"/> configured.</returns>
+        IMailFolderMonitor SetMaxRetries(byte maxRetries = 1);
+
         /// <summary>
         /// Ignore existing messages, processing emails on connect is enabled by default.
         /// </summary>

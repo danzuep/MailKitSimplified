@@ -1,19 +1,19 @@
 ﻿using MailKit;
-using MailKit.Security;
 using MailKit.Net.Imap;
+using MailKit.Security;
+using MailKitSimplified.Receiver.Abstractions;
+using MailKitSimplified.Receiver.Extensions;
+using MailKitSimplified.Receiver.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Collections.Concurrent;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using MailKitSimplified.Receiver.Abstractions;
-using MailKitSimplified.Receiver.Extensions;
-using MailKitSimplified.Receiver.Models;
 
 namespace MailKitSimplified.Receiver
 {
@@ -54,13 +54,13 @@ namespace MailKitSimplified.Receiver
             };
         }
 
-        public MailFolderMonitor SetIdleMinutes(byte idleMinutes = FolderMonitorOptions.IdleMinutesImap)
+        public IMailFolderMonitor SetIdleMinutes(byte idleMinutes = FolderMonitorOptions.IdleMinutesImap)
         {
             _folderMonitorOptions.IdleMinutes = idleMinutes;
             return this;
         }
 
-        public MailFolderMonitor SetMaxRetries(byte maxRetries = 1)
+        public IMailFolderMonitor SetMaxRetries(byte maxRetries = 1)
         {
             _folderMonitorOptions.MaxRetries = maxRetries;
             return this;
@@ -186,7 +186,7 @@ namespace MailKitSimplified.Receiver
                 }
             }
         }
-        
+
         private async ValueTask ReconnectAsync(CancellationToken cancellationToken = default)
         {
             if (!cancellationToken.IsCancellationRequested)
