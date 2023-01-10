@@ -31,16 +31,19 @@ namespace MailKitSimplified.Receiver
         private CancellationTokenSource _cancel;
         private IImapClient _imapClient;
         private IMailFolder _mailFolder;
+        private IMailFolder _fetchFolder;
         private bool _canIdle;
 
         private readonly ILogger _logger;
         private readonly IImapReceiver _imapReceiver;
+        private readonly IImapReceiver _fetchReceiver;
         private readonly FolderMonitorOptions _folderMonitorOptions;
 
         public MailFolderMonitor(IImapReceiver imapReceiver, IOptions<FolderMonitorOptions> folderMonitorOptions = null, ILogger<MailFolderMonitor> logger = null)
         {
             _logger = logger ?? NullLogger<MailFolderMonitor>.Instance;
-            _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
+            _imapReceiver = imapReceiver?.Clone() ?? throw new ArgumentNullException(nameof(imapReceiver));
+            _fetchReceiver = imapReceiver.Clone();
             _folderMonitorOptions = folderMonitorOptions?.Value ?? new FolderMonitorOptions();
             _messageArrivalMethod = (m) =>
             {
@@ -141,6 +144,8 @@ namespace MailKitSimplified.Receiver
                 {
                     _imapClient = await _imapReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
                     _canIdle = _imapClient.Capabilities.HasFlag(ImapCapabilities.Idle);
+                    _fetchFolder = await _fetchReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
+                    _ = await _fetchFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
                     _mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
                     _ = await _mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
                     _logger.LogDebug($"{_imapReceiver} ({_mailFolder.Count}) idle monitor started.");
@@ -173,6 +178,7 @@ namespace MailKitSimplified.Receiver
                         _mailFolder.CountChanged -= OnCountChanged;
 
                         await _mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+                        await _fetchFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
                     }
                     await _imapReceiver.DisconnectAsync(CancellationToken.None).ConfigureAwait(false);
 
@@ -276,11 +282,11 @@ namespace MailKitSimplified.Receiver
         private async ValueTask<int> ProcessMessagesArrivedAsync(bool firstConnection = false, CancellationToken cancellationToken = default)
         {
             int startIndex = _messageCache.Count;
-            _logger.LogTrace($"{_imapReceiver} ({_mailFolder.Count}) Fetching new message arrivals, starting from {startIndex}.");
-            if (startIndex > _mailFolder.Count)
-                startIndex = _mailFolder.Count;
+            _logger.LogTrace($"{_fetchReceiver} ({_fetchFolder.Count}) Fetching new message arrivals, starting from {startIndex}.");
+            if (startIndex > _fetchFolder.Count)
+                startIndex = _fetchFolder.Count;
             var filter = _folderMonitorOptions.MessageSummaryItems | MessageSummaryItems.UniqueId;
-            var fetched = await _mailFolder.FetchAsync(startIndex, -1, filter, cancellationToken).ConfigureAwait(false);
+            var fetched = await _fetchFolder.FetchAsync(startIndex, -1, filter, cancellationToken).ConfigureAwait(false);
             if (_arrival.IsCancellationRequested)
                 _arrival = new CancellationTokenSource();
             var newMail = _messageCache.TryAddUniqueRange(fetched);

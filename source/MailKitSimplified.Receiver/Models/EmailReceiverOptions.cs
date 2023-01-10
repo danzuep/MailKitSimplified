@@ -40,6 +40,8 @@ namespace MailKitSimplified.Receiver.Models
             ProtocolLogFileAppend = protocolLogFileAppend;
         }
 
+        public EmailReceiverOptions Copy() => MemberwiseClone() as EmailReceiverOptions;
+
         public override string ToString() => $"{ImapHost}:{ImapPort} {ImapCredential.UserName} {MailFolderName}";
     }
 }

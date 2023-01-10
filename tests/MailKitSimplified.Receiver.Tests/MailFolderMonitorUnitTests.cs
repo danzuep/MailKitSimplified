@@ -25,6 +25,8 @@ namespace MailKitSimplified.Receiver.Tests
                 .Returns(StubIdleAsync);
             _mailFolderClientMock.Setup(_ => _.ConnectAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_mailFolderMock.Object).Verifiable();
+            _imapReceiverMock.Setup(_ => _.Clone())
+                .Returns(_imapReceiverMock.Object).Verifiable();
             _imapReceiverMock.Setup(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_mailFolderMock.Object).Verifiable();
             _imapReceiverMock.Setup(_ => _.ConnectAuthenticatedImapClientAsync(It.IsAny<CancellationToken>()))
@@ -80,7 +82,7 @@ namespace MailKitSimplified.Receiver.Tests
             // Act
             await _imapIdleClient.IdleAsync(_arrival.Token);
             // Assert
-            _imapReceiverMock.Verify(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()), Times.Once);
+            _imapReceiverMock.Verify(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
         }
 
         //[Fact]

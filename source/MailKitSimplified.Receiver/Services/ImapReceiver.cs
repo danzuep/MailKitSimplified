@@ -204,7 +204,12 @@ namespace MailKitSimplified.Receiver.Services
             return mailFolderNames;
         }
 
-        public IImapReceiver Copy() => MemberwiseClone() as IImapReceiver;
+        public IImapReceiver Clone()
+        {
+            var receiverOptions = _receiverOptions.Copy();
+            receiverOptions.ProtocolLog = string.Empty; // TODO: fix concurrent writes to the log file
+            return Create(receiverOptions, _logger);
+        }
 
         public override string ToString() => _receiverOptions.ToString();
 

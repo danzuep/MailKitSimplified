@@ -55,5 +55,13 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <returns>Disconnected IMAP client.</returns>
         Task DisconnectAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Create a new IMAP receiver with the same settings and logger.
+        /// The IMAP client is not re-entrant so a shallow copy would generate
+        /// an <see cref="InvalidOperationException"/>.
+        /// </summary>
+        /// <returns>Configured IMAP receiver.</returns>
+        IImapReceiver Clone();
     }
 }
