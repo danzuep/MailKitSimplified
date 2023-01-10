@@ -223,17 +223,17 @@ namespace MailKitSimplified.Receiver.Services
             return filteredSummaries ?? Array.Empty<IMessageSummary>();
         }
 
-        public async Task<MimeMessage> GetMimeMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default)
+        public async Task<MimeMessage> GetMimeMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default, ITransferProgress progress = null)
         {
             MimeMessage mimeMessage;
             var mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
             _ = await mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
-            mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken).ConfigureAwait(false);
+            mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
             await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
             return mimeMessage;
         }
 
-        public async Task<IList<MimeMessage>> GetMimeMessagesAsync(IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default)
+        public async Task<IList<MimeMessage>> GetMimeMessagesAsync(IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default, ITransferProgress progress = null)
         {
             IList<MimeMessage> mimeMessages = new List<MimeMessage>();
             if (uniqueIds != null)
@@ -244,7 +244,7 @@ namespace MailKitSimplified.Receiver.Services
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;
-                    var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken).ConfigureAwait(false);
+                    var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
                     if (mimeMessage != null)
                         mimeMessages.Add(mimeMessage);
                 }

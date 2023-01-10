@@ -181,13 +181,13 @@ namespace MailKitSimplified.Receiver.Tests
 
 
         [Fact]
-        public void Copy_VerifyReturnsShallowCopy()
+        public void Clone_VerifyReturnsDeepCopy()
         {
             // Act
-            var shallowCopy = _imapReceiver.Copy();
+            var deepCopy = _imapReceiver.Clone();
             // Assert
-            Assert.NotNull(shallowCopy);
-            Assert.IsAssignableFrom<ImapReceiver>(shallowCopy);
+            Assert.NotNull(deepCopy);
+            Assert.IsAssignableFrom<ImapReceiver>(deepCopy);
         }
 
         [Fact]

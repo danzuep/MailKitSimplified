@@ -3,9 +3,9 @@ using MailKit;
 using MailKit.Search;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
+using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Sender.Abstractions;
 using System.Diagnostics;
-using MailKitSimplified.Receiver.Services;
 
 namespace ExampleNamespace;
 
@@ -24,10 +24,31 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        await GetMessageSummaryRepliesAsync(cancellationToken);
+        //await GetMessageSummaryRepliesAsync(cancellationToken);
         //await ReceiveAsync(cancellationToken);
         //await QueryAsync(cancellationToken);
         //await MonitorAsync(cancellationToken);
+        await NotReentrantAsync(cancellationToken);
+    }
+
+    private async Task NotReentrantAsync(CancellationToken cancellationToken = default)
+    {
+        await _imapReceiver.MonitorFolder
+           .OnMessageArrival(OnArrivalAsync)
+           .IdleAsync(cancellationToken);
+
+        async Task OnArrivalAsync(IMessageSummary messageSummary)
+        {
+            try
+            {
+                _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} arrived.");
+                var mimeMessage = await messageSummary.GetMimeMessageAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+            }
+        }
     }
 
     private async Task GetMessageSummaryRepliesAsync(CancellationToken cancellationToken = default)
