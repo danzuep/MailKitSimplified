@@ -206,6 +206,16 @@ namespace MailKitSimplified.Receiver
             }
         }
 
+        private static async ValueTask ReconnectAsync(IImapReceiver imapReceiver, IMailFolder mailFolder, CancellationToken cancellationToken = default)
+        {
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                _ = await imapReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
+                if (!mailFolder.IsOpen)
+                    _ = await mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
         private async ValueTask WaitForNewMessagesAsync(CancellationToken cancellationToken = default)
         {
             int retryCount = 0;
@@ -282,6 +292,7 @@ namespace MailKitSimplified.Receiver
         private async ValueTask<int> ProcessMessagesArrivedAsync(bool firstConnection = false, CancellationToken cancellationToken = default)
         {
             int startIndex = _messageCache.Count;
+            await ReconnectAsync(_fetchReceiver, _fetchFolder, cancellationToken).ConfigureAwait(false);
             _logger.LogTrace($"{_fetchReceiver} ({_fetchFolder.Count}) Fetching new message arrivals, starting from {startIndex}.");
             if (startIndex > _fetchFolder.Count)
                 startIndex = _fetchFolder.Count;
