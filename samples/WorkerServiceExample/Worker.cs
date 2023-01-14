@@ -42,7 +42,8 @@ public class Worker : BackgroundService
             try
             {
                 _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} arrived.");
-                var mimeMessage = await messageSummary.GetMimeMessageAsync();
+                //var mimeMessage = await _imapReceiver.ReadMail.GetMimeMessageAsync(messageSummary.UniqueId);
+                //var mimeMessage = await messageSummary.GetMimeMessageAsync();
             }
             catch (Exception ex)
             {
@@ -113,7 +114,7 @@ public class Worker : BackgroundService
             .Subject(id)
             .BodyText("text/plain.")
             .TrySendAsync(cancellationToken);
-        _logger.LogInformation("Email {result}.", isSent ? "sent" : "failed to send");
+        _logger.LogInformation($"Email {(isSent ? "sent" : "failed to send")}.");
     }
 
     private async Task MonitorAsync(CancellationToken cancellationToken = default)

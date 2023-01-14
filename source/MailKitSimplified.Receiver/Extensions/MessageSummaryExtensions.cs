@@ -231,6 +231,7 @@ namespace MailKitSimplified.Receiver.Extensions
             return result;
         }
 
+        // TODO: investigate source of the System.NotSupportedException
         public static async Task<MimeMessage> GetMimeMessageAsync(this IMessageSummary original, CancellationToken cancellationToken = default, ITransferProgress progress = null)
         {
             if (original?.Folder == null)
