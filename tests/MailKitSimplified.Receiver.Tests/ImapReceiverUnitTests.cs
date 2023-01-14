@@ -5,12 +5,12 @@ global using MailKit;
 global using MailKit.Net.Imap;
 using MailKit.Security;
 using System.Net;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
-using MailKit.Net.Smtp;
 
 namespace MailKitSimplified.Receiver.Tests
 {
@@ -32,7 +32,7 @@ namespace MailKitSimplified.Receiver.Tests
             _imapClientMock.Setup(_ => _.AuthenticateAsync(It.IsAny<SaslMechanism>(), It.IsAny<CancellationToken>())).Verifiable();
             _imapClientMock.SetupGet(_ => _.Inbox).Returns(Mock.Of<IMailFolder>()).Verifiable();
             var imapReceiverOptions = Options.Create(new EmailReceiverOptions(_localhost, new NetworkCredential()));
-            _imapReceiver = new ImapReceiver(imapReceiverOptions, loggerMock.Object, protocolLoggerMock.Object, _imapClientMock.Object);
+            _imapReceiver = new ImapReceiver(imapReceiverOptions, loggerMock.Object, protocolLoggerMock.Object, _imapClientMock.Object, NullLoggerFactory.Instance);
         }
 
         [Fact]

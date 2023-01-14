@@ -57,6 +57,13 @@ namespace MailKitSimplified.Receiver
             };
         }
 
+        public static MailFolderMonitor Create(IImapReceiver imapReceiver, FolderMonitorOptions folderMonitorOptions, ILogger<MailFolderMonitor> logger = null)
+        {
+            var options = Options.Create(folderMonitorOptions);
+            var receiver = new MailFolderMonitor(imapReceiver, options, logger);
+            return receiver;
+        }
+
         public MailFolderMonitor SetIdleMinutes(byte idleMinutes = FolderMonitorOptions.IdleMinutesImap)
         {
             _folderMonitorOptions.IdleMinutes = idleMinutes;
@@ -202,6 +209,12 @@ namespace MailKitSimplified.Receiver
                 {
                     _ = await _mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
                     _logger.LogTrace($"{_mailFolder.FullName} mail folder re-opened with ReadOnly access.");
+                }
+                _ = await _fetchReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
+                if (!_fetchFolder.IsOpen)
+                {
+                    _ = await _fetchFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
+                    _logger.LogTrace($"{_fetchFolder.FullName} mail folder re-opened with ReadOnly access.");
                 }
             }
         }
@@ -408,7 +421,7 @@ namespace MailKitSimplified.Receiver
             }
         }
 
-        public IMailFolderMonitor Copy() => MemberwiseClone() as IMailFolderMonitor;
+        public MailFolderMonitor Copy() => MemberwiseClone() as MailFolderMonitor;
 
         public override string ToString() => _imapReceiver.ToString();
     }

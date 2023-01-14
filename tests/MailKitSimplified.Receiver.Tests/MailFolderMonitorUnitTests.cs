@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
-using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Receiver.Models;
 
 namespace MailKitSimplified.Receiver.Tests
@@ -35,6 +35,14 @@ namespace MailKitSimplified.Receiver.Tests
                 .Returns(_mailFolderClientMock.Object).Verifiable();
             var options = Options.Create(new FolderMonitorOptions { MessageSummaryItems = MessageSummaryItems.Envelope });
             _imapIdleClient = new MailFolderMonitor(_imapReceiverMock.Object, options, loggerFactory.CreateLogger<MailFolderMonitor>());
+        }
+
+        [Fact]
+        public void CreateMailFolderMonitor_WithAnyFolderMonitorOptions_ReturnsMailFolderMonitor()
+        {
+            var mailFolderMonitor = MailFolderMonitor.Create(_imapReceiverMock.Object, It.IsAny<FolderMonitorOptions>(), NullLogger<MailFolderMonitor>.Instance);
+            Assert.NotNull(mailFolderMonitor);
+            Assert.IsAssignableFrom<IMailFolderMonitor>(mailFolderMonitor);
         }
 
         private Task StubIdleAsync()
@@ -88,8 +96,8 @@ namespace MailKitSimplified.Receiver.Tests
         //[Fact]
         //public async Task MonitoryAsync_FromImapReceiver_Verify()
         //{
-        //    var imapIdleClient = ((MailFolderMonitor)_imapIdleClient.Copy()).SetMessageSummaryParts()
-        //        .SetProcessMailOnConnect().SetIdleMinutes().SetMaxRetries(1)
+        //    var imapIdleClient = ((MailFolderMonitor)_imapIdleClient.Copy()).SetMessageSummaryItems()
+        //        .SetIgnoreExistingMailOnConnect().SetIdleMinutes().SetMaxRetries(1)
         //        .OnMessageArrival((messageSummary) => _completedTask)
         //        .OnMessageDeparture((messageSummary) => _completedTask);
         //    await imapIdleClient.IdleAsync(_arrival.Token);

@@ -21,18 +21,20 @@ namespace MailKitSimplified.Receiver.Services
         private Func<IImapClient, Task> _customAuthenticationMethod;
 
         private readonly ILogger<ImapReceiver> _logger;
+        private readonly ILoggerFactory _loggerFactory;
         private readonly IImapClient _imapClient;
         private readonly EmailReceiverOptions _receiverOptions;
 
-        public ImapReceiver(IOptions<EmailReceiverOptions> receiverOptions, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null)
+        public ImapReceiver(IOptions<EmailReceiverOptions> receiverOptions, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null, ILoggerFactory loggerFactory = null)
         {
             _logger = logger ?? NullLogger<ImapReceiver>.Instance;
+            _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
             _receiverOptions = receiverOptions.Value;
             if (string.IsNullOrWhiteSpace(_receiverOptions.ImapHost))
                 throw new NullReferenceException($"{nameof(EmailReceiverOptions.ImapHost)} is null.");
             if (_receiverOptions.ImapCredential == null)
                 throw new NullReferenceException($"{nameof(EmailReceiverOptions.ImapCredential)} is null.");
-            var imapLogger = protocolLogger ?? new MailKitProtocolLogger();
+            var imapLogger = protocolLogger ?? new MailKitProtocolLogger(_loggerFactory.CreateLogger<MailKitProtocolLogger>());
             if (imapLogger is MailKitProtocolLogger imapLog)
                 imapLog.SetLogFilePath(_receiverOptions.ProtocolLog, _receiverOptions.ProtocolLogFileAppend);
             _imapClient = imapClient ?? new ImapClient(imapLogger);
@@ -109,11 +111,11 @@ namespace MailKitSimplified.Receiver.Services
             return MonitorFolder;
         }
 
-        public IMailFolderClient MailFolderClient => new MailFolderClient(this);
+        public IMailFolderClient MailFolderClient => new MailFolderClient(this, _loggerFactory.CreateLogger<MailFolderClient>());
 
-        public IMailFolderReader ReadMail => new MailFolderReader(this);
+        public IMailFolderReader ReadMail => new MailFolderReader(this, _loggerFactory.CreateLogger<MailFolderReader>());
 
-        public IMailFolderMonitor MonitorFolder => new MailFolderMonitor(this);
+        public IMailFolderMonitor MonitorFolder => new MailFolderMonitor(this, null, _loggerFactory.CreateLogger<MailFolderMonitor>());
 
         public async ValueTask<IImapClient> ConnectAuthenticatedImapClientAsync(CancellationToken cancellationToken = default)
         {
