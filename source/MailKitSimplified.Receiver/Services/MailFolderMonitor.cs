@@ -203,16 +203,12 @@ namespace MailKitSimplified.Receiver
                     _ = await _mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
                     _logger.LogTrace($"{_mailFolder.FullName} mail folder re-opened with ReadOnly access.");
                 }
-            }
-        }
-
-        private static async ValueTask ReconnectAsync(IImapReceiver imapReceiver, IMailFolder mailFolder, CancellationToken cancellationToken = default)
-        {
-            if (!cancellationToken.IsCancellationRequested)
-            {
-                _ = await imapReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
-                if (!mailFolder.IsOpen)
-                    _ = await mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
+                _ = await _fetchReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
+                if (!_fetchFolder.IsOpen)
+                {
+                    _ = await _fetchFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
+                    _logger.LogTrace($"{_fetchFolder.FullName} mail folder re-opened with ReadOnly access.");
+                }
             }
         }
 
@@ -292,7 +288,6 @@ namespace MailKitSimplified.Receiver
         private async ValueTask<int> ProcessMessagesArrivedAsync(bool firstConnection = false, CancellationToken cancellationToken = default)
         {
             int startIndex = _messageCache.Count;
-            await ReconnectAsync(_fetchReceiver, _fetchFolder, cancellationToken).ConfigureAwait(false);
             _logger.LogTrace($"{_fetchReceiver} ({_fetchFolder.Count}) Fetching new message arrivals, starting from {startIndex}.");
             if (startIndex > _fetchFolder.Count)
                 startIndex = _fetchFolder.Count;
