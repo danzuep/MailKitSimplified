@@ -33,23 +33,43 @@ public class Worker : BackgroundService
 
     private async Task NotReentrantAsync(CancellationToken cancellationToken = default)
     {
+        var sendTask = DelayedSendAsync(5, cancellationToken);
+
+        var newestEmail = await GetNewestMessageSummaryAsync(cancellationToken);
         await _imapReceiver.MonitorFolder
-           .OnMessageArrival(OnArrivalAsync)
-           .IdleAsync(cancellationToken);
+            .SetIgnoreExistingMailOnConnect()
+            .OnMessageArrival(OnArrivalAsync)
+            .IdleAsync(cancellationToken);
 
         async Task OnArrivalAsync(IMessageSummary messageSummary)
         {
             try
             {
-                _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} arrived.");
-                //var mimeMessage = await _imapReceiver.ReadMail.GetMimeMessageAsync(messageSummary.UniqueId);
-                //var mimeMessage = await messageSummary.GetMimeMessageAsync();
+                if (messageSummary.UniqueId > newestEmail?.UniqueId)
+                {
+                    var mimeMessage = await messageSummary.GetMimeMessageAsync();
+                    //var mimeMessage = await _imapReceiver.ReadMail.GetMimeMessageAsync(messageSummary.UniqueId);
+                    _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} arrived, {mimeMessage.MessageId}.");
+                }
+                else
+                    _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} arrived.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, ex.Message);
             }
         }
+    }
+
+    public async Task<IMessageSummary?> GetNewestMessageSummaryAsync(CancellationToken cancellationToken = default)
+    {
+        using var mailFolderClient = _imapReceiver.MailFolderClient;
+        var mailFolder = await mailFolderClient.ConnectAsync(false, cancellationToken).ConfigureAwait(false);
+        var index = mailFolder.Count - 1;
+        var filter = MessageSummaryItems.UniqueId;
+        var messageSummaries = await mailFolder.FetchAsync(index, index, filter, cancellationToken).ConfigureAwait(false);
+        await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+        return messageSummaries.FirstOrDefault();
     }
 
     private async Task GetMessageSummaryRepliesAsync(CancellationToken cancellationToken = default)

@@ -1,4 +1,5 @@
-﻿using MailKit.Search;
+﻿using MailKit;
+using MailKit.Search;
 using System;
 using System.Linq;
 using System.Threading;
@@ -13,8 +14,7 @@ namespace MailKitSimplified.Receiver.Extensions
         public static string ToEnumeratedString<T>(this IEnumerable<T> data, string div = ", ") =>
             data is null ? "" : string.Join(div, data.Select(o => o?.ToString() ?? ""));
 
-        public static IList<T> TryAddUniqueRange<T>(this IList<T> list, IEnumerable<T> items)
-        {
+        public static IList<T> TryAddUniqueRange<T>(this IList<T> list, IEnumerable<T> items) where T : IMessageSummary        {
             var result = new List<T>();
             if (list is null)
                 list = new List<T>();
@@ -22,7 +22,7 @@ namespace MailKitSimplified.Receiver.Extensions
             {
                 foreach (T item in items)
                 {
-                    if (item != null && !list.Contains(item))
+                    if (item != null && !list.Any(m => m.UniqueId == item.UniqueId))
                     {
                         list.Add(item);
                         result.Add(item);
