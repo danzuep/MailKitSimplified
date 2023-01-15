@@ -20,6 +20,22 @@ namespace MailKitSimplified.Receiver.Tests
             _mailFolderReader = new MailFolderReader(_imapReceiverMock.Object);
         }
 
+        [Fact]
+        public void Dispose_UsingMailFolderReader()
+        {
+            using var mailFolderReader = new MailFolderReader(_imapReceiverMock.Object);
+            mailFolderReader.Dispose();
+            Assert.NotNull(mailFolderReader);
+            Assert.IsAssignableFrom<IMailFolderReader>(mailFolderReader);
+        }
+
+        [Fact]
+        public async Task DisposeAsync_WithMailFolderReader()
+        {
+            using var mailFolderReader = new MailFolderReader(_imapReceiverMock.Object);
+            await mailFolderReader.DisposeAsync();
+            Assert.IsAssignableFrom<IMailFolderReader>(mailFolderReader);
+        }
 
         [Fact]
         public void Copy_ReturnsShallowCopy()
