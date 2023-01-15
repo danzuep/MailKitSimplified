@@ -30,6 +30,7 @@ namespace MailKitSimplified.Receiver
         private CancellationTokenSource _arrival = new CancellationTokenSource();
         private CancellationTokenSource _cancel;
         private IImapClient _imapClient;
+        private IImapClient _fetchClient;
         private IMailFolder _mailFolder;
         private IMailFolder _fetchFolder;
         private bool _canIdle;
@@ -151,6 +152,7 @@ namespace MailKitSimplified.Receiver
                 {
                     _imapClient = await _imapReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
                     _canIdle = _imapClient.Capabilities.HasFlag(ImapCapabilities.Idle);
+                    _fetchClient = await _fetchReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
                     _fetchFolder = await _fetchReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
                     _ = await _fetchFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
                     _mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
@@ -295,9 +297,13 @@ namespace MailKitSimplified.Receiver
         private async ValueTask<int> ProcessMessagesArrivedAsync(bool firstConnection = false, CancellationToken cancellationToken = default)
         {
             int startIndex = _messageCache.Count;
-            _logger.LogTrace($"{_fetchReceiver} ({_fetchFolder.Count}) Fetching new message arrivals, starting from {startIndex}.");
+            await _fetchClient.NoOpAsync(cancellationToken).ConfigureAwait(false);
+            _logger.LogTrace($"{_fetchReceiver} ({_fetchFolder.Count}) fetching new message arrivals, starting from {startIndex}.");
             if (startIndex > _fetchFolder.Count)
+            {
+                _logger.LogTrace($"{_fetchReceiver} start index {startIndex} is higher than fetched folder count of {_fetchFolder.Count}, monitored count is {_mailFolder.Count}.");
                 startIndex = _fetchFolder.Count;
+            }
             var filter = _folderMonitorOptions.MessageSummaryItems | MessageSummaryItems.UniqueId;
             var fetched = await _fetchFolder.FetchAsync(startIndex, -1, filter, cancellationToken).ConfigureAwait(false);
             if (_arrival.IsCancellationRequested)
