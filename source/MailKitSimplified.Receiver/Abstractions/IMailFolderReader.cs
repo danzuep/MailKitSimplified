@@ -1,12 +1,13 @@
 ﻿using MailKit;
 using MimeKit;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace MailKitSimplified.Receiver.Abstractions
 {
-    public interface IMailFolderReader : IMailReader
+    public interface IMailFolderReader : IMailReader, IAsyncDisposable, IDisposable
     {
         /// <summary>
         /// Get message summaries with just the requested items filled in for the specified unique IDs.

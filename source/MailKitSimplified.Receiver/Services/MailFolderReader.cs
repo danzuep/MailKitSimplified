@@ -256,5 +256,9 @@ namespace MailKitSimplified.Receiver.Services
         public IMailFolderReader Copy() => MemberwiseClone() as IMailFolderReader;
 
         public override string ToString() => $"{_imapReceiver} (skip {_skip}, take {_take})";
+
+        public async ValueTask DisposeAsync() => await _imapReceiver.DisconnectAsync(CancellationToken.None).ConfigureAwait(false);
+
+        public void Dispose() => _imapReceiver?.Dispose();
     }
 }
