@@ -257,7 +257,7 @@ namespace MailKitSimplified.Receiver.Services
 
         public override string ToString() => $"{_imapReceiver} (skip {_skip}, take {_take})";
 
-        public async ValueTask DisposeAsync() => await _imapReceiver.DisconnectAsync(CancellationToken.None).ConfigureAwait(false);
+        public async ValueTask DisposeAsync() => await _imapReceiver.DisposeAsync().ConfigureAwait(false);
 
         public void Dispose() => _imapReceiver?.Dispose();
     }

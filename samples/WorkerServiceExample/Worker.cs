@@ -34,12 +34,12 @@ public class Worker : BackgroundService
     private async Task NotReentrantAsync(CancellationToken cancellationToken = default)
     {
         var sendTask = DelayedSendAsync(5, cancellationToken);
-
         var newestEmail = await GetNewestMessageSummaryAsync(cancellationToken);
         await _imapReceiver.MonitorFolder
             .SetIgnoreExistingMailOnConnect()
             .OnMessageArrival(OnArrivalAsync)
             .IdleAsync(cancellationToken);
+        await sendTask;
 
         async Task OnArrivalAsync(IMessageSummary messageSummary)
         {
@@ -56,7 +56,7 @@ public class Worker : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, $"{_imapReceiver} message #{messageSummary.UniqueId} failed. {ex.Message}");
             }
         }
     }
