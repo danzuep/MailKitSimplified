@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace MailKitSimplified.Receiver.Services
 {
-    public class MailKitProtocolLogger : IProtocolLogger
+    public class MailKitProtocolLogger : IProtocolLogger, IDisposable
     {
         public IAuthenticationSecretDetector AuthenticationSecretDetector
         {
@@ -31,13 +31,14 @@ namespace MailKitSimplified.Receiver.Services
         private bool _redactSecrets;
         private bool _useTimestamp;
         private bool _isFileOpen;
-
+        
         public MailKitProtocolLogger(ILogger<MailKitProtocolLogger> logger = null, IFileSystem fileSystem = null)
         {
             _logger = logger ?? NullLogger<MailKitProtocolLogger>.Instance;
             _fileSystem = fileSystem ?? new FileSystem();
         }
 
+        [Obsolete("Use any file logger that implements ILogger (e.g NLog or Serilog) instead.")]
         public IProtocolLogger SetLogFilePath(string logFilePath = null, bool appendToExisting = false, bool useTimestamp = false, bool redactSecrets = true)
         {
             _useTimestamp = useTimestamp;
