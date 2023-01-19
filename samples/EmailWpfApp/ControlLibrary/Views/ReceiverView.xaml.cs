@@ -3,11 +3,11 @@
 namespace EmailWpfApp.Views
 {
     /// <summary>
-    /// Interaction logic for EncryptView.xaml
+    /// Interaction logic for ReceiverView.xaml
     /// </summary>
-    public partial class EncryptView : UserControl
+    public partial class ReceiverView : UserControl
     {
-        public EncryptView()
+        public ReceiverView()
         {
             InitializeComponent();
         }

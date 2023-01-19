@@ -24,7 +24,7 @@ namespace EmailWpfApp.ViewModels
                 _statusText = value;
                 NotifyPropertyChanged();
 
-                if (!String.IsNullOrWhiteSpace(_statusText) &&
+                if (!string.IsNullOrWhiteSpace(_statusText) &&
                     !_statusText.StartsWith(StartupText))
                 {
                     logger.LogDebug("Status: {0}", _statusText);

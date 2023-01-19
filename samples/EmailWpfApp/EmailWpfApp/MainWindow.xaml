@@ -8,14 +8,14 @@
         SizeToContent="WidthAndHeight"
         WindowStartupLocation="Manual" 
         Left="0" Top="0"
-        Title="Encrypt/Decrypt Tool">
+        Title="Sender/Receiver Tool">
     <Grid>
         <TabControl TabStripPlacement="Top">
-            <TabItem Header="Encrypt">
-                <views:EncryptView/>
+            <TabItem Header="Sender">
+                <views:SenderView/>
             </TabItem>
-            <TabItem Header="Decrypt">
-                <views:DecryptView/>
+            <TabItem Header="Receiver">
+                <views:ReceiverView/>
             </TabItem>
         </TabControl>
     </Grid>

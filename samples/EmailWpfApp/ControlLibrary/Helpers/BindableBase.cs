@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 namespace ControlLibrary.Helpers
@@ -9,7 +10,7 @@ namespace ControlLibrary.Helpers
     public abstract class NotifyPropertyChanged : INotifyPropertyChanged
     {
         #region Property Changed Event Handling
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary> 
         /// This method can be called manually by the Set accessor of each property.
@@ -59,10 +60,9 @@ namespace ControlLibrary.Helpers
 
     public abstract class BindableBase : INotifyPropertyChangedEnhanced
     {
-        public event PropertyChangedEventHandlerEnhanced PropertyChanged;
+        public event PropertyChangedEventHandlerEnhanced? PropertyChanged;
 
-        protected bool SetProperty<T>(ref T storage, T value,
-            [CallerMemberName] string propertyName = null)
+        protected bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string propertyName = "") where T : notnull
         {
             if (Equals(storage, value))
             {
@@ -76,12 +76,9 @@ namespace ControlLibrary.Helpers
         }
 
         #region Property Changed Event Handling
-        protected void OnPropertyChanged<T>(T oldValue, T newValue,
-            [CallerMemberName] string propertyName = null)
+        protected void OnPropertyChanged<T>(T oldValue, T newValue, [CallerMemberName] string propertyName = "") where T : notnull
         {
-            this.PropertyChanged?.Invoke(this,
-                new PropertyChangedExtendedEventArgs(propertyName,
-                    oldValue?.ToString(), newValue?.ToString()));
+            this.PropertyChanged?.Invoke(this, new PropertyChangedExtendedEventArgs(propertyName, oldValue.ToString(), newValue.ToString()));
         }
 
         /// <summary> 

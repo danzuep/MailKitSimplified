@@ -7,16 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Update="Views\EncryptView.xaml.cs">
+    <Compile Update="Views\SenderView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
 
   <ItemGroup>
-    <Page Update="Views\DecryptView.xaml">
+    <Page Update="Views\ReceiverView.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="Views\EncryptView.xaml">
+    <Page Update="Views\SenderView.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Views\ResourceDictionary.xaml">
