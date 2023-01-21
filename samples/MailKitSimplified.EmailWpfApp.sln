@@ -3,13 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0-ControlLibrary", "0-ControlLibrary", "{F4261CB5-9849-42A1-AC4F-7904881181DB}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ControlLibrary", "EmailWpfApp\ControlLibrary\ControlLibrary.csproj", "{FE1017D1-D406-4EA4-9895-6D02E41C5363}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1-WpfApp", "1-WpfApp", "{91F83CE5-416A-4F34-B445-FD823A2FDC43}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EmailWpfApp", "EmailWpfApp\EmailWpfApp\EmailWpfApp.csproj", "{92B663B8-FFEB-444C-95D1-09DE6771E331}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EmailWpfApp", "EmailWpfApp\EmailWpfApp.csproj", "{92B663B8-FFEB-444C-95D1-09DE6771E331}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +11,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{FE1017D1-D406-4EA4-9895-6D02E41C5363}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FE1017D1-D406-4EA4-9895-6D02E41C5363}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FE1017D1-D406-4EA4-9895-6D02E41C5363}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FE1017D1-D406-4EA4-9895-6D02E41C5363}.Release|Any CPU.Build.0 = Release|Any CPU
 		{92B663B8-FFEB-444C-95D1-09DE6771E331}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{92B663B8-FFEB-444C-95D1-09DE6771E331}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{92B663B8-FFEB-444C-95D1-09DE6771E331}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -28,10 +18,6 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{FE1017D1-D406-4EA4-9895-6D02E41C5363} = {F4261CB5-9849-42A1-AC4F-7904881181DB}
-		{92B663B8-FFEB-444C-95D1-09DE6771E331} = {91F83CE5-416A-4F34-B445-FD823A2FDC43}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7D283673-1757-4033-8B87-11405EC3E778}

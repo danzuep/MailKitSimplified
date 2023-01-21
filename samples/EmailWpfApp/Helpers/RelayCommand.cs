@@ -2,7 +2,7 @@
 using System.Windows.Input;
 using System.Threading.Tasks;
 
-namespace ControlLibrary.Helpers
+namespace EmailWpfApp.Helpers
 {
     /// <summary>
     /// A basic command that runs an Action

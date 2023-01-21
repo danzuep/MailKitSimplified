@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace ControlLibrary.Helpers
+namespace EmailWpfApp.Helpers
 {
     /// <summary>
     /// Simple implementation of INotifyPropertyChanged

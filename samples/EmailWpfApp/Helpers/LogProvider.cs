@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
 
-namespace ControlLibrary.Helpers
+namespace EmailWpfApp.Helpers
 {
     public static class LogProvider
     {

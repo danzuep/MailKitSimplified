@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Collections.ObjectModel;
 using Microsoft.Extensions.Logging;
-using ControlLibrary.Helpers;
+using EmailWpfApp.Helpers;
 
 namespace EmailWpfApp.ViewModels
 {
