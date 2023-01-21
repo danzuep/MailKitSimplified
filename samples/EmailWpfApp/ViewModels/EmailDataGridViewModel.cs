@@ -1,4 +1,4 @@
-﻿using EmailWpfApp.DataModel;
+﻿using EmailWpfApp.Data;
 using EmailWpfApp.Models;
 using EmailWpfApp.Helpers;
 using System;
@@ -24,10 +24,10 @@ namespace EmailWpfApp.ViewModels
         {
             UserCommand = new RelayCommand(ReceiveMail);
             StatusText = string.Empty;
-            GetEmployees();
+            GetEmails();
         }
 
-        private void GetEmployees()
+        private void GetEmails()
         {
             try
             {

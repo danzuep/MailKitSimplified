@@ -3,6 +3,10 @@ using System.Windows;
 using System.Windows.Input;
 using Microsoft.Extensions.Logging;
 using EmailWpfApp.Helpers;
+using EmailWpfApp.Data;
+using EmailWpfApp.Models;
+using Microsoft.Extensions.DependencyInjection;
+using MailKitSimplified.Sender.Abstractions;
 
 namespace EmailWpfApp.ViewModels
 {
@@ -36,10 +40,22 @@ namespace EmailWpfApp.ViewModels
 
         private void SendMail()
         {
-            StatusText = $"Email #{++_count} sent!";
-            if (!string.IsNullOrWhiteSpace(StatusText))
+            using var smtpSender = App.ServiceProvider?.GetService<ISmtpSender>();
+            if (smtpSender != null)
             {
-                logger.LogDebug("Result: {0}", StatusText);
+                smtpSender.WriteEmail
+                    .To("to@localhost")
+                    .Subject(UserInputTextBox)
+                    .Send();
+                StatusText = $"Email #{++_count} sent with message: \"{UserInputTextBox}\".";
+            }
+            else
+            {
+                StatusText = $"Email #{++_count} sent!";
+                if (!string.IsNullOrWhiteSpace(StatusText))
+                {
+                    logger.LogDebug("Result: {0}", StatusText);
+                }
             }
         }
     }

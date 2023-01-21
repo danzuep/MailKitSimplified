@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using EmailWpfApp.Models;
 
-namespace EmailWpfApp.DataModel
+namespace EmailWpfApp.Data
 {
     public class EmailDbContext : DbContext
     {

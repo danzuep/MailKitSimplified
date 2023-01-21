@@ -1,4 +1,4 @@
-﻿using EmailWpfApp.DataModel;
+﻿using EmailWpfApp.Data;
 using MailKitSimplified.Receiver;
 using MailKitSimplified.Sender;
 using Microsoft.Extensions.Logging;

@@ -11,7 +11,7 @@ namespace EmailWpfApp.Helpers
 {
     public static class LogProvider
     {
-        private static IDictionary<string, ILogger> _loggers = new Dictionary<string, ILogger>();
+        private static readonly IDictionary<string, ILogger> _loggers = new Dictionary<string, ILogger>();
 
         private static ILoggerFactory? _loggerFactory;
         internal static ILoggerFactory LoggerFactory

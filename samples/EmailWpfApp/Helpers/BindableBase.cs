@@ -62,7 +62,7 @@ namespace EmailWpfApp.Helpers
     {
         public event PropertyChangedEventHandlerEnhanced? PropertyChanged;
 
-        protected bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string propertyName = "") where T : notnull
+        protected bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string propertyName = "")
         {
             if (Equals(storage, value))
             {
@@ -76,8 +76,12 @@ namespace EmailWpfApp.Helpers
         }
 
         #region Property Changed Event Handling
-        protected void OnPropertyChanged<T>(T oldValue, T newValue, [CallerMemberName] string propertyName = "") where T : notnull
+        protected void OnPropertyChanged<T>(T oldValue, T newValue, [CallerMemberName] string propertyName = "")
         {
+            if (oldValue == null)
+                throw new ArgumentNullException(nameof(oldValue));
+            if (newValue == null)
+                throw new ArgumentNullException(nameof(newValue));
             this.PropertyChanged?.Invoke(this, new PropertyChangedExtendedEventArgs(propertyName, oldValue.ToString(), newValue.ToString()));
         }
 
