@@ -3,11 +3,11 @@
 namespace EmailWpfApp.Views
 {
     /// <summary>
-    /// Interaction logic for EmailDataGrid.xaml
+    /// Interaction logic for EmailDataGridView.xaml
     /// </summary>
-    public partial class EmailDataGrid : UserControl
+    public partial class EmailDataGridView : UserControl
     {
-        public EmailDataGrid()
+        public EmailDataGridView()
         {
             InitializeComponent();
         }

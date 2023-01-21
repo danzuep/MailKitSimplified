@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Sqlite;
+using EmailWpfApp.Models;
 
 namespace EmailWpfApp.DataModel
 {
@@ -10,6 +10,8 @@ namespace EmailWpfApp.DataModel
         #region Contructor
         public EmailDbContext(DbContextOptions<EmailDbContext> options) : base(options)
         {
+            // SqlLiteException when data doesn't match schema.
+            //Database.EnsureDeleted();
             Database.EnsureCreated();
         }
         #endregion
@@ -29,12 +31,25 @@ namespace EmailWpfApp.DataModel
         #region Private methods
         private List<Email> GetEmails()
         {
+            var email = Email.Write.From("admin@localhost", "Admin");
             return new List<Email>
             {
-                new Email {Id = 100, FirstName ="John", LastName = "Doe"},
-                new Email {Id = 101, FirstName ="Nicole", LastName = "Martha"},
-                new Email {Id = 102, FirstName ="Steve", LastName = "Johnson"},
-                new Email {Id = 103, FirstName ="Thomas", LastName = "Bond"},
+                email.Copy()
+                    .To("john.doe@example.com", "John Doe")
+                    .Subject("Email to John Doe")
+                    .AsEmail,
+                email.Copy()
+                    .To("jane.smith@example.com", "Jane Smith")
+                    .Subject("Email to Jane Smith")
+                    .AsEmail,
+                email.Copy()
+                    .To("steve.tait@example.com", "Steve Tait")
+                    .Subject("Email to Steve Tait")
+                    .AsEmail,
+                email.Copy()
+                    .To("sally.johnson@example.com", "Sally Johnson")
+                    .Subject("Email to Sally Johnson")
+                    .AsEmail,
             };
         }
         #endregion

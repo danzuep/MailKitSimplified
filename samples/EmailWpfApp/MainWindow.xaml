@@ -10,14 +10,14 @@
         Title="Send/Receive Email Tool">
   <Grid>
     <TabControl TabStripPlacement="Top">
+      <TabItem Header="Mail">
+        <views:EmailDataGridView/>
+      </TabItem>
       <TabItem Header="Sender">
         <views:SenderView/>
       </TabItem>
       <TabItem Header="Receiver">
         <views:ReceiverView/>
-      </TabItem>
-      <TabItem Header="Mail">
-        <views:EmailDataGrid/>
       </TabItem>
     </TabControl>
   </Grid>

@@ -1,5 +1,7 @@
 ﻿using EmailWpfApp.DataModel;
+using EmailWpfApp.Models;
 using EmailWpfApp.Helpers;
+using System;
 using System.Linq;
 using System.Windows.Input;
 using System.Collections.ObjectModel;
@@ -27,23 +29,33 @@ namespace EmailWpfApp.ViewModels
 
         private void GetEmployees()
         {
-            if (App.ServiceProvider?.GetService<EmailDbContext>() is EmailDbContext dbContext)
+            try
             {
-                var employees = dbContext.Emails.AsEnumerable();
-                var collection = new ObservableCollection<Email>(employees);
-                ViewModelDataGrid = collection;
+                if (App.ServiceProvider?.GetService<EmailDbContext>() is EmailDbContext dbContext)
+                {
+                    var emails = dbContext.Emails.AsEnumerable();
+                    var collection = new ObservableCollection<Email>(emails);
+                    ViewModelDataGrid = collection;
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusText = ex.GetBaseException().Message;
+                if (App.ServiceProvider?.GetService<ILogger<EmailDataGridViewModel>>() is ILogger logger)
+                    logger.LogError(ex, StatusText);
+                else
+                    System.Diagnostics.Debugger.Break();
             }
         }
 
         private void ReceiveMail()
         {
             StatusText = $"Email #{++_count} received!";
-            var email = new Email
-            {
-                Id = _count,
-                FirstName = $"FN#{_count}",
-                LastName = $"LN#{_count}"
-            };
+            var email = Email.Write
+                .From("admin@localhost", "Admin")
+                .To($"person{_count}@example.com")
+                .Subject($"Email #{_count}")
+                .AsEmail;
             ViewModelDataGrid.Add(email);
             if (!string.IsNullOrWhiteSpace(StatusText))
             {

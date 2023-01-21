@@ -23,11 +23,11 @@
             <StatusBarItem Content="{Binding StatusText}" />
         </StatusBar>
         <StackPanel Background="{StaticResource BackgroundBrush}">
-            <DockPanel FocusManager.FocusedElement="{Binding ElementName=View_UserInputTextBox}">
+        <DockPanel FocusManager.FocusedElement="{Binding ElementName=Button_Receive}">
                 <Label
                     Style="{StaticResource LabelStyle}"
                     Content="Messages: " />
-                <Button
+                <Button x:Name="Button_Receive"
                     Style="{StaticResource ButtonStyle}"
                     Command="{Binding UserCommand}"
                     DockPanel.Dock="Right"

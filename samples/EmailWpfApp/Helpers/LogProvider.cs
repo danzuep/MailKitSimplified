@@ -74,13 +74,13 @@ namespace EmailWpfApp.Helpers
         }
     }
 
-    public class OptionsMonitor<T> : IOptionsMonitor<T>
+    public class OptionsMonitor<T> : IOptionsMonitor<T> where T : class
     {
         private readonly T options;
 
         public OptionsMonitor(T options)
         {
-            this.options = options;
+            this.options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
         public T CurrentValue => options;

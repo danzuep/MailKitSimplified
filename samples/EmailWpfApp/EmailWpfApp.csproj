@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Views\EmailDataGrid.xaml.cs">
+    <Compile Update="Views\EmailDataGridView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Views\SenderView.xaml.cs">
