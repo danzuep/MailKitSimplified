@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using MailKit.Search;
 using MailKitSimplified.Receiver.Abstractions;
 using EmailWpfApp.Models;
+using MailKit;
 
 namespace EmailWpfApp.ViewModels
 {
@@ -44,14 +45,18 @@ namespace EmailWpfApp.ViewModels
             using var imapReceiver = App.ServiceProvider?.GetService<IImapReceiver>();
             if (imapReceiver != null)
             {
-                var messageSummaries = await imapReceiver.ReadMail
-                    .Take(1).GetMessageSummariesAsync();
-                var messageSummary = messageSummaries.Single();
-                var email = messageSummaries.Select(m => Email.Write
-                    .To(m.Envelope.To.ToString())).Single();
-                ViewModelData.Add(messageSummary.ToString());
-                StatusText = $"Email received: {messageSummary.UniqueId}.";
-                MessageTextBlock += messageSummary.UniqueId.ToString();
+                var mimeMessages = await imapReceiver.ReadMail
+                    .Take(1).GetMimeMessagesAsync();
+                var m = mimeMessages.Single();
+                var email = Email.Write
+                    .From(m.From.ToString())
+                    .To(m.To.ToString())
+                    .Subject(m.Subject)
+                    .BodyHtml(m.Body)
+                    .AsEmail;
+                ViewModelData.Add(email.ToString());
+                StatusText = $"Email received: {email.Subject}.";
+                MessageTextBlock = email.ToString();
             }
             else
             {
