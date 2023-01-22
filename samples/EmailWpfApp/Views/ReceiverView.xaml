@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:vm="clr-namespace:EmailWpfApp.ViewModels"
              mc:Ignorable="d" 
-             d:DesignHeight="50" d:DesignWidth="300">
+             d:DesignHeight="100" d:DesignWidth="300">
     <UserControl.DataContext>
         <vm:ReceiverViewModel />
     </UserControl.DataContext>
@@ -23,13 +23,13 @@
             <StatusBarItem Content="{Binding StatusText}" />
         </StatusBar>
         <StackPanel Background="{StaticResource BackgroundBrush}">
-        <DockPanel FocusManager.FocusedElement="{Binding ElementName=Button_Receive}">
+            <DockPanel FocusManager.FocusedElement="{Binding ElementName=Button_Receive}">
                 <Label
                     Style="{StaticResource LabelStyle}"
                     Content="Messages: " />
                 <Button x:Name="Button_Receive"
                     Style="{StaticResource ButtonStyle}"
-                    Command="{Binding UserCommand}"
+                    Command="{Binding ReceiveCommand}"
                     DockPanel.Dock="Right"
                     Content="Receive" />
                 <ComboBox
@@ -42,6 +42,13 @@
                     </ComboBox.ItemTemplate>-->
                 </ComboBox>
             </DockPanel>
+            <TextBlock
+                Name="View_MessageTextBlock"
+                Style="{StaticResource TextBlockStyle}"
+                Text="{Binding MessageTextBlock}"
+                MinHeight="50"
+                MinWidth="150">
+            </TextBlock>
         </StackPanel>
     </DockPanel>
 </UserControl>

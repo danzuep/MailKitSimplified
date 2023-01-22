@@ -1,61 +1,91 @@
-﻿using System;
-using System.Windows;
-using System.Windows.Input;
-using Microsoft.Extensions.Logging;
-using EmailWpfApp.Helpers;
-using EmailWpfApp.Data;
-using EmailWpfApp.Models;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using CommunityToolkit.Mvvm.Input;
 using MailKitSimplified.Sender.Abstractions;
+using System.Threading.Tasks;
 
 namespace EmailWpfApp.ViewModels
 {
     class SenderViewModel : BaseViewModel
     {
         #region Public Properties
-        public ICommand UserCommand { get; set; }
+        public IAsyncRelayCommand SendCommand { get; set; }
 
-        private string _userInputText = string.Empty;
-        public string UserInputTextBox
+        private string _fromText = string.Empty;
+        public string FromTextBox
         {
-            get => _userInputText;
+            get => _fromText;
             set
             {
-                _userInputText = value;
-                NotifyPropertyChanged();
+                _fromText = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _toText = string.Empty;
+        public string ToTextBox
+        {
+            get => _toText;
+            set
+            {
+                _toText = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _subjectText = string.Empty;
+        public string SubjectTextBox
+        {
+            get => _subjectText;
+            set
+            {
+                _subjectText = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _messageText = string.Empty;
+        public string MessageTextBox
+        {
+            get => _messageText;
+            set
+            {
+                _messageText = value;
+                OnPropertyChanged();
             }
         }
         #endregion
 
         private int _count = 0;
 
-        public SenderViewModel()
+        public SenderViewModel() : base()
         {
-            UserCommand = new RelayCommand(SendMail);
+            SendCommand = new AsyncRelayCommand(SendMailAsync);
             StatusText = string.Empty;
 #if DEBUG
-            UserInputTextBox = "Hi.";
+            FromTextBox = "from@localhost";
+            ToTextBox = "to@localhost";
+            SubjectTextBox = "Hey";
+            MessageTextBox = "<p>Hi.<p>";
 #endif
         }
 
-        private void SendMail()
+        private async Task SendMailAsync()
         {
             using var smtpSender = App.ServiceProvider?.GetService<ISmtpSender>();
             if (smtpSender != null)
             {
-                smtpSender.WriteEmail
-                    .To("to@localhost")
-                    .Subject(UserInputTextBox)
-                    .Send();
-                StatusText = $"Email #{++_count} sent with message: \"{UserInputTextBox}\".";
+                await smtpSender.WriteEmail
+                    .From(FromTextBox)
+                    .To(ToTextBox)
+                    .Subject(SubjectTextBox)
+                    .BodyHtml(MessageTextBox)
+                    .SendAsync();
+                StatusText = $"Email #{++_count} sent with message: \"{SubjectTextBox}\".";
             }
             else
             {
                 StatusText = $"Email #{++_count} sent!";
-                if (!string.IsNullOrWhiteSpace(StatusText))
-                {
-                    logger.LogDebug("Result: {0}", StatusText);
-                }
             }
         }
     }

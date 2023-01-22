@@ -40,11 +40,8 @@ namespace EmailWpfApp.ViewModels
             }
             catch (Exception ex)
             {
-                StatusText = ex.GetBaseException().Message;
-                if (App.ServiceProvider?.GetService<ILogger<EmailDataGridViewModel>>() is ILogger logger)
-                    logger.LogError(ex, StatusText);
-                else
-                    System.Diagnostics.Debugger.Break();
+                ShowAndLogError(ex, StatusText);
+                //System.Diagnostics.Debugger.Break();
             }
         }
 

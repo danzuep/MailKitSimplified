@@ -12,19 +12,30 @@ using EmailWpfApp.Models;
 
 namespace EmailWpfApp.ViewModels
 {
-    class ReceiverViewModel : BaseViewModel // ObservableObject
+    class ReceiverViewModel : BaseViewModel
     {
         #region Public Properties
-        public ObservableCollection<string> ViewModelData { get; private set; } = new ObservableCollection<string>();
+        public ObservableCollection<string> ViewModelData { get; private set; } = new();
 
-        public IAsyncRelayCommand UserCommand { get; set; }
+        public IAsyncRelayCommand ReceiveCommand { get; set; }
+
+        private string _messageText = string.Empty;
+        public string MessageTextBlock
+        {
+            get => _messageText;
+            set
+            {
+                _messageText = value;
+                OnPropertyChanged();
+            }
+        }
         #endregion
 
         private int _count = 0;
 
-        public ReceiverViewModel()
+        public ReceiverViewModel() : base()
         {
-            UserCommand = new AsyncRelayCommand(ReceiveMailAsync);
+            ReceiveCommand = new AsyncRelayCommand(ReceiveMailAsync);
             StatusText = string.Empty;
         }
 
@@ -40,15 +51,12 @@ namespace EmailWpfApp.ViewModels
                     .To(m.Envelope.To.ToString())).Single();
                 ViewModelData.Add(messageSummary.ToString());
                 StatusText = $"Email received: {messageSummary.UniqueId}.";
+                MessageTextBlock += messageSummary.UniqueId.ToString();
             }
             else
             {
                 ViewModelData.Add($"Email #{++_count}");
                 StatusText = $"Email #{_count} received!";
-                if (!string.IsNullOrWhiteSpace(StatusText))
-                {
-                    logger.LogDebug("Result: {0}", StatusText);
-                }
             }
         }
     }
