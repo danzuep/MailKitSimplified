@@ -1,0 +1,70 @@
+﻿<UserControl x:Class="EmailWpfApp.Views.ReceiverView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vm="clr-namespace:EmailWpfApp.ViewModels"
+             mc:Ignorable="d" 
+             d:DesignHeight="100" d:DesignWidth="300">
+    <UserControl.DataContext>
+        <vm:ReceiverViewModel />
+    </UserControl.DataContext>
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ResourceDictionary.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <StatusBar Style="{StaticResource StatusBarStyle}">
+            <StatusBarItem Content="{Binding StatusText}" />
+        </StatusBar>
+        <StackPanel Background="{StaticResource BackgroundBrush}">
+            <DockPanel FocusManager.FocusedElement="{Binding ElementName=View_ReceiveButton}">
+                <Label
+                    Name="View_FolderLabel"
+                    Content="_Folder: "
+                    Target="{Binding ElementName=View_FolderComboBox}"
+                    Style="{StaticResource LabelStyle}"/>
+                <Button
+                    x:Name="View_ReceiveButton"
+                    TabIndex="1"
+                    DockPanel.Dock="Right"
+                    Content="_Receive"
+                    Command="{Binding ReceiveCommand}"
+                    Style="{StaticResource ButtonStyle}"/>
+                <ComboBox
+                    x:Name="View_FolderComboBox"
+                    TabIndex="0"
+                    ToolTip="Select which folder to download an email from."
+                    ItemsSource="{Binding ViewModelItems}"
+                    SelectedItem="{Binding SelectedViewModelItem}"
+                    Style="{StaticResource ComboBoxStyle}"/>
+            </DockPanel>
+            <DataGrid
+                Name="View_MessagesDataGrid"
+                AutoGenerateColumns="False"
+                ItemsSource="{Binding ViewModelDataGrid}"
+                Style="{StaticResource ReadonlyDataGridStyle}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Date" Binding="{Binding Date}"/>
+                    <DataGridTextColumn Header="From" Binding="{Binding From}"/>
+                    <DataGridTextColumn Header="To" Binding="{Binding To}"/>
+                    <DataGridTextColumn Header="Subject" Binding="{Binding Subject}"/>
+                    <DataGridTextColumn Header="Attachments" Binding="{Binding Attachments}"/>
+                    <DataGridTextColumn Header="Message ID" Binding="{Binding MessageId}"/>
+                </DataGrid.Columns>
+                <DataGrid.RowDetailsTemplate>
+                    <DataTemplate>
+                        <TextBlock
+                            Text="{Binding BodyHtml}"
+                            Style="{StaticResource MultilineTextBlockStyle}"/>
+                    </DataTemplate>
+                </DataGrid.RowDetailsTemplate>
+            </DataGrid>
+        </StackPanel>
+    </DockPanel>
+</UserControl>
