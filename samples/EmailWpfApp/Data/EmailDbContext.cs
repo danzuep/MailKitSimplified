@@ -10,8 +10,10 @@ namespace EmailWpfApp.Data
         #region Contructor
         public EmailDbContext(DbContextOptions<EmailDbContext> options) : base(options)
         {
-            // SqlLiteException when data doesn't match schema.
-            //Database.EnsureDeleted();
+#if DEBUG
+            // Fixes SqlLiteException when data doesn't match schema.
+            Database.EnsureDeleted();
+#endif
             Database.EnsureCreated();
         }
         #endregion
@@ -23,7 +25,11 @@ namespace EmailWpfApp.Data
         #region Overrides
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Email>().HasData(GetEmails());
+            modelBuilder.Entity<Email>()
+#if DEBUG
+                .HasData(GetEmails())
+#endif
+                ;
             base.OnModelCreating(modelBuilder);
         }
         #endregion

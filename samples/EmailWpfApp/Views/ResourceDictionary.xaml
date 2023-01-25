@@ -21,14 +21,16 @@
     </Style>
 
     <Style x:Key="TextBlockStyle" TargetType="{x:Type TextBlock}">
-        <Setter Property="Margin" Value="0 0 5 0" />
-        <Setter Property="MinWidth" Value="150"/>
-        <Setter Property="MinHeight" Value="50" />
+        <Setter Property="Margin" Value="5 2 5 2" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
+    <Style x:Key="MultilineTextBlockStyle" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource TextBlockStyle}">
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible" />
+    </Style>
+
     <Style x:Key="MultiLineTextBoxStyle" TargetType="{x:Type TextBox}">
-        <Setter Property="Margin" Value="0 0 5 0" />
+        <Setter Property="Margin" Value="5 2 5 2" />
         <Setter Property="MinWidth" Value="150"/>
         <Setter Property="MinHeight" Value="50" />
         <Setter Property="TextWrapping" Value="Wrap" />
@@ -44,10 +46,13 @@
 
     <Style x:Key="ReadonlyDataGridStyle" TargetType="{x:Type DataGrid}">
         <Setter Property="IsReadOnly" Value="True" />
-        <Setter Property="MaxHeight" Value="900" />
+        <Setter Property="MinWidth" Value="150"/>
+        <Setter Property="MinHeight" Value="100" />
         <Setter Property="MaxWidth" Value="1920" />
+        <Setter Property="MaxHeight" Value="900" />
+        <Setter Property="AlternatingRowBackground" Value="LightGray" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible" />
-        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Visible" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
     </Style>
 
 </ResourceDictionary>

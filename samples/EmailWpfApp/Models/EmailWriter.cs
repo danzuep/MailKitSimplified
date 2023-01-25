@@ -1,7 +1,4 @@
-﻿using System.Net.Mail;
-using System.Xml.Linq;
-
-namespace EmailWpfApp.Models
+﻿namespace EmailWpfApp.Models
 {
     public class EmailWriter
     {

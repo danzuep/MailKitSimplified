@@ -1,9 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
 
 namespace EmailWpfApp.Models
@@ -19,6 +16,10 @@ namespace EmailWpfApp.Models
         public string MailboxFolder { get; set; } = string.Empty;
 
         public int MailboxIndex { get; set; }
+
+        public string MessageId { get; set; } = string.Empty;
+
+        public string Date { get; set; } = string.Empty;
 
         public string From { get; set; } = string.Empty;
 
@@ -52,7 +53,8 @@ namespace EmailWpfApp.Models
             string envelope = string.Empty;
             using (var text = new StringWriter())
             {
-                text.WriteLine("Date: {0}", DateTimeOffset.Now);
+                text.WriteLine("SentDate: {0}", Date);
+                text.WriteLine("Received: {0}", DateTimeOffset.Now);
                 if (!string.IsNullOrEmpty(From))
                     text.WriteLine("From: {0}", From);
                 if (!string.IsNullOrEmpty(To))

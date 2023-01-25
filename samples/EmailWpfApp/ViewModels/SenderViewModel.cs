@@ -1,8 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using CommunityToolkit.Mvvm.Input;
-using MailKitSimplified.Sender.Abstractions;
+﻿using CommunityToolkit.Mvvm.Input;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using MailKitSimplified.Sender.Abstractions;
 
 namespace EmailWpfApp.ViewModels
 {
@@ -81,7 +80,7 @@ namespace EmailWpfApp.ViewModels
                     .Subject(SubjectTextBox)
                     .BodyHtml(MessageTextBox)
                     .SendAsync();
-                StatusText = $"Email #{++_count} sent with message: \"{SubjectTextBox}\".";
+                StatusText = $"Email #{++_count} sent with subject: \"{SubjectTextBox}\".";
             }
             else
             {

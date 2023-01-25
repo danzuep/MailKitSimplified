@@ -5,6 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:views="clr-namespace:EmailWpfApp.Views"
         mc:Ignorable="d"
+        MinWidth="240"
+        MinHeight="240"
         SizeToContent="WidthAndHeight"
         WindowStartupLocation="CenterScreen"
         Title="Send/Receive Email Tool">
@@ -13,12 +15,9 @@
       <TabItem Header="Sender">
         <views:SenderView/>
       </TabItem>
-      <TabItem Header="Receiver">
-        <views:ReceiverView/>
-      </TabItem>
-      <TabItem Header="Mail">
-        <views:EmailDataGridView/>
-      </TabItem>
-    </TabControl>
+            <TabItem Header="Receiver">
+                <views:ReceiverView/>
+            </TabItem>
+        </TabControl>
   </Grid>
 </Window>

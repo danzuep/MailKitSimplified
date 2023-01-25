@@ -23,32 +23,48 @@
             <StatusBarItem Content="{Binding StatusText}" />
         </StatusBar>
         <StackPanel Background="{StaticResource BackgroundBrush}">
-            <DockPanel FocusManager.FocusedElement="{Binding ElementName=Button_Receive}">
+            <DockPanel FocusManager.FocusedElement="{Binding ElementName=View_ReceiveButton}">
                 <Label
-                    Style="{StaticResource LabelStyle}"
-                    Content="Messages: " />
-                <Button x:Name="Button_Receive"
-                    Style="{StaticResource ButtonStyle}"
-                    Command="{Binding ReceiveCommand}"
+                    Name="View_FolderLabel"
+                    Content="_Folder: "
+                    Target="{Binding ElementName=View_FolderComboBox}"
+                    Style="{StaticResource LabelStyle}"/>
+                <Button
+                    x:Name="View_ReceiveButton"
+                    TabIndex="1"
                     DockPanel.Dock="Right"
-                    Content="Receive" />
+                    Content="_Receive"
+                    Command="{Binding ReceiveCommand}"
+                    Style="{StaticResource ButtonStyle}"/>
                 <ComboBox
-                    Name="View_ComboBox"
-                    ItemsSource="{Binding ViewModelData}">
-                    <!--<ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding DisplayName}" />
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>-->
-                </ComboBox>
+                    x:Name="View_FolderComboBox"
+                    TabIndex="0"
+                    ToolTip="Select which folder to download an email from."
+                    ItemsSource="{Binding ViewModelItems}"
+                    SelectedItem="{Binding SelectedViewModelItem}"
+                    Style="{StaticResource ComboBoxStyle}"/>
             </DockPanel>
-            <TextBlock
-                Name="View_MessageTextBlock"
-                Style="{StaticResource TextBlockStyle}"
-                Text="{Binding MessageTextBlock}"
-                MinHeight="50"
-                MinWidth="150">
-            </TextBlock>
+            <DataGrid
+                Name="View_MessagesDataGrid"
+                AutoGenerateColumns="False"
+                ItemsSource="{Binding ViewModelDataGrid}"
+                Style="{StaticResource ReadonlyDataGridStyle}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Date" Binding="{Binding Date}"/>
+                    <DataGridTextColumn Header="From" Binding="{Binding From}"/>
+                    <DataGridTextColumn Header="To" Binding="{Binding To}"/>
+                    <DataGridTextColumn Header="Subject" Binding="{Binding Subject}"/>
+                    <DataGridTextColumn Header="Attachments" Binding="{Binding Attachments}"/>
+                    <DataGridTextColumn Header="Message ID" Binding="{Binding MessageId}"/>
+                </DataGrid.Columns>
+                <DataGrid.RowDetailsTemplate>
+                    <DataTemplate>
+                        <TextBlock
+                            Text="{Binding BodyHtml}"
+                            Style="{StaticResource MultilineTextBlockStyle}"/>
+                    </DataTemplate>
+                </DataGrid.RowDetailsTemplate>
+            </DataGrid>
         </StackPanel>
     </DockPanel>
 </UserControl>
