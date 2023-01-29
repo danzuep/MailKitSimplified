@@ -1,0 +1,68 @@
+﻿<UserControl x:Class="EmailWpfApp.Views.SenderView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vm="clr-namespace:EmailWpfApp.ViewModels"
+             mc:Ignorable="d" 
+             d:DesignHeight="150" d:DesignWidth="300">
+    <UserControl.DataContext>
+        <vm:SenderViewModel />
+    </UserControl.DataContext>
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ResourceDictionary.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <DockPanel FocusManager.FocusedElement="{Binding ElementName=View_FromTextBox}">
+        <StatusBar Style="{StaticResource StatusBarStyle}">
+            <StatusBarItem Content="{Binding StatusText}" />
+        </StatusBar>
+        <Button
+            Style="{StaticResource ButtonStyle}"
+            Command="{Binding SendCommand}"
+            DockPanel.Dock="Bottom"
+            Content="Send" />
+        <StackPanel
+            Background="{StaticResource BackgroundBrush}">
+            <DockPanel>
+                <Label
+                    Style="{StaticResource LabelStyle}"
+                    Content="From: " />
+                <TextBox
+                    Name="View_FromTextBox"
+                    Text="{Binding FromTextBox}"
+                    MinWidth="150"/>
+            </DockPanel>
+            <DockPanel>
+                <Label
+                    Style="{StaticResource LabelStyle}"
+                    Content="To: " />
+                <TextBox
+                    Name="View_ToTextBox"
+                    Text="{Binding ToTextBox}"
+                    MinWidth="150"/>
+            </DockPanel>
+            <DockPanel>
+                <Label
+                    Style="{StaticResource LabelStyle}"
+                    Content="Subject: " />
+                <TextBox
+                    Name="View_SubjectTextBox"
+                    Text="{Binding SubjectTextBox}"
+                    MinWidth="150"/>
+            </DockPanel>
+            <TextBox
+                Name="View_MessageTextBox"
+                Style="{StaticResource MultiLineTextBoxStyle}"
+                Text="{Binding MessageTextBox, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                MinHeight="50"
+                MinWidth="150">
+            </TextBox>
+        </StackPanel>
+    </DockPanel>
+</UserControl>
