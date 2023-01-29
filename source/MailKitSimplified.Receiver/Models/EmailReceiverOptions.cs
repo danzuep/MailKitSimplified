@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Linq;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace MailKitSimplified.Receiver.Models
@@ -8,8 +9,11 @@ namespace MailKitSimplified.Receiver.Models
     public class EmailReceiverOptions
     {
         public const string SectionName = "EmailReceiver";
+        private static readonly string _inbox = "INBOX";
 
-        public string MailFolderName { get; set; } = "INBOX";
+        public string MailFolderName { get; set; } = _inbox;
+        public IList<string> MailFolderNames { get; set; } = new List<string> { _inbox };
+
         [Required]
         public string ImapHost { get; set; }
         public ushort ImapPort { get; set; } = 0;

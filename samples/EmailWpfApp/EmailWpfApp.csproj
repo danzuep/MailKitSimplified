@@ -8,10 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MailKitSimplified.Sender" Version="2.4.7" />
+    <PackageReference Include="MailKitSimplified.Receiver" Version="2.4.7" />
     <PackageReference Include="CommunityToolkit.Common" Version="8.1.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.1.0" />
-    <PackageReference Include="MailKitSimplified.Sender" Version="2.4.6" />
-    <PackageReference Include="MailKitSimplified.Receiver" Version="2.4.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />

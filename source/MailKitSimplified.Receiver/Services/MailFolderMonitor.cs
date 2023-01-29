@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Models;
+using MailKitSimplified.Receiver.Services;
 
 namespace MailKitSimplified.Receiver
 {
@@ -56,6 +57,15 @@ namespace MailKitSimplified.Receiver
                 _logger.LogInformation($"{_imapReceiver} message #{m.UniqueId} departure processed.");
                 return _completedTask;
             };
+        }
+
+        public static MailFolderMonitor Create(FolderMonitorOptions folderMonitorOptions, ILogger<MailFolderMonitor> logger = null)
+        {
+            if (folderMonitorOptions == null)
+                throw new ArgumentNullException(nameof(folderMonitorOptions));
+            var imapReceiver = ImapReceiver.Create(folderMonitorOptions.EmailReceiverOptions);
+            var receiver = Create(imapReceiver, folderMonitorOptions, logger);
+            return receiver;
         }
 
         public static MailFolderMonitor Create(IImapReceiver imapReceiver, FolderMonitorOptions folderMonitorOptions, ILogger<MailFolderMonitor> logger = null)

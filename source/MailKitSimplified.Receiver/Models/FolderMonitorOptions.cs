@@ -9,6 +9,11 @@ namespace MailKitSimplified.Receiver.Models
         public const int IdleMinutesImap = 29;
 
         /// <summary>
+        /// Specify custom email receiver options.
+        /// </summary>
+        public EmailReceiverOptions EmailReceiverOptions { get; set; } = null;
+
+        /// <summary>
         /// Specify whether to process existing messages, default is false.
         /// </summary>
         public bool ProcessMailOnConnect { get; set; } = false;

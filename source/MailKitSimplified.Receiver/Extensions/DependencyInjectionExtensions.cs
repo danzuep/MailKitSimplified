@@ -25,7 +25,7 @@ namespace MailKitSimplified.Receiver
         /// <param name="sectionNameImap">IMAP configuration section name.</param>
         /// <param name="sectionNameMonitor">Folder monitor configuration section name.</param>
         /// <returns><see cref="IServiceCollection"/>.</returns>
-        public static IServiceCollection AddMailKitSimplifiedEmailReceiver(this IServiceCollection services, IConfiguration configuration, string sectionNameImap = EmailReceiverOptions.SectionName, string sectionNameMonitor = FolderMonitorOptions.SectionName)
+        public static IServiceCollection AddMailKitSimplifiedEmailReceiver(this IServiceCollection services, IConfiguration configuration, string sectionNameImap = EmailReceiverOptions.SectionName, string sectionNameMonitor = FolderMonitorOptions.SectionName, string sectionNameMailbox = MailboxOptions.SectionName)
         {
             if (configuration == null)
                 throw new ArgumentNullException(nameof(configuration));
@@ -33,6 +33,8 @@ namespace MailKitSimplified.Receiver
             services.Configure<EmailReceiverOptions>(imapSection);
             var monitorSection = configuration.GetSection(sectionNameMonitor);
             services.Configure<FolderMonitorOptions>(monitorSection);
+            var mailboxSection = configuration.GetSection(sectionNameMailbox);
+            services.Configure<MailboxOptions>(mailboxSection);
             services.AddMailKitSimplifiedEmailReceiver();
             return services;
         }
@@ -46,8 +48,13 @@ namespace MailKitSimplified.Receiver
         /// <returns><see cref="IServiceCollection"/>.</returns>
         private static IServiceCollection AddMailKitSimplifiedEmailReceiver(this IServiceCollection services)
         {
+            // Add library dependencies
+            services.AddMemoryCache();
             services.AddSingleton<IFileSystem, FileSystem>();
+            // Add custom services to the container
             services.AddSingleton<IProtocolLogger, MailKitProtocolLogger>();
+            services.AddTransient<IImapReceiverFactory, ImapReceiverFactory>();
+            services.AddTransient<IMailFolderMonitorFactory, MailFolderMonitorFactory>();
             services.AddTransient<IImapReceiver, ImapReceiver>();
             services.AddTransient<IMailFolderClient, MailFolderClient>();
             services.AddTransient<IMailFolderReader, MailFolderReader>();

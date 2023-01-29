@@ -56,6 +56,8 @@ namespace MailKitSimplified.Receiver.Services
 
         public static ImapReceiver Create(EmailReceiverOptions emailReceiverOptions, ILogger<ImapReceiver> logger = null)
         {
+            if (emailReceiverOptions == null)
+                throw new ArgumentNullException(nameof(emailReceiverOptions));
             var options = Options.Create(emailReceiverOptions);
             var receiver = new ImapReceiver(options, logger);
             return receiver;
@@ -232,6 +234,7 @@ namespace MailKitSimplified.Receiver.Services
         {
             DisconnectAsync().GetAwaiter().GetResult();
             _imapClient.Dispose();
+            _loggerFactory.Dispose();
         }
     }
 }
