@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MailKitSimplified.Receiver" Version="2.4.0" />
-    <PackageReference Include="MailKitSimplified.Sender" Version="2.4.0" />
+    <PackageReference Include="MailKitSimplified.Receiver" Version="2.4.7" />
+    <PackageReference Include="MailKitSimplified.Sender" Version="2.4.7" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="7.0.0" />
