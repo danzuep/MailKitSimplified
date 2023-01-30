@@ -24,7 +24,7 @@
         </StatusBar>
         <Button
             Style="{StaticResource ButtonStyle}"
-            Command="{Binding SendCommand}"
+            Command="{Binding SendMailCommand}"
             DockPanel.Dock="Bottom"
             Content="Send" />
         <StackPanel

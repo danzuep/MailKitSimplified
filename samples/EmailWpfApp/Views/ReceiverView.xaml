@@ -34,7 +34,7 @@
                     TabIndex="1"
                     DockPanel.Dock="Right"
                     Content="_Receive"
-                    Command="{Binding ReceiveCommand}"
+                    Command="{Binding ReceiveMailCommand}"
                     Style="{StaticResource ButtonStyle}"/>
                 <ComboBox
                     x:Name="View_FolderComboBox"

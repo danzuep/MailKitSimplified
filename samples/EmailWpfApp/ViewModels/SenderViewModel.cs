@@ -1,65 +1,29 @@
-﻿using CommunityToolkit.Mvvm.Input;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using MailKitSimplified.Sender.Abstractions;
 
 namespace EmailWpfApp.ViewModels
 {
-    class SenderViewModel : BaseViewModel
+    public sealed partial class SenderViewModel : BaseViewModel
     {
-        #region Public Properties
-        public IAsyncRelayCommand SendCommand { get; set; }
+        [ObservableProperty]
+        private string _fromTextBox = string.Empty;
 
-        private string _fromText = string.Empty;
-        public string FromTextBox
-        {
-            get => _fromText;
-            set
-            {
-                _fromText = value;
-                OnPropertyChanged();
-            }
-        }
+        [ObservableProperty]
+        private string _toTextBox = string.Empty;
 
-        private string _toText = string.Empty;
-        public string ToTextBox
-        {
-            get => _toText;
-            set
-            {
-                _toText = value;
-                OnPropertyChanged();
-            }
-        }
+        [ObservableProperty]
+        private string _subjectTextBox = string.Empty;
 
-        private string _subjectText = string.Empty;
-        public string SubjectTextBox
-        {
-            get => _subjectText;
-            set
-            {
-                _subjectText = value;
-                OnPropertyChanged();
-            }
-        }
-
-        private string _messageText = string.Empty;
-        public string MessageTextBox
-        {
-            get => _messageText;
-            set
-            {
-                _messageText = value;
-                OnPropertyChanged();
-            }
-        }
-        #endregion
+        [ObservableProperty]
+        private string _messageTextBox = string.Empty;
 
         private int _count = 0;
 
         public SenderViewModel() : base()
         {
-            SendCommand = new AsyncRelayCommand(SendMailAsync);
             StatusText = string.Empty;
 #if DEBUG
             FromTextBox = "from@localhost";
@@ -69,6 +33,7 @@ namespace EmailWpfApp.ViewModels
 #endif
         }
 
+        [RelayCommand]
         private async Task SendMailAsync()
         {
             using var smtpSender = App.ServiceProvider?.GetService<ISmtpSender>();

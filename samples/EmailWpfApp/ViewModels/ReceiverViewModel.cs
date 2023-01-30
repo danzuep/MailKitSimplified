@@ -6,34 +6,22 @@ using System.Collections.ObjectModel;
 using Microsoft.Extensions.DependencyInjection;
 using MailKitSimplified.Receiver.Abstractions;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
 using EmailWpfApp.Extensions;
 using EmailWpfApp.Models;
 using EmailWpfApp.Data;
-using MailKitSimplified.Receiver.Services;
 
 namespace EmailWpfApp.ViewModels
 {
-    class ReceiverViewModel : BaseViewModel, IDisposable
+    public sealed partial class ReceiverViewModel : BaseViewModel, IDisposable
     {
-        #region Public Properties
         public ObservableCollection<string> ViewModelItems { get; private set; } = new() { _inbox };
         public string SelectedViewModelItem { get; set; } = _inbox;
 
         public ObservableCollection<Email> ViewModelDataGrid { get; private set; } = new();
 
-        public IAsyncRelayCommand ReceiveCommand { get; set; }
-
-        private string _messageText = string.Empty;
-        public string MessageTextBlock
-        {
-            get => _messageText;
-            set
-            {
-                _messageText = value;
-                OnPropertyChanged();
-            }
-        }
-        #endregion
+        [ObservableProperty]
+        private string _messageTextBlock = string.Empty;
 
         private int _count = 0;
         private static readonly string _inbox = "INBOX";
@@ -42,7 +30,6 @@ namespace EmailWpfApp.ViewModels
 
         public ReceiverViewModel() : base()
         {
-            ReceiveCommand = new AsyncRelayCommand(ReceiveMailAsync);
             _mailFolderReader = App.ServiceProvider?.GetService<IMailFolderReader>();
             _dbContext = App.ServiceProvider?.GetService<EmailDbContext>();
             StatusText = string.Empty;
@@ -89,6 +76,7 @@ namespace EmailWpfApp.ViewModels
             }
         }
 
+        [RelayCommand]
         private async Task ReceiveMailAsync()
         {
             if (_mailFolderReader != null)
