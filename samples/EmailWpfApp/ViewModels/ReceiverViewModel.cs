@@ -3,10 +3,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Microsoft.Extensions.DependencyInjection;
-using MailKitSimplified.Receiver.Abstractions;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.DependencyInjection;
+using MailKitSimplified.Receiver.Abstractions;
 using EmailWpfApp.Extensions;
 using EmailWpfApp.Models;
 using EmailWpfApp.Data;
@@ -23,15 +23,18 @@ namespace EmailWpfApp.ViewModels
         [ObservableProperty]
         private string _messageTextBlock = string.Empty;
 
+        [ObservableProperty]
+        private bool isInProgress;
+
         private int _count = 0;
         private static readonly string _inbox = "INBOX";
-        private readonly IMailFolderReader? _mailFolderReader;
-        private readonly EmailDbContext? _dbContext;
+        private readonly IMailFolderReader _mailFolderReader;
+        private readonly EmailDbContext _dbContext;
 
         public ReceiverViewModel() : base()
         {
-            _mailFolderReader = App.ServiceProvider?.GetService<IMailFolderReader>();
-            _dbContext = App.ServiceProvider?.GetService<EmailDbContext>();
+            _mailFolderReader = Ioc.Default.GetRequiredService<IMailFolderReader>();
+            _dbContext = Ioc.Default.GetRequiredService<EmailDbContext>();
             StatusText = string.Empty;
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             GetFoldersAsync();
@@ -42,7 +45,7 @@ namespace EmailWpfApp.ViewModels
         {
             try
             {
-                if (App.ServiceProvider?.GetService<IImapReceiver>() is IImapReceiver imapReceiver)
+                if (Ioc.Default.GetRequiredService<IImapReceiver>() is IImapReceiver imapReceiver)
                 {
                     StatusText = "Getting mail folder names...";
                     var mailFolderNames = await imapReceiver.GetMailFolderNamesAsync();
@@ -79,29 +82,25 @@ namespace EmailWpfApp.ViewModels
         [RelayCommand]
         private async Task ReceiveMailAsync()
         {
-            if (_mailFolderReader != null)
+            //Guard.IsNotNull(_mailFolderReader, nameof(_mailFolderReader));
+            StatusText = "Getting email...";
+            IsInProgress = true;
+            var mimeMessages = await _mailFolderReader
+                .Take(1, continuous: true).GetMimeMessagesAsync();
+            var emails = mimeMessages.Convert();
+            var count = 0;
+            foreach (var email in emails)
             {
-                StatusText = "Getting email...";
-                var mimeMessages = await _mailFolderReader
-                    .Take(1, continuous: true).GetMimeMessagesAsync();
-                var emails = mimeMessages.Convert();
-                var count = 0;
-                foreach (var email in emails)
-                {
-                    StatusText = $"Email #{++_count} received: {email.Subject}.";
-                    MessageTextBlock = email.ToString();
-                    ViewModelDataGrid.Add(email);
-                    count++;
-                }
-                if (count > 0)
-                    StoreEmails(ViewModelDataGrid.AsEnumerable());
-                else
-                    StatusText = "No more emails in this folder.";
+                StatusText = $"Email #{++_count} received: {email.Subject}.";
+                MessageTextBlock = email.ToString();
+                ViewModelDataGrid.Add(email);
+                count++;
             }
+            if (count > 0)
+                StoreEmails(ViewModelDataGrid.AsEnumerable());
             else
-            {
-                StatusText = $"Email #{++_count} received!";
-            }
+                StatusText = "No more emails in this folder.";
+            IsInProgress = false;
         }
 
         public void Dispose()

@@ -2,12 +2,9 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Brush x:Key="BackgroundBrush">White</Brush>
-    
-    <Style x:Key="StatusBarStyle" TargetType="{x:Type StatusBar}">
-        <Setter Property="DockPanel.Dock" Value="Bottom"/>
-        <Setter Property="MinWidth" Value="350"/>
-    </Style>
-    
+
+    <Style x:Key="StatusBarStyle" TargetType="{x:Type StatusBar}"/>
+
     <Style x:Key="ButtonStyle" TargetType="{x:Type Button}">
         <Setter Property="MinWidth" Value="100"/>
     </Style>
@@ -31,10 +28,10 @@
 
     <Style x:Key="MultiLineTextBoxStyle" TargetType="{x:Type TextBox}">
         <Setter Property="Margin" Value="5 2 5 2" />
-        <Setter Property="MinWidth" Value="150"/>
-        <Setter Property="MinHeight" Value="50" />
         <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="AcceptsReturn" Value="True" />
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Visible" />
     </Style>
@@ -46,11 +43,9 @@
 
     <Style x:Key="ReadonlyDataGridStyle" TargetType="{x:Type DataGrid}">
         <Setter Property="IsReadOnly" Value="True" />
-        <Setter Property="MinWidth" Value="150"/>
-        <Setter Property="MinHeight" Value="100" />
-        <Setter Property="MaxWidth" Value="1920" />
-        <Setter Property="MaxHeight" Value="900" />
-        <Setter Property="AlternatingRowBackground" Value="LightGray" />
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+        <Setter Property="AlternatingRowBackground" Value="LightBlue" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
     </Style>

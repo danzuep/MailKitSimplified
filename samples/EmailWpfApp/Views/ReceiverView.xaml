@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:vm="clr-namespace:EmailWpfApp.ViewModels"
              mc:Ignorable="d" 
-             d:DesignHeight="100" d:DesignWidth="300">
+             d:DesignHeight="150" d:DesignWidth="300">
     <UserControl.DataContext>
         <vm:ReceiverViewModel />
     </UserControl.DataContext>
@@ -18,53 +18,62 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <DockPanel>
-        <StatusBar Style="{StaticResource StatusBarStyle}">
-            <StatusBarItem Content="{Binding StatusText}" />
-        </StatusBar>
-        <StackPanel Background="{StaticResource BackgroundBrush}">
-            <DockPanel FocusManager.FocusedElement="{Binding ElementName=View_ReceiveButton}">
-                <Label
+    <Grid Background="{StaticResource BackgroundBrush}"
+        FocusManager.FocusedElement="{Binding ElementName=View_ReceiveButton}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <DockPanel Grid.Row="0">
+            <Label
                     Name="View_FolderLabel"
                     Content="_Folder: "
                     Target="{Binding ElementName=View_FolderComboBox}"
                     Style="{StaticResource LabelStyle}"/>
-                <Button
+            <Button
                     x:Name="View_ReceiveButton"
                     TabIndex="1"
                     DockPanel.Dock="Right"
                     Content="_Receive"
                     Command="{Binding ReceiveMailCommand}"
                     Style="{StaticResource ButtonStyle}"/>
-                <ComboBox
+            <ComboBox
                     x:Name="View_FolderComboBox"
                     TabIndex="0"
                     ToolTip="Select which folder to download an email from."
                     ItemsSource="{Binding ViewModelItems}"
                     SelectedItem="{Binding SelectedViewModelItem}"
                     Style="{StaticResource ComboBoxStyle}"/>
-            </DockPanel>
-            <DataGrid
+        </DockPanel>
+        <DataGrid Grid.Row="1"
                 Name="View_MessagesDataGrid"
-                AutoGenerateColumns="False"
                 ItemsSource="{Binding ViewModelDataGrid}"
+                AutoGenerateColumns="False"
                 Style="{StaticResource ReadonlyDataGridStyle}">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Date" Binding="{Binding Date}"/>
-                    <DataGridTextColumn Header="From" Binding="{Binding From}"/>
-                    <DataGridTextColumn Header="To" Binding="{Binding To}"/>
-                    <DataGridTextColumn Header="Subject" Binding="{Binding Subject}"/>
-                    <DataGridTextColumn Header="Attachments" Binding="{Binding Attachments}"/>
-                    <DataGridTextColumn Header="Message ID" Binding="{Binding MessageId}"/>
-                </DataGrid.Columns>
-                <DataGrid.RowDetailsTemplate>
-                    <DataTemplate>
-                        <TextBlock
-                            Text="{Binding BodyHtml}"
-                            Style="{StaticResource MultilineTextBlockStyle}"/>
-                    </DataTemplate>
-                </DataGrid.RowDetailsTemplate>
-            </DataGrid>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Date" Binding="{Binding Date}"/>
+                <DataGridTextColumn Header="From" Binding="{Binding From}"/>
+                <DataGridTextColumn Header="To" Binding="{Binding To}"/>
+                <DataGridTextColumn Header="Subject" Binding="{Binding Subject}"/>
+                <DataGridTextColumn Header="Attachments" Binding="{Binding Attachments}"/>
+                <DataGridTextColumn Header="Message ID" Binding="{Binding MessageId}"/>
+            </DataGrid.Columns>
+            <DataGrid.RowDetailsTemplate>
+                <DataTemplate>
+                    <TextBlock
+                        Text="{Binding BodyHtml}"
+                        Style="{StaticResource MultilineTextBlockStyle}"/>
+                </DataTemplate>
+            </DataGrid.RowDetailsTemplate>
+        </DataGrid>
+        <StackPanel Grid.Row="2">
+            <ProgressBar
+                Name="View_ProgressBar"
+                IsIndeterminate="{Binding IsInProgress}"/>
+            <StatusBar Style="{StaticResource StatusBarStyle}">
+                <StatusBarItem Content="{Binding StatusText}" />
+            </StatusBar>
         </StackPanel>
-    </DockPanel>
+    </Grid>
 </UserControl>

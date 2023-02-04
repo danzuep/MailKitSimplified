@@ -18,17 +18,14 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <DockPanel FocusManager.FocusedElement="{Binding ElementName=View_FromTextBox}">
-        <StatusBar Style="{StaticResource StatusBarStyle}">
-            <StatusBarItem Content="{Binding StatusText}" />
-        </StatusBar>
-        <Button
-            Style="{StaticResource ButtonStyle}"
-            Command="{Binding SendMailCommand}"
-            DockPanel.Dock="Bottom"
-            Content="Send" />
-        <StackPanel
-            Background="{StaticResource BackgroundBrush}">
+    <Grid Background="{StaticResource BackgroundBrush}"
+        FocusManager.FocusedElement="{Binding ElementName=View_FromTextBox}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0">
             <DockPanel>
                 <Label
                     Style="{StaticResource LabelStyle}"
@@ -56,13 +53,24 @@
                     Text="{Binding SubjectTextBox}"
                     MinWidth="150"/>
             </DockPanel>
-            <TextBox
-                Name="View_MessageTextBox"
-                Style="{StaticResource MultiLineTextBoxStyle}"
-                Text="{Binding MessageTextBox, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                MinHeight="50"
-                MinWidth="150">
-            </TextBox>
         </StackPanel>
-    </DockPanel>
+        <TextBox Grid.Row="1"
+            Name="View_MessageTextBox"
+            Style="{StaticResource MultiLineTextBoxStyle}"
+            Text="{Binding MessageTextBox, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+        </TextBox>
+        <StackPanel Grid.Row="2">
+            <Button
+                Name="View_SendButton"
+                Content="Send"
+                Command="{Binding SendMailCommand}"
+                Style="{StaticResource ButtonStyle}" />
+            <ProgressBar
+                Name="View_ProgressBar"
+                IsIndeterminate="{Binding IsInProgress}"/>
+            <StatusBar Style="{StaticResource StatusBarStyle}">
+                <StatusBarItem Content="{Binding StatusText}" />
+            </StatusBar>
+        </StackPanel>
+    </Grid>
 </UserControl>

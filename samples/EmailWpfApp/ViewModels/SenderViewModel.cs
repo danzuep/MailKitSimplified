@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Microsoft.Extensions.DependencyInjection;
+using CommunityToolkit.Mvvm.DependencyInjection;
 using MailKitSimplified.Sender.Abstractions;
 
 namespace EmailWpfApp.ViewModels
@@ -20,6 +20,9 @@ namespace EmailWpfApp.ViewModels
         [ObservableProperty]
         private string _messageTextBox = string.Empty;
 
+        [ObservableProperty]
+        private bool isInProgress;
+
         private int _count = 0;
 
         public SenderViewModel() : base()
@@ -36,9 +39,10 @@ namespace EmailWpfApp.ViewModels
         [RelayCommand]
         private async Task SendMailAsync()
         {
-            using var smtpSender = App.ServiceProvider?.GetService<ISmtpSender>();
+            using var smtpSender = Ioc.Default.GetRequiredService<ISmtpSender>();
             if (smtpSender != null)
             {
+                IsInProgress = true;
                 await smtpSender.WriteEmail
                     .From(FromTextBox)
                     .To(ToTextBox)
@@ -46,6 +50,7 @@ namespace EmailWpfApp.ViewModels
                     .BodyHtml(MessageTextBox)
                     .SendAsync();
                 StatusText = $"Email #{++_count} sent with subject: \"{SubjectTextBox}\".";
+                IsInProgress = false;
             }
             else
             {
