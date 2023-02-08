@@ -20,6 +20,7 @@ namespace EmailWpfApp.Data
 
         #region Public properties
         public DbSet<Email> Emails { get; set; }
+        public DbSet<string> Folders { get; set; }
         #endregion
 
         #region Overrides

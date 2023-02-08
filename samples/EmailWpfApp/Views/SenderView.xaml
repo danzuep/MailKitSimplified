@@ -1,11 +1,13 @@
-﻿<UserControl x:Class="EmailWpfApp.Views.SenderView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:vm="clr-namespace:EmailWpfApp.ViewModels"
-             mc:Ignorable="d" 
-             d:DesignHeight="150" d:DesignWidth="300">
+﻿<UserControl
+    x:Class="EmailWpfApp.Views.SenderView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:EmailWpfApp.ViewModels"
+    d:DesignHeight="150"
+    d:DesignWidth="300"
+    mc:Ignorable="d">
     <UserControl.DataContext>
         <vm:SenderViewModel />
     </UserControl.DataContext>
@@ -18,8 +20,7 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Background="{StaticResource BackgroundBrush}"
-        FocusManager.FocusedElement="{Binding ElementName=View_FromTextBox}">
+    <Grid Background="{StaticResource BackgroundBrush}" FocusManager.FocusedElement="{Binding ElementName=View_FromTextBox}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -27,47 +28,39 @@
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0">
             <DockPanel>
-                <Label
-                    Style="{StaticResource LabelStyle}"
-                    Content="From: " />
+                <Label Content="From: " Style="{StaticResource LabelStyle}" />
                 <TextBox
                     Name="View_FromTextBox"
-                    Text="{Binding FromTextBox}"
-                    MinWidth="150"/>
+                    MinWidth="150"
+                    Text="{Binding FromTextBox}" />
             </DockPanel>
             <DockPanel>
-                <Label
-                    Style="{StaticResource LabelStyle}"
-                    Content="To: " />
+                <Label Content="To: " Style="{StaticResource LabelStyle}" />
                 <TextBox
                     Name="View_ToTextBox"
-                    Text="{Binding ToTextBox}"
-                    MinWidth="150"/>
+                    MinWidth="150"
+                    Text="{Binding ToTextBox}" />
             </DockPanel>
             <DockPanel>
-                <Label
-                    Style="{StaticResource LabelStyle}"
-                    Content="Subject: " />
+                <Label Content="Subject: " Style="{StaticResource LabelStyle}" />
                 <TextBox
                     Name="View_SubjectTextBox"
-                    Text="{Binding SubjectTextBox}"
-                    MinWidth="150"/>
+                    MinWidth="150"
+                    Text="{Binding SubjectTextBox}" />
             </DockPanel>
         </StackPanel>
-        <TextBox Grid.Row="1"
+        <TextBox
             Name="View_MessageTextBox"
+            Grid.Row="1"
             Style="{StaticResource MultiLineTextBoxStyle}"
-            Text="{Binding MessageTextBox, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-        </TextBox>
+            Text="{Binding MessageTextBox, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
         <StackPanel Grid.Row="2">
             <Button
                 Name="View_SendButton"
-                Content="Send"
                 Command="{Binding SendMailCommand}"
+                Content="Send"
                 Style="{StaticResource ButtonStyle}" />
-            <ProgressBar
-                Name="View_ProgressBar"
-                IsIndeterminate="{Binding IsInProgress}"/>
+            <ProgressBar Name="View_ProgressBar" IsIndeterminate="{Binding IsInProgress}" />
             <StatusBar Style="{StaticResource StatusBarStyle}">
                 <StatusBarItem Content="{Binding StatusText}" />
             </StatusBar>

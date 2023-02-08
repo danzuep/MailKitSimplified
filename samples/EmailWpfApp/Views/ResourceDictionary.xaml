@@ -1,36 +1,44 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Brush x:Key="BackgroundBrush">White</Brush>
 
-    <Style x:Key="StatusBarStyle" TargetType="{x:Type StatusBar}"/>
+    <Style x:Key="StatusBarStyle" TargetType="{x:Type StatusBar}" />
 
     <Style x:Key="ButtonStyle" TargetType="{x:Type Button}">
-        <Setter Property="MinWidth" Value="100"/>
+        <Setter Property="MinWidth" Value="100" />
     </Style>
 
     <Style x:Key="LabelStyle" TargetType="{x:Type Label}">
-        <Setter Property="Padding" Value="0 0 5 0"/>
-        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Padding" Value="0,0,5,0" />
+        <Setter Property="FontSize" Value="12" />
         <Setter Property="FontWeight" Value="Bold" />
-        <Setter Property="DockPanel.Dock" Value="Left"/>
-        <Setter Property="MinWidth" Value="60"/>
+        <Setter Property="DockPanel.Dock" Value="Left" />
+        <Setter Property="MinWidth" Value="60" />
     </Style>
 
     <Style x:Key="TextBlockStyle" TargetType="{x:Type TextBlock}">
-        <Setter Property="Margin" Value="5 2 5 2" />
+        <Setter Property="Margin" Value="5,2,5,2" />
         <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="MinWidth" Value="100" />
     </Style>
 
-    <Style x:Key="MultilineTextBlockStyle" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource TextBlockStyle}">
+    <Style
+        x:Key="MultilineTextBlockStyle"
+        BasedOn="{StaticResource TextBlockStyle}"
+        TargetType="{x:Type TextBlock}">
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible" />
     </Style>
 
+    <Style x:Key="TextBoxStyle" TargetType="{x:Type TextBox}">
+        <Setter Property="Margin" Value="5,2,5,2" />
+        <Setter Property="MinWidth" Value="100" />
+    </Style>
+
     <Style x:Key="MultiLineTextBoxStyle" TargetType="{x:Type TextBox}">
-        <Setter Property="Margin" Value="5 2 5 2" />
+        <Setter Property="Margin" Value="5,2,5,2" />
         <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="AcceptsReturn" Value="True" />
-        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Stretch" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Visible" />
@@ -43,7 +51,7 @@
 
     <Style x:Key="ReadonlyDataGridStyle" TargetType="{x:Type DataGrid}">
         <Setter Property="IsReadOnly" Value="True" />
-        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Stretch" />
         <Setter Property="AlternatingRowBackground" Value="LightBlue" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible" />

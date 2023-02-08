@@ -1,0 +1,115 @@
+﻿<UserControl
+    x:Class="EmailWpfApp.Views.FolderMonitorView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:uc="clr-namespace:EmailWpfApp.UserControls"
+    xmlns:vm="clr-namespace:EmailWpfApp.ViewModels"
+    d:DesignHeight="150"
+    d:DesignWidth="300"
+    mc:Ignorable="d">
+    <UserControl.DataContext>
+        <vm:FolderMonitorViewModel />
+    </UserControl.DataContext>
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ResourceDictionary.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource BackgroundBrush}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="5" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="5" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel
+            Grid.Row="0"
+            Grid.Column="0"
+            Grid.ColumnSpan="3">
+            <DockPanel>
+                <Label
+                    Content="IMAP _Host: "
+                    Style="{StaticResource LabelStyle}"
+                    Target="{Binding ElementName=View_HostTextBox}" />
+                <Button
+                    x:Name="View_ConnectButton"
+                    Command="{Binding ConnectHostCommand}"
+                    Content="_Connect"
+                    DockPanel.Dock="Right"
+                    Style="{StaticResource ButtonStyle}"
+                    TabIndex="1" />
+                <TextBox
+                    x:Name="View_HostTextBox"
+                    Style="{StaticResource TextBoxStyle}"
+                    Text="{Binding ImapHost}"
+                    ToolTip="Input the IMAP host name, e.g. localhost." />
+            </DockPanel>
+            <DockPanel>
+                <Label
+                    Content="Mail _Folder: "
+                    Style="{StaticResource LabelStyle}"
+                    Target="{Binding ElementName=View_FolderComboBox}" />
+                <Button
+                    x:Name="View_ChangeButton"
+                    Command="{Binding ChangeFolderCommand}"
+                    Content="_Receive"
+                    DockPanel.Dock="Right"
+                    Style="{StaticResource ButtonStyle}"
+                    TabIndex="3" />
+                <ComboBox
+                    x:Name="View_FolderComboBox"
+                    ItemsSource="{Binding ViewModelItems}"
+                    SelectedItem="{Binding SelectedViewModelItem}"
+                    Style="{StaticResource ComboBoxStyle}"
+                    TabIndex="2"
+                    ToolTip="Select which folder to download an email from." />
+            </DockPanel>
+            <!--<uc:InputBoxUserControl ButtonContent="Connect" LabelContent="IMAP Host: " />
+            <uc:DropdownBoxUserControl ButtonContent="Receive" LabelContent="Mail Folder: " />-->
+        </StackPanel>
+        <DataGrid
+            Name="View_MessagesDataGrid"
+            Grid.Row="2"
+            Grid.Column="0"
+            AutoGenerateColumns="False"
+            ItemsSource="{Binding ViewModelDataGrid}"
+            SelectedItem="{Binding SelectedEmail}"
+            Style="{StaticResource ReadonlyDataGridStyle}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding Date}" Header="Date" />
+                <DataGridTextColumn Binding="{Binding From}" Header="From" />
+                <DataGridTextColumn Binding="{Binding To}" Header="To" />
+                <DataGridTextColumn Binding="{Binding Subject}" Header="Subject" />
+                <DataGridTextColumn Binding="{Binding Attachments}" Header="Attachments" />
+            </DataGrid.Columns>
+        </DataGrid>
+        <GridSplitter
+            Grid.Row="2"
+            Grid.Column="1"
+            Width="5"
+            HorizontalAlignment="Stretch" />
+        <TextBlock
+            Grid.Row="2"
+            Grid.Column="2"
+            Style="{StaticResource MultilineTextBlockStyle}"
+            Text="{Binding SelectedEmail}" />
+        <StackPanel Grid.Row="3">
+            <ProgressBar Name="View_ProgressBar" IsIndeterminate="{Binding IsInProgress}" />
+            <StatusBar Style="{StaticResource StatusBarStyle}">
+                <StatusBarItem Content="{Binding StatusText}" />
+            </StatusBar>
+        </StackPanel>
+    </Grid>
+</UserControl>

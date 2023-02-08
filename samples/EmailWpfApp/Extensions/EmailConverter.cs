@@ -28,5 +28,22 @@ namespace EmailWpfApp.Extensions
 
         public static IEnumerable<Email> Convert<TIn>(this IEnumerable<TIn>? values) where TIn : MimeMessage =>
             values?.Select(c => c?.Convert()!).Where(c => c != null) ?? Array.Empty<Email>();
+
+        //public static Email Convert(this IMessageSummary messageSummary)
+        //{
+        //    var email = new Email();
+        //    email.MessageId = messageSummary.MessageId;
+        //    email.Date = messageSummary.Date.ToString();
+        //    email.From = messageSummary.From.ToString();
+        //    email.To = messageSummary.To.ToString();
+        //    email.Cc = messageSummary.Cc.ToString();
+        //    email.Bcc = messageSummary.Bcc.ToString();
+        //    email.Headers = messageSummary.Headers.ToEnumeratedString();
+        //    email.Attachments = messageSummary.Attachments?.Count().ToString() ?? "0";
+        //    email.Subject = messageSummary.Subject ?? string.Empty;
+        //    email.BodyText = messageSummary.TextBody?.Trim() ?? string.Empty;
+        //    email.BodyHtml = messageSummary.HtmlBody?.Trim() ?? email.BodyText;
+        //    return email;
+        //}
     }
 }

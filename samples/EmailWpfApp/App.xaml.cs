@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using EmailWpfApp.Extensions;
 using CommunityToolkit.Mvvm.DependencyInjection;
+using EmailWpfApp.ViewModels;
 
 namespace EmailWpfApp
 {
@@ -19,6 +20,9 @@ namespace EmailWpfApp
                 .Build();
             var services = new ServiceCollection()
                 .AddSingleton<MainWindow>()
+                .AddSingleton<SenderViewModel>()
+                .AddSingleton<ReceiverViewModel>()
+                .AddSingleton<FolderMonitorViewModel>()
                 .ConfigureServices(configuration);
             var serviceProvider = services.BuildServiceProvider();
             Ioc.Default.ConfigureServices(serviceProvider);

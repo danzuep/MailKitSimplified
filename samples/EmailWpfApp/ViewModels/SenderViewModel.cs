@@ -3,6 +3,12 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using MailKitSimplified.Sender.Abstractions;
+using EmailWpfApp.Models;
+using MailKitSimplified.Receiver.Abstractions;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.ObjectModel;
+using System;
+using System.Windows.Controls;
 
 namespace EmailWpfApp.ViewModels
 {
@@ -39,23 +45,27 @@ namespace EmailWpfApp.ViewModels
         [RelayCommand]
         private async Task SendMailAsync()
         {
-            using var smtpSender = Ioc.Default.GetRequiredService<ISmtpSender>();
-            if (smtpSender != null)
+            IsInProgress = true;
+            try
             {
-                IsInProgress = true;
-                await smtpSender.WriteEmail
+                using var smtpSender = Ioc.Default.GetRequiredService<ISmtpSender>();
+                if (smtpSender != null)
+                {
+                    await smtpSender.WriteEmail
                     .From(FromTextBox)
-                    .To(ToTextBox)
-                    .Subject(SubjectTextBox)
-                    .BodyHtml(MessageTextBox)
-                    .SendAsync();
-                StatusText = $"Email #{++_count} sent with subject: \"{SubjectTextBox}\".";
-                IsInProgress = false;
+                        .To(ToTextBox)
+                        .Subject(SubjectTextBox)
+                        .BodyHtml(MessageTextBox)
+                        .SendAsync();
+                    StatusText = $"Email #{++_count} sent with subject: \"{SubjectTextBox}\".";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                StatusText = $"Email #{++_count} sent!";
+                ShowAndLogError(ex);
+                System.Diagnostics.Debugger.Break();
             }
+            IsInProgress = false;
         }
     }
 }
