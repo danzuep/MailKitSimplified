@@ -12,6 +12,11 @@ using EmailWpfApp.Models;
 using System.Windows.Threading;
 using MailKitSimplified.Sender.Models;
 using System.Linq;
+using System.ComponentModel;
+using System.Windows;
+using System.Threading;
+using System.Windows.Controls;
+using MailKit;
 
 namespace EmailWpfApp.ViewModels
 {
@@ -25,16 +30,20 @@ namespace EmailWpfApp.ViewModels
         public Email? SelectedEmail { get; set; }
 
         [ObservableProperty]
-        private string _messageTextBlock = string.Empty;
+        private string imapHost = "localhost";
 
         [ObservableProperty]
         private bool isInProgress;
 
         [ObservableProperty]
-        private string imapHost = "localhost";
+        private int progressBarPercentage;
+
+        [ObservableProperty]
+        private string _messageTextBlock = string.Empty;
 
         public IProgress<Email> ProgressEmail;
 
+        private readonly BackgroundWorker worker = new BackgroundWorker();
         private static readonly string _inbox = "INBOX";
         private readonly IImapReceiver _imapReceiver;
 
@@ -65,13 +74,119 @@ namespace EmailWpfApp.ViewModels
                     //StoreFolderNames(mailFolderNames);
                 }
                 IsInProgress = false;
-                StatusText = string.Empty;
+                StatusText = $"Connected to {ImapHost}.";
             }
             catch (Exception ex)
             {
                 ShowAndLogError(ex);
                 System.Diagnostics.Debugger.Break();
             }
+        }
+
+        //[RelayCommand]
+        //private async Task ChangeFolderAsync()
+        //{
+        //    //await _imapReceiver.ConnectMailFolderAsync(SelectedViewModelItem);
+        //    var idleTask = Task.Run(() => _imapReceiver.MonitorFolder
+        //        .OnMessageArrival(OnArrivalAsync)
+        //        .IdleAsync());
+        //    //Dispatcher.InvokeAsync();
+        //    await Task.Delay(2000);
+        //    ViewModelDataGrid = new ObservableCollection<Email>(emails);
+        //    if (SelectedEmail == null)
+        //    {
+        //        SelectedEmail = emails.FirstOrDefault();
+        //    }
+        //    OnPropertyChanged(nameof(ViewModelDataGrid));
+        //    //await idleTask;
+        //}
+
+        CancellationTokenSource cts = new CancellationTokenSource();
+
+        [RelayCommand]
+        private void Receive()
+        {
+            if (ProgressBarPercentage > 0)
+            {
+                cts.Cancel(false);
+                worker.DoWork -= BackgroundWorkerDoWork;
+                worker.ProgressChanged -= BackgroundWorkerProgressChanged;
+                worker.RunWorkerCompleted -= BackgroundWorkerRunWorkerCompleted;
+                worker.Dispose();
+                ProgressBarPercentage = 0;
+                return;
+            }
+            ProgressBarPercentage = 1;
+            worker.WorkerSupportsCancellation = true;
+            worker.WorkerReportsProgress = true;
+            worker.DoWork += BackgroundWorkerDoWork;
+            worker.ProgressChanged += BackgroundWorkerProgressChanged;
+            worker.RunWorkerCompleted += BackgroundWorkerRunWorkerCompleted;
+            worker.RunWorkerAsync();
+        }
+
+        [RelayCommand]
+        private void Cancel()
+        {
+            worker?.CancelAsync();
+        }
+
+        private async Task OnArrivalAsync(MailKit.IMessageSummary messageSummary)
+        {
+            UpdateStatusText("Downloading email...");
+            IsInProgress = true;
+            var mimeMessage = await messageSummary.GetMimeMessageAsync();
+            var email = mimeMessage.Convert();
+            UpdateStatusText($"{_imapReceiver} #{messageSummary.Index} received: {email.Subject}.");
+            ViewModelDataGrid.Add(email);
+            if (SelectedEmail == null)
+            {
+                SelectedEmail = email;
+            }
+            IsInProgress = false;
+            //UpdateStatusText(string.Empty);
+        }
+
+        private void BackgroundWorkerDoWork(object? sender, DoWorkEventArgs e)
+        {
+            if (sender is BackgroundWorker worker)
+            {
+                if (worker.CancellationPending)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+                if (e.Argument is int max)
+                {
+                    //int progressPercentage = Convert.ToInt32((max * 100d) / 100);
+                }
+                var idleTask = _imapReceiver.MonitorFolder
+                    .OnMessageArrival(OnMessageArrived)
+                    .IdleAsync(cts.Token);
+                idleTask.Wait();
+                e.Result = 100;
+            }
+        }
+
+        private void OnMessageArrived(IMessageSummary messageSummary)
+        {
+            int progressPercentage = ProgressBarPercentage + 10;
+            worker.ReportProgress(progressPercentage, messageSummary);
+            Thread.Sleep(1);
+        }
+
+        private void BackgroundWorkerProgressChanged(object? sender, ProgressChangedEventArgs e)
+        {
+            ProgressBarPercentage = e.ProgressPercentage;
+            if (e.UserState is IMessageSummary messageSummary)
+            {
+                _ = OnArrivalAsync(messageSummary);
+            }
+        }
+
+        private void BackgroundWorkerRunWorkerCompleted(object? sender, RunWorkerCompletedEventArgs e)
+        {
+            ProgressBarPercentage = Convert.ToInt32(e.Result);
         }
 
         //private void StoreFolderNames(IEnumerable<string> folderNames)
@@ -90,37 +205,6 @@ namespace EmailWpfApp.ViewModels
         //        ShowAndLogWarning(ex);
         //    }
         //}
-
-        [RelayCommand]
-        private async Task ChangeFolderAsync()
-        {
-            //await _imapReceiver.ConnectMailFolderAsync(SelectedViewModelItem);
-            var idleTask = Task.Run(() => _imapReceiver.MonitorFolder
-                .OnMessageArrival(OnArrivalAsync)
-                .IdleAsync());
-            //Dispatcher.InvokeAsync();
-            await Task.Delay(2000);
-            ViewModelDataGrid = new ObservableCollection<Email>(emails);
-            if (SelectedEmail == null)
-            {
-                SelectedEmail = emails.FirstOrDefault();
-            }
-            OnPropertyChanged(nameof(ViewModelDataGrid));
-            //await idleTask;
-        }
-
-        private async Task OnArrivalAsync(MailKit.IMessageSummary messageSummary)
-        {
-            UpdateStatusText("Downloading email...");
-            IsInProgress = true;
-            var mimeMessage = await messageSummary.GetMimeMessageAsync();
-            var email = mimeMessage.Convert();
-            UpdateStatusText($"{_imapReceiver} #{messageSummary.Index} received: {email.Subject}.");
-            UpdateProgressEmail(email);
-            //ViewModelDataGrid.Add(email);
-            IsInProgress = false;
-            //UpdateStatusText(string.Empty);
-        }
 
         public void Dispose()
         {

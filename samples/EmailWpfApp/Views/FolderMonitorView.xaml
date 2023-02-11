@@ -7,7 +7,7 @@
     xmlns:uc="clr-namespace:EmailWpfApp.UserControls"
     xmlns:vm="clr-namespace:EmailWpfApp.ViewModels"
     d:DesignHeight="150"
-    d:DesignWidth="300"
+    d:DesignWidth="500"
     mc:Ignorable="d">
     <UserControl.DataContext>
         <vm:FolderMonitorViewModel />
@@ -61,13 +61,22 @@
                     Content="Mail _Folder: "
                     Style="{StaticResource LabelStyle}"
                     Target="{Binding ElementName=View_FolderComboBox}" />
-                <Button
-                    x:Name="View_ChangeButton"
-                    Command="{Binding ChangeFolderCommand}"
-                    Content="_Receive"
-                    DockPanel.Dock="Right"
-                    Style="{StaticResource ButtonStyle}"
-                    TabIndex="3" />
+                <ToggleButton x:Name="View_ChangeButton" DockPanel.Dock="Right">
+                    <ToggleButton.Style>
+                        <Style TargetType="{x:Type ToggleButton}">
+                            <Setter Property="TabIndex" Value="3" />
+                            <Setter Property="MinWidth" Value="100" />
+                            <Setter Property="HorizontalAlignment" Value="Center" />
+                            <Setter Property="Content" Value="_Receive" />
+                            <Setter Property="Command" Value="{Binding ReceiveCommand}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter Property="Content" Value="_Cancel" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ToggleButton.Style>
+                </ToggleButton>
                 <ComboBox
                     x:Name="View_FolderComboBox"
                     ItemsSource="{Binding ViewModelItems}"
@@ -78,6 +87,7 @@
             </DockPanel>
             <!--<uc:InputBoxUserControl ButtonContent="Connect" LabelContent="IMAP Host: " />
             <uc:DropdownBoxUserControl ButtonContent="Receive" LabelContent="Mail Folder: " />-->
+            <ProgressBar Name="View_ConnectProgressBar" IsIndeterminate="{Binding IsInProgress}" />
         </StackPanel>
         <DataGrid
             Name="View_MessagesDataGrid"
@@ -106,7 +116,10 @@
             Style="{StaticResource MultilineTextBlockStyle}"
             Text="{Binding SelectedEmail}" />
         <StackPanel Grid.Row="3">
-            <ProgressBar Name="View_ProgressBar" IsIndeterminate="{Binding IsInProgress}" />
+            <ProgressBar
+                Name="View_DownloadProgressBar"
+                Height="7"
+                Value="{Binding ProgressBarPercentage}" />
             <StatusBar Style="{StaticResource StatusBarStyle}">
                 <StatusBarItem Content="{Binding StatusText}" />
             </StatusBar>

@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using System;
+using System.Windows.Controls;
 
 namespace EmailWpfApp.Views
 {
@@ -7,9 +8,10 @@ namespace EmailWpfApp.Views
     /// </summary>
     public partial class ReceiverView : UserControl
     {
-        public ReceiverView()
+        protected override void OnInitialized(EventArgs e)
         {
             InitializeComponent();
+            base.OnInitialized(e);
         }
     }
 }
