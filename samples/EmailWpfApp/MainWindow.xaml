@@ -8,19 +8,21 @@
     Title="Send/Receive Email Tool"
     MinWidth="240"
     MinHeight="240"
+    Left="0"
     SizeToContent="WidthAndHeight"
-    WindowStartupLocation="CenterScreen"
+    Top="0"
+    WindowStartupLocation="Manual"
     mc:Ignorable="d">
     <Grid>
         <TabControl TabStripPlacement="Top">
-            <TabItem Header="Folder Monitor">
-                <views:FolderMonitorView />
-            </TabItem>
             <TabItem Header="Sender">
                 <views:SenderView />
             </TabItem>
             <TabItem Header="Receiver">
                 <views:ReceiverView />
+            </TabItem>
+            <TabItem Header="Folder Monitor">
+                <views:FolderMonitorView />
             </TabItem>
         </TabControl>
     </Grid>

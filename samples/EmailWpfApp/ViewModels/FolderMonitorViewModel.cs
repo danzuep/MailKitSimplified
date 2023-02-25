@@ -1,7 +1,12 @@
-﻿using System;
+﻿using MailKit;
+using System;
+using System.ComponentModel;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Channels;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using CommunityToolkit.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
@@ -9,24 +14,21 @@ using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using EmailWpfApp.Extensions;
 using EmailWpfApp.Models;
-using System.Windows.Threading;
-using MailKitSimplified.Sender.Models;
-using System.Linq;
-using System.ComponentModel;
-using System.Windows;
-using System.Threading;
-using System.Windows.Controls;
-using MailKit;
+using EmailWpfApp.Data;
+using MailKitSimplified.Receiver.Models;
+using Microsoft.Extensions.Logging;
+using static CommunityToolkit.Mvvm.ComponentModel.__Internals.__TaskExtensions.TaskAwaitableWithoutEndValidation;
 
 namespace EmailWpfApp.ViewModels
 {
     public sealed partial class FolderMonitorViewModel : BaseViewModel, IDisposable
     {
+        private readonly Channel<IMessageSummary> _queue;
+
         public ObservableCollection<string> ViewModelItems { get; private set; } = new() { _inbox };
         public string SelectedViewModelItem { get; set; } = _inbox;
 
         public ObservableCollection<Email> ViewModelDataGrid { get; private set; } = new();
-        private List<Email> emails = new();
         public Email? SelectedEmail { get; set; }
 
         [ObservableProperty]
@@ -41,23 +43,43 @@ namespace EmailWpfApp.ViewModels
         [ObservableProperty]
         private string _messageTextBlock = string.Empty;
 
-        public IProgress<Email> ProgressEmail;
-
-        private readonly BackgroundWorker worker = new BackgroundWorker();
         private static readonly string _inbox = "INBOX";
+        private readonly CancellationTokenSource _cts = new();
+        private readonly BackgroundWorker _worker = new();
+        //private readonly EmailDbContext? _dbContext;
         private readonly IImapReceiver _imapReceiver;
+        private readonly ILogger _logger;
 
         public FolderMonitorViewModel() : base()
         {
             _imapReceiver = Ioc.Default.GetRequiredService<IImapReceiver>();
-            ProgressEmail = new Progress<Email>(UpdateProgressEmail);
+            _logger = Ioc.Default.GetRequiredService<ILogger<FolderMonitorViewModel>>();
+            //_dbContext = Ioc.Default.GetService<EmailDbContext>();
             StatusText = string.Empty;
-        }
 
-        internal void UpdateProgressEmail(Email email)
-        {
-            //ViewModelDataGrid.Add(email);
-            emails.Add(email);
+            int capacity = 0;
+            if (capacity > 0)
+            {
+                var channelOptions = new BoundedChannelOptions(capacity)
+                {
+                    FullMode = BoundedChannelFullMode.Wait,
+                    AllowSynchronousContinuations = true,
+                    SingleReader = true,
+                    SingleWriter = true
+                };
+                _queue = Channel.CreateBounded<IMessageSummary>(channelOptions);
+            }
+            else
+            {
+                var channelOptions = new UnboundedChannelOptions()
+                {
+                    AllowSynchronousContinuations = true,
+                    SingleReader = true,
+                    SingleWriter = true
+                };
+                _queue = Channel.CreateUnbounded<IMessageSummary>(channelOptions);
+            }
+
         }
 
         [RelayCommand]
@@ -71,7 +93,7 @@ namespace EmailWpfApp.ViewModels
                 if (mailFolderNames.Count > 0)
                 {
                     ViewModelItems = new ObservableCollection<string>(mailFolderNames);
-                    //StoreFolderNames(mailFolderNames);
+                    StoreFolderNames(mailFolderNames);
                 }
                 IsInProgress = false;
                 StatusText = $"Connected to {ImapHost}.";
@@ -83,59 +105,68 @@ namespace EmailWpfApp.ViewModels
             }
         }
 
-        //[RelayCommand]
-        //private async Task ChangeFolderAsync()
-        //{
-        //    //await _imapReceiver.ConnectMailFolderAsync(SelectedViewModelItem);
-        //    var idleTask = Task.Run(() => _imapReceiver.MonitorFolder
-        //        .OnMessageArrival(OnArrivalAsync)
-        //        .IdleAsync());
-        //    //Dispatcher.InvokeAsync();
-        //    await Task.Delay(2000);
-        //    ViewModelDataGrid = new ObservableCollection<Email>(emails);
-        //    if (SelectedEmail == null)
-        //    {
-        //        SelectedEmail = emails.FirstOrDefault();
-        //    }
-        //    OnPropertyChanged(nameof(ViewModelDataGrid));
-        //    //await idleTask;
-        //}
-
-        CancellationTokenSource cts = new CancellationTokenSource();
-
-        [RelayCommand]
-        private void Receive()
+        private void StoreFolderNames(IEnumerable<string> folderNames)
         {
-            if (ProgressBarPercentage > 0)
+            try
             {
-                cts.Cancel(false);
-                worker.DoWork -= BackgroundWorkerDoWork;
-                worker.ProgressChanged -= BackgroundWorkerProgressChanged;
-                worker.RunWorkerCompleted -= BackgroundWorkerRunWorkerCompleted;
-                worker.Dispose();
-                ProgressBarPercentage = 0;
-                return;
+                Guard.IsNotNull(folderNames, nameof(folderNames));
+                //_dbContext?.Folders.UpdateRange(folderNames);
             }
-            ProgressBarPercentage = 1;
-            worker.WorkerSupportsCancellation = true;
-            worker.WorkerReportsProgress = true;
-            worker.DoWork += BackgroundWorkerDoWork;
-            worker.ProgressChanged += BackgroundWorkerProgressChanged;
-            worker.RunWorkerCompleted += BackgroundWorkerRunWorkerCompleted;
-            worker.RunWorkerAsync();
+            catch (Exception ex)
+            {
+                ShowAndLogWarning(ex);
+            }
         }
 
         [RelayCommand]
-        private void Cancel()
+        private async Task ReceiveAsync()
         {
-            worker?.CancelAsync();
+            //int progressPercentage = Convert.ToInt32((max * 100d) / 100);
+            var tasks = new Task[]
+            {
+                _imapReceiver.MonitorFolder.OnMessageArrival(EnqueueAsync).IdleAsync(_cts.Token),
+                ProcessQueueAsync(OnArrivalAsync, _cts.Token)
+            };
+            await Task.WhenAll(tasks);
         }
 
-        private async Task OnArrivalAsync(MailKit.IMessageSummary messageSummary)
+        private async Task EnqueueAsync(IMessageSummary m) => await _queue.Writer.WriteAsync(m, _cts.Token);
+
+        private async Task ProcessQueueAsync(Func<IMessageSummary, ValueTask> messageArrivalMethod, CancellationToken cancellationToken = default)
+        {
+            IMessageSummary? messageItem = null;
+            try
+            {
+                await foreach (var messageSummary in _queue.Reader.ReadAllAsync(cancellationToken))
+                {
+                    if (messageSummary != null)
+                    {
+                        messageItem = messageSummary;
+                        await messageArrivalMethod(messageSummary);
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogTrace("Arrival queue cancelled.");
+            }
+            catch (ChannelClosedException ex)
+            {
+                _logger.LogWarning(ex, "Channel closed.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred processing task queue item #{0}.", messageItem);
+                if (messageItem != null)
+                    await _queue.Writer.WriteAsync(messageItem);
+            }
+        }
+
+        private async ValueTask OnArrivalAsync(IMessageSummary messageSummary)
         {
             UpdateStatusText("Downloading email...");
             IsInProgress = true;
-            var mimeMessage = await messageSummary.GetMimeMessageAsync();
+            var mimeMessage = await messageSummary.GetMimeMessageAsync(_cts.Token);
             var email = mimeMessage.Convert();
             UpdateStatusText($"{_imapReceiver} #{messageSummary.Index} received: {email.Subject}.");
             ViewModelDataGrid.Add(email);
@@ -147,68 +178,13 @@ namespace EmailWpfApp.ViewModels
             //UpdateStatusText(string.Empty);
         }
 
-        private void BackgroundWorkerDoWork(object? sender, DoWorkEventArgs e)
-        {
-            if (sender is BackgroundWorker worker)
-            {
-                if (worker.CancellationPending)
-                {
-                    e.Cancel = true;
-                    return;
-                }
-                if (e.Argument is int max)
-                {
-                    //int progressPercentage = Convert.ToInt32((max * 100d) / 100);
-                }
-                var idleTask = _imapReceiver.MonitorFolder
-                    .OnMessageArrival(OnMessageArrived)
-                    .IdleAsync(cts.Token);
-                idleTask.Wait();
-                e.Result = 100;
-            }
-        }
-
-        private void OnMessageArrived(IMessageSummary messageSummary)
-        {
-            int progressPercentage = ProgressBarPercentage + 10;
-            worker.ReportProgress(progressPercentage, messageSummary);
-            Thread.Sleep(1);
-        }
-
-        private void BackgroundWorkerProgressChanged(object? sender, ProgressChangedEventArgs e)
-        {
-            ProgressBarPercentage = e.ProgressPercentage;
-            if (e.UserState is IMessageSummary messageSummary)
-            {
-                _ = OnArrivalAsync(messageSummary);
-            }
-        }
-
-        private void BackgroundWorkerRunWorkerCompleted(object? sender, RunWorkerCompletedEventArgs e)
-        {
-            ProgressBarPercentage = Convert.ToInt32(e.Result);
-        }
-
-        //private void StoreFolderNames(IEnumerable<string> folderNames)
-        //{
-        //    try
-        //    {
-        //        Guard.IsNotNull(folderNames, nameof(folderNames));
-        //        if (Ioc.Default.GetService<EmailDbContext>() is EmailDbContext dbContext)
-        //        {
-        //            dbContext.Folders.UpdateRange(folderNames);
-        //            dbContext.Dispose();
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        ShowAndLogWarning(ex);
-        //    }
-        //}
-
         public void Dispose()
         {
+            //_queue.Writer.Complete();
             _imapReceiver.Dispose();
+            //_dbContext?.Dispose();
+            _worker.Dispose();
+            _cts.Dispose();
         }
     }
 }
