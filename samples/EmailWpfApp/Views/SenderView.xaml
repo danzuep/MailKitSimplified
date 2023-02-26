@@ -52,7 +52,7 @@
         <TextBox
             Name="View_MessageTextBox"
             Grid.Row="1"
-            Style="{StaticResource MultiLineTextBoxStyle}"
+            Style="{StaticResource MultilineTextBoxStyle}"
             Text="{Binding MessageTextBox, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
         <StackPanel Grid.Row="2">
             <Button

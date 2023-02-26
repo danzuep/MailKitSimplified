@@ -2,6 +2,7 @@
 using System.IO;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using CommunityToolkit.Common;
 
 namespace EmailWpfApp.Models
 {
@@ -37,7 +38,18 @@ namespace EmailWpfApp.Models
 
         public string Subject { get; set; } = string.Empty;
 
-        public string BodyText { get; set; } = string.Empty;
+        private string _bodyText = string.Empty;
+        public string BodyText
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(_bodyText) &&
+                    !string.IsNullOrWhiteSpace(BodyHtml))
+                    _bodyText = BodyHtml.DecodeHtml();
+                return _bodyText;
+            }
+            set => _bodyText = value;
+        }
 
         public string BodyHtml { get; set; } = string.Empty;
 

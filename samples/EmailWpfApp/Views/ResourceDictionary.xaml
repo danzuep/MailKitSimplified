@@ -26,16 +26,14 @@
     <Style
         x:Key="MultilineTextBlockStyle"
         BasedOn="{StaticResource TextBlockStyle}"
-        TargetType="{x:Type TextBlock}">
-        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible" />
-    </Style>
+        TargetType="{x:Type TextBlock}" />
 
     <Style x:Key="TextBoxStyle" TargetType="{x:Type TextBox}">
         <Setter Property="Margin" Value="5,2,5,2" />
         <Setter Property="MinWidth" Value="100" />
     </Style>
 
-    <Style x:Key="MultiLineTextBoxStyle" TargetType="{x:Type TextBox}">
+    <Style x:Key="MultilineTextBoxStyle" TargetType="{x:Type TextBox}">
         <Setter Property="Margin" Value="5,2,5,2" />
         <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="AcceptsReturn" Value="True" />

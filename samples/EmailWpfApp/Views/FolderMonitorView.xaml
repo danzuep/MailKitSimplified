@@ -110,11 +110,17 @@
             Grid.Column="1"
             Width="5"
             HorizontalAlignment="Stretch" />
-        <TextBlock
+        <!--<TextBlock
             Grid.Row="2"
             Grid.Column="2"
             Style="{StaticResource MultilineTextBlockStyle}"
-            Text="{Binding SelectedEmail}" />
+            Text="{Binding SelectedEmail.BodyText}" />-->
+        <TextBox
+            Grid.Row="2"
+            Grid.Column="2"
+            IsReadOnly="True"
+            Style="{StaticResource MultilineTextBoxStyle}"
+            Text="{Binding SelectedEmail.BodyText}" />
         <StackPanel Grid.Row="3">
             <ProgressBar
                 Name="View_DownloadProgressBar"

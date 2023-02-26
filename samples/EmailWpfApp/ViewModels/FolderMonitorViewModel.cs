@@ -18,6 +18,7 @@ using EmailWpfApp.Data;
 using MailKitSimplified.Receiver.Models;
 using Microsoft.Extensions.Logging;
 using static CommunityToolkit.Mvvm.ComponentModel.__Internals.__TaskExtensions.TaskAwaitableWithoutEndValidation;
+using CommunityToolkit.Common;
 
 namespace EmailWpfApp.ViewModels
 {
@@ -29,7 +30,9 @@ namespace EmailWpfApp.ViewModels
         public string SelectedViewModelItem { get; set; } = _inbox;
 
         public ObservableCollection<Email> ViewModelDataGrid { get; private set; } = new();
-        public Email? SelectedEmail { get; set; }
+
+        [ObservableProperty]
+        private Email selectedEmail = new();
 
         [ObservableProperty]
         private string imapHost = "localhost";
