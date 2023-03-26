@@ -12,18 +12,11 @@ namespace EmailWpfApp.Extensions
     {
         internal static IServiceCollection ConfigureServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddLogging(options =>
-            {
-                options.AddConfiguration(configuration);
-            });
-            services.AddDbContext<EmailDbContext>(options =>
-            {
-                options.UseSqlite("Data Source = Email.db");
-            });
+            services.AddLogging(options => options.AddConfiguration(configuration));
+            services.AddDbContext<EmailDbContext>(options => options.UseSqlite("Data Source=Email.db"));
             services.AddMailKitSimplifiedEmailSender(configuration);
             services.AddMailKitSimplifiedEmailReceiver(configuration);
             return services;
         }
-
     }
 }

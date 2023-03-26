@@ -2,8 +2,10 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using EmailWpfApp.Models;
+using CommunityToolkit.Common;
+using CommunityToolkit.Diagnostics;
 using MailKitSimplified.Receiver.Extensions;
+using EmailWpfApp.Models;
 
 namespace EmailWpfApp.Extensions
 {
@@ -11,6 +13,7 @@ namespace EmailWpfApp.Extensions
     {
         public static Email Convert(this MimeMessage mimeMessage)
         {
+            Guard.IsNotNull(mimeMessage, nameof(mimeMessage));
             var email = new Email();
             email.MessageId = mimeMessage.MessageId;
             email.Date = mimeMessage.Date.ToString();
@@ -21,7 +24,8 @@ namespace EmailWpfApp.Extensions
             email.Headers = mimeMessage.Headers.ToEnumeratedString();
             email.Attachments = mimeMessage.Attachments?.Count().ToString() ?? "0";
             email.Subject = mimeMessage.Subject ?? string.Empty;
-            email.BodyText = mimeMessage.TextBody?.Trim() ?? string.Empty;
+            email.BodyText = mimeMessage.TextBody?.Trim() ??
+                mimeMessage.HtmlBody?.DecodeHtml() ?? string.Empty;
             email.BodyHtml = mimeMessage.HtmlBody?.Trim() ?? email.BodyText;
             return email;
         }

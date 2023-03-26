@@ -41,7 +41,9 @@ namespace MailKitSimplified.Receiver.Extensions
         public static async Task<MemoryStream> GetMimeEntityStream(this MimeEntity mimeEntity, CancellationToken ct = default)
         {
             var memoryStream = new MemoryStream();
-            await mimeEntity.WriteToStreamAsync(memoryStream, ct);
+            if (mimeEntity != null)
+                await mimeEntity.WriteToStreamAsync(memoryStream, ct);
+            memoryStream.Position = 0;
             return memoryStream;
         }
 

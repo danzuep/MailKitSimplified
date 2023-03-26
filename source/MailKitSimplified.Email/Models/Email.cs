@@ -1,17 +1,14 @@
 ﻿using System;
 using System.IO;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Diagnostics.CodeAnalysis;
 using CommunityToolkit.Common;
 
-namespace EmailWpfApp.Models
+namespace MailKitSimplified.Email.Models
 {
     public class Email
     {
-        public static EmailWriter Write => new EmailWriter();
-
         [Key]
-        [NotNull]
         public Guid Uid { get; set; } = Guid.NewGuid();
 
         public string MailboxFolder { get; set; } = string.Empty;
@@ -34,9 +31,32 @@ namespace EmailWpfApp.Models
 
         public string Headers { get; set; } = string.Empty;
 
-        public string Attachments { get; set; } = string.Empty;
+        public int AttachmentCount { get; set; }
+
+        public IEnumerable<string> AttachmentNames { get; set; } = new List<string>();
 
         public string Subject { get; set; } = string.Empty;
+
+        public int PreviewLength { get; set; } = 1000;
+
+        private string _bodyPreview = string.Empty;
+        public string BodyPreview
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(_bodyPreview) &&
+                    !string.IsNullOrWhiteSpace(BodyHtml))
+                {
+                    _bodyPreview = BodyHtml.DecodeHtml();
+                    if (string.IsNullOrWhiteSpace(BodyText))
+                        BodyText = _bodyPreview;
+                    if (_bodyPreview.Length > PreviewLength)
+                        _bodyPreview = $"{_bodyPreview.Substring(0, PreviewLength)}...";
+                }
+                return _bodyPreview;
+            }
+            set => _bodyPreview = value;
+        }
 
         public string BodyText { get; set; } = string.Empty;
 
@@ -65,8 +85,8 @@ namespace EmailWpfApp.Models
                 if (!string.IsNullOrEmpty(Bcc))
                     text.WriteLine("Bcc: {0}", Bcc);
                 text.WriteLine("Subject: {0}", Subject);
-                if (!string.IsNullOrEmpty(Attachments))
-                    text.WriteLine("Attachments: {0}", Attachments);
+                if (AttachmentCount > 0)
+                    text.WriteLine("Attachments: {0}", AttachmentCount);
                 envelope = text.ToString();
             }
             return envelope;

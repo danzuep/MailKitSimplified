@@ -44,8 +44,4 @@
     <PackageReference Include="System.IO.Abstractions" Version="19.1.5" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Resources\" />
-  </ItemGroup>
-
 </Project>

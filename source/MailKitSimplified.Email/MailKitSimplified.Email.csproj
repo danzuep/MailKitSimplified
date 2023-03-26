@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net6.0;net7.0</TargetFrameworks>
-    <ImplicitUsings>disable</ImplicitUsings>
+    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -10,9 +10,9 @@
     <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
     <Authors>danzuep</Authors>
-    <Title>Simple MailKit IMAP Receiver</Title>
-    <PackageTags>IMAP; MailKit; email; receiver; receive email; reply; forward; simply; easily; simple; easy; fluent; C#; .NET</PackageTags>
-    <Description>Easy, fluent way to receive, forward, and reply to emails with MailKit.</Description>
+    <Title>Simple MailKit SMTP Sender and IMAP Receiver</Title>
+    <PackageTags>MailKit; SMTP; IMAP; email; send; receive; forward; reply; simply; easily; simple; easy; fluent; C#; .NET</PackageTags>
+    <Description>Easy, fluent way to send, receive, forward, and reply to emails with MailKit.</Description>
     <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
@@ -35,15 +35,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MailKit" Version="3.4.3" />
-    <PackageReference Include="MimeKit" Version="3.4.3" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
-    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
-    <PackageReference Include="System.IO.Abstractions" Version="19.1.5" />
+    <PackageReference Include="CommunityToolkit.Common" Version="8.1.0" />
+    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.1.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.1.0" />
+    <PackageReference Include="MailKitSimplified.Sender" Version="2.4.7" />
+    <PackageReference Include="MailKitSimplified.Receiver" Version="2.4.7" />
   </ItemGroup>
 
 </Project>

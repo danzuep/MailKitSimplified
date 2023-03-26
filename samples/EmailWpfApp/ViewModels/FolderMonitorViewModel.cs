@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Threading.Channels;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Microsoft.Extensions.Logging;
 using CommunityToolkit.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -14,11 +15,6 @@ using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using EmailWpfApp.Extensions;
 using EmailWpfApp.Models;
-using EmailWpfApp.Data;
-using MailKitSimplified.Receiver.Models;
-using Microsoft.Extensions.Logging;
-using static CommunityToolkit.Mvvm.ComponentModel.__Internals.__TaskExtensions.TaskAwaitableWithoutEndValidation;
-using CommunityToolkit.Common;
 
 namespace EmailWpfApp.ViewModels
 {
@@ -88,23 +84,28 @@ namespace EmailWpfApp.ViewModels
         [RelayCommand]
         private async Task ConnectHostAsync()
         {
+            IsInProgress = true;
             try
             {
                 StatusText = "Getting mail folder names...";
-                IsInProgress = true;
-                var mailFolderNames = await _imapReceiver.GetMailFolderNamesAsync();
-                if (mailFolderNames.Count > 0)
-                {
-                    ViewModelItems = new ObservableCollection<string>(mailFolderNames);
-                    StoreFolderNames(mailFolderNames);
-                }
-                IsInProgress = false;
+                await GetMailFolderNamesAsync().ConfigureAwait(false);
                 StatusText = $"Connected to {ImapHost}.";
             }
             catch (Exception ex)
             {
                 ShowAndLogError(ex);
                 System.Diagnostics.Debugger.Break();
+            }
+            IsInProgress = false;
+        }
+
+        private async Task GetMailFolderNamesAsync()
+        {
+            var mailFolderNames = await _imapReceiver.GetMailFolderNamesAsync();
+            if (mailFolderNames.Count > 0)
+            {
+                ViewModelItems = new ObservableCollection<string>(mailFolderNames);
+                StoreFolderNames(mailFolderNames);
             }
         }
 
@@ -121,16 +122,36 @@ namespace EmailWpfApp.ViewModels
             }
         }
 
+        private bool isReceiving = false;
+
         [RelayCommand]
         private async Task ReceiveAsync()
         {
-            //int progressPercentage = Convert.ToInt32((max * 100d) / 100);
-            var tasks = new Task[]
+            if (isReceiving)
             {
-                _imapReceiver.MonitorFolder.OnMessageArrival(EnqueueAsync).IdleAsync(_cts.Token),
-                ProcessQueueAsync(OnArrivalAsync, _cts.Token)
-            };
-            await Task.WhenAll(tasks);
+                isReceiving = false;
+                _cts.Cancel();
+                _cts.TryReset();
+                return;
+            }
+            try
+            {
+                await GetMailFolderNamesAsync().ConfigureAwait(false);
+                //int progressPercentage = Convert.ToInt32((max * 100d) / 100);
+                isReceiving = true;
+                var tasks = new Task[]
+                {
+                    _imapReceiver.MonitorFolder.OnMessageArrival(EnqueueAsync).IdleAsync(_cts.Token),
+                    ProcessQueueAsync(OnArrivalAsync, _cts.Token)
+                };
+                await Task.WhenAll(tasks);
+            }
+            catch (Exception ex)
+            {
+                isReceiving = false;
+                ShowAndLogError(ex);
+                //System.Diagnostics.Debugger.Break();
+            }
         }
 
         private async Task EnqueueAsync(IMessageSummary m) => await _queue.Writer.WriteAsync(m, _cts.Token);

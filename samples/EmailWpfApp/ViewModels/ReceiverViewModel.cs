@@ -41,28 +41,20 @@ namespace EmailWpfApp.ViewModels
         private async Task GetFoldersAsync()
         {
             IsInProgress = true;
-            try
+            if (Ioc.Default.GetRequiredService<IImapReceiver>() is IImapReceiver imapReceiver)
             {
-                if (Ioc.Default.GetRequiredService<IImapReceiver>() is IImapReceiver imapReceiver)
-                {
-                    StatusText = "Getting mail folder names...";
-                    var mailFolderNames = await imapReceiver.GetMailFolderNamesAsync();
-                    if (mailFolderNames.Count > 0)
-                        ViewModelItems = new ObservableCollection<string>(mailFolderNames);
-                    StatusText = string.Empty;
-                }
-                //else if (_dbContext != null)
-                //{
-                //    var emails = _dbContext.Emails.AsEnumerable();
-                //    var collection = new ObservableCollection<Email>(emails);
-                //    ViewModelDataGrid = collection;
-                //}
+                StatusText = "Getting mail folder names...";
+                var mailFolderNames = await imapReceiver.GetMailFolderNamesAsync();
+                if (mailFolderNames.Count > 0)
+                    ViewModelItems = new ObservableCollection<string>(mailFolderNames);
+                StatusText = string.Empty;
             }
-            catch (Exception ex)
-            {
-                ShowAndLogError(ex);
-                System.Diagnostics.Debugger.Break();
-            }
+            //else if (_dbContext != null)
+            //{
+            //    var emails = _dbContext.Emails.AsEnumerable();
+            //    var collection = new ObservableCollection<Email>(emails);
+            //    ViewModelDataGrid = collection;
+            //}
             IsInProgress = false;
         }
 
@@ -81,25 +73,33 @@ namespace EmailWpfApp.ViewModels
         [RelayCommand]
         private async Task ReceiveMailAsync()
         {
-            StatusText = "Getting email...";
-            IsInProgress = true;
-            var getFoldersTask = GetFoldersAsync();
-            var mimeMessages = await _mailFolderReader
-                .Take(1, continuous: true).GetMimeMessagesAsync();
-            var emails = mimeMessages.Convert();
-            var count = 0;
-            foreach (var email in emails)
+            try
             {
-                StatusText = $"Email #{++_count} received: {email.Subject}.";
-                MessageTextBlock = email.ToString();
-                ViewModelDataGrid.Add(email);
-                count++;
+                StatusText = "Getting email...";
+                IsInProgress = true;
+                var getFoldersTask = GetFoldersAsync();
+                var mimeMessages = await _mailFolderReader
+                    .Take(1, continuous: true).GetMimeMessagesAsync();
+                var emails = mimeMessages.Convert();
+                var count = 0;
+                foreach (var email in emails)
+                {
+                    StatusText = $"Email #{++_count} received: {email.Subject}.";
+                    MessageTextBlock = email.ToString();
+                    ViewModelDataGrid.Add(email);
+                    count++;
+                }
+                if (count > 0)
+                    StoreEmails(ViewModelDataGrid.AsEnumerable());
+                else
+                    StatusText = "No more emails in this folder.";
+                await getFoldersTask;
             }
-            if (count > 0)
-                StoreEmails(ViewModelDataGrid.AsEnumerable());
-            else
-                StatusText = "No more emails in this folder.";
-            await getFoldersTask;
+            catch (Exception ex)
+            {
+                ShowAndLogError(ex);
+                System.Diagnostics.Debugger.Break();
+            }
             IsInProgress = false;
         }
 
