@@ -6,10 +6,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using MailKitSimplified.Receiver.Abstractions;
-using MailKitSimplified.Receiver.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using MailKitSimplified.Receiver.Abstractions;
+using MailKitSimplified.Receiver.Extensions;
+using MailKitSimplified.Receiver.Models;
 
 namespace MailKitSimplified.Receiver.Services
 {
@@ -72,6 +73,15 @@ namespace MailKitSimplified.Receiver.Services
         {
             _logger = logger ?? NullLogger<MailFolderReader>.Instance;
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
+        }
+
+        public static MailFolderReader Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderReader> logger = null, ILogger<ImapReceiver> logImap = null)
+        {
+            if (emailReceiverOptions == null)
+                throw new ArgumentNullException(nameof(emailReceiverOptions));
+            var imapReceiver = ImapReceiver.Create(emailReceiverOptions, logImap);
+            var mailFolderReader = new MailFolderReader(imapReceiver, logger);
+            return mailFolderReader;
         }
 
         public IMailReader Skip(int skipCount)

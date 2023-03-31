@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Net;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using MailKit.Net.Imap;
+using MailKit.Security;
 
 namespace MailKitSimplified.Receiver.Models
 {
@@ -20,6 +24,7 @@ namespace MailKitSimplified.Receiver.Models
         public NetworkCredential ImapCredential { get; set; } = new NetworkCredential();
         public string ProtocolLog { get; set; } = null;
         public bool ProtocolLogFileAppend { get; set; } = false;
+        public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(1);
 
         // Constructor required for Configuration mapping.
         public EmailReceiverOptions() { }
@@ -42,6 +47,20 @@ namespace MailKitSimplified.Receiver.Models
                 MailFolderName = mailFolderName;
             ProtocolLog = protocolLog;
             ProtocolLogFileAppend = protocolLogFileAppend;
+        }
+
+        public async Task<IImapClient> CreateImapClientAsync(CancellationToken cancellationToken = default)
+        {
+            var imapClient = new ImapClient
+            {
+                Timeout = (int)Timeout.TotalMilliseconds
+            };
+            await imapClient.ConnectAsync(ImapHost, ImapPort, SecureSocketOptions.Auto, cancellationToken).ConfigureAwait(false);
+            if (imapClient.Capabilities.HasFlag(ImapCapabilities.Compress))
+                await imapClient.CompressAsync(cancellationToken).ConfigureAwait(false);
+            await imapClient.AuthenticateAsync(ImapCredential, cancellationToken).ConfigureAwait(false);
+            //await imapClient.Inbox.OpenAsync(FolderAccess.ReadOnly).ConfigureAwait(false);
+            return imapClient;
         }
 
         public EmailReceiverOptions Copy() => MemberwiseClone() as EmailReceiverOptions;

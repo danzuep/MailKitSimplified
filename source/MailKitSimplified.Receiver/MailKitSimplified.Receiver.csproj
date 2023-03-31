@@ -11,7 +11,7 @@
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
     <Authors>danzuep</Authors>
     <Title>Simple MailKit IMAP Receiver</Title>
-    <PackageTags>IMAP; MailKit; email; receiver; receive email; reply; forward; simply; easily; simple; easy; fluent; C#; .NET</PackageTags>
+    <PackageTags>IMAP; MailKit; email; receiver; receive; forward; reply; simply; easily; simple; easy; fluent; C#; .NET</PackageTags>
     <Description>Easy, fluent way to receive, forward, and reply to emails with MailKit.</Description>
     <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>

@@ -1,4 +1,7 @@
 ﻿using MimeKit;
+using System;
+using System.Linq;
+using System.Collections.Generic;
 using CommunityToolkit.Common;
 using CommunityToolkit.Diagnostics;
 using MailKitSimplified.Receiver.Extensions;

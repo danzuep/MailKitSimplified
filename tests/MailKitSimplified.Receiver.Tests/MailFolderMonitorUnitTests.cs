@@ -10,6 +10,7 @@ namespace MailKitSimplified.Receiver.Tests
     {
         private static readonly Task _completedTask = Task.CompletedTask;
         private readonly CancellationTokenSource _arrival = new();
+        private readonly FolderMonitorOptions _folderMonitorOptions;
         private readonly Mock<IImapClient> _imapClientMock = new();
         private readonly Mock<IMailFolder> _mailFolderMock = new();
         private readonly Mock<IMailFolderClient> _mailFolderClientMock = new();
@@ -33,14 +34,15 @@ namespace MailKitSimplified.Receiver.Tests
                 .ReturnsAsync(_imapClientMock.Object).Verifiable();
             _imapReceiverMock.SetupGet(_ => _.MailFolderClient)
                 .Returns(_mailFolderClientMock.Object).Verifiable();
-            var options = Options.Create(new FolderMonitorOptions { MessageSummaryItems = MessageSummaryItems.Envelope });
+            _folderMonitorOptions = new FolderMonitorOptions { MessageSummaryItems = MessageSummaryItems.Envelope };
+            var options = Options.Create(_folderMonitorOptions);
             _imapIdleClient = new MailFolderMonitor(_imapReceiverMock.Object, options, loggerFactory.CreateLogger<MailFolderMonitor>());
         }
 
         [Fact]
         public void CreateMailFolderMonitor_WithAnyFolderMonitorOptions_ReturnsMailFolderMonitor()
         {
-            var mailFolderMonitor = MailFolderMonitor.Create(_imapReceiverMock.Object, It.IsAny<FolderMonitorOptions>(), NullLogger<MailFolderMonitor>.Instance);
+            var mailFolderMonitor = MailFolderMonitor.Create(It.IsAny<FolderMonitorOptions>(), NullLogger<MailFolderMonitor>.Instance);
             Assert.NotNull(mailFolderMonitor);
             Assert.IsAssignableFrom<IMailFolderMonitor>(mailFolderMonitor);
         }

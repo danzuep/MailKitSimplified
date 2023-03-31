@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
+using MailKitSimplified.Receiver.Models;
 
 namespace MailKitSimplified.Receiver.Services
 {
@@ -24,6 +25,15 @@ namespace MailKitSimplified.Receiver.Services
         {
             _logger = logger ?? NullLogger<MailFolderClient>.Instance;
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
+        }
+
+        public static MailFolderClient Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderClient> logger = null, ILogger<ImapReceiver> logImap = null)
+        {
+            if (emailReceiverOptions == null)
+                throw new ArgumentNullException(nameof(emailReceiverOptions));
+            var imapReceiver = ImapReceiver.Create(emailReceiverOptions, logImap);
+            var mailFolderClient = new MailFolderClient(imapReceiver, logger);
+            return mailFolderClient;
         }
 
         public async ValueTask<IMailFolder> ConnectAsync(bool enableWrite = false, CancellationToken cancellationToken = default)

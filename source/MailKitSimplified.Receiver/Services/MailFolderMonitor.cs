@@ -59,12 +59,25 @@ namespace MailKitSimplified.Receiver
             };
         }
 
-        public static MailFolderMonitor Create(FolderMonitorOptions folderMonitorOptions, ILogger<MailFolderMonitor> logger = null)
+        public static MailFolderMonitor Create(FolderMonitorOptions folderMonitorOptions, ILogger<MailFolderMonitor> logger = null, ILogger<ImapReceiver> logImap = null)
         {
             if (folderMonitorOptions == null)
                 throw new ArgumentNullException(nameof(folderMonitorOptions));
-            var imapReceiver = ImapReceiver.Create(folderMonitorOptions.EmailReceiverOptions);
-            var receiver = Create(imapReceiver, folderMonitorOptions, logger);
+            var imapReceiver = ImapReceiver.Create(folderMonitorOptions.EmailReceiverOptions, logImap);
+            var options = Options.Create(folderMonitorOptions);
+            var receiver = new MailFolderMonitor(imapReceiver, options, logger);
+            return receiver;
+        }
+
+        public static MailFolderMonitor Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderMonitor> logger = null, ILogger<ImapReceiver> logImap = null)
+        {
+            if (emailReceiverOptions == null)
+                throw new ArgumentNullException(nameof(emailReceiverOptions));
+            var folderMonitorOptions = new FolderMonitorOptions
+            {
+                EmailReceiverOptions = emailReceiverOptions
+            };
+            var receiver = Create(folderMonitorOptions, logger, logImap);
             return receiver;
         }
 

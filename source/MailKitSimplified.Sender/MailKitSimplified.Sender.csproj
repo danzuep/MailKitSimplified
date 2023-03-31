@@ -11,7 +11,7 @@
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
     <Authors>danzuep</Authors>
     <Title>Simple MailKit SMTP Sender</Title>
-    <PackageTags>MailKit; SMTP; email; sender; send email; simply; easily; simple; easy; fluent; C#; .NET; </PackageTags>
+    <PackageTags>SMTP; MailKit; email; sender; send; simply; easily; simple; easy; fluent; C#; .NET; </PackageTags>
     <Description>Easy, fluent way to send emails with MailKit.</Description>
     <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
