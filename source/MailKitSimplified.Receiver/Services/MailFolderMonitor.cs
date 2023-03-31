@@ -81,13 +81,6 @@ namespace MailKitSimplified.Receiver
             return receiver;
         }
 
-        public static MailFolderMonitor Create(IImapReceiver imapReceiver, FolderMonitorOptions folderMonitorOptions, ILogger<MailFolderMonitor> logger = null)
-        {
-            var options = Options.Create(folderMonitorOptions);
-            var receiver = new MailFolderMonitor(imapReceiver, options, logger);
-            return receiver;
-        }
-
         public MailFolderMonitor SetIdleMinutes(byte idleMinutes = FolderMonitorOptions.IdleMinutesImap)
         {
             _folderMonitorOptions.IdleMinutes = idleMinutes;
