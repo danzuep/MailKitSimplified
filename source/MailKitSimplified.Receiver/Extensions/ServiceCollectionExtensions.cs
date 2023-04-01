@@ -11,7 +11,7 @@ using MailKitSimplified.Receiver.Services;
 namespace MailKitSimplified.Receiver
 {
     [ExcludeFromCodeCoverage]
-    public static class DependencyInjectionExtensions
+    public static class ServiceCollectionExtensions
     {
         /// <summary>
         /// Add the MailKitSimplified.Receiver configuration and services.
@@ -35,6 +35,10 @@ namespace MailKitSimplified.Receiver
             services.Configure<FolderMonitorOptions>(monitorSection);
             var mailboxSection = configuration.GetSection(sectionNameMailbox);
             services.Configure<MailboxOptions>(mailboxSection);
+            var protocolLoggerSection = imapSection.GetSection(ProtocolLoggerOptions.SectionName);
+            services.Configure<ProtocolLoggerOptions>(protocolLoggerSection);
+            var fileWriteSection = protocolLoggerSection.GetSection(FileWriterOptions.SectionName);
+            services.Configure<FileWriterOptions>(fileWriteSection);
             services.AddMailKitSimplifiedEmailReceiver();
             return services;
         }
@@ -52,7 +56,8 @@ namespace MailKitSimplified.Receiver
             services.AddMemoryCache();
             services.AddSingleton<IFileSystem, FileSystem>();
             // Add custom services to the container
-            services.AddSingleton<IProtocolLogger, MailKitProtocolLogger>();
+            services.AddSingleton<IFileWriter, LogFileWriter>();
+            services.AddTransient<IProtocolLogger, MailKitProtocolLogger>();
             services.AddTransient<IImapReceiverFactory, ImapReceiverFactory>();
             services.AddTransient<IMailFolderMonitorFactory, MailFolderMonitorFactory>();
             services.AddTransient<IImapReceiver, ImapReceiver>();

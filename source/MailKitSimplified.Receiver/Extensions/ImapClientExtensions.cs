@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace MailKitSimplified.Receiver.Extensions
 {
-    public static class IImapClientExtensions
+    public static class ImapClientExtensions
     {
         public static async ValueTask ConnectImapClientAsync(this IImapClient imapClient, string host, ushort port, CancellationToken cancellationToken = default)
         {

@@ -37,11 +37,7 @@ namespace MailKitSimplified.Receiver.Services
                 throw new NullReferenceException($"{nameof(EmailReceiverOptions.ImapHost)} is null.");
             if (_receiverOptions.ImapCredential == null)
                 throw new NullReferenceException($"{nameof(EmailReceiverOptions.ImapCredential)} is null.");
-            var imapLogger = protocolLogger ?? new MailKitProtocolLogger(_loggerFactory.CreateLogger<MailKitProtocolLogger>());
-#pragma warning disable CS0618 // Type or member is obsolete
-            if (imapLogger is MailKitProtocolLogger imapLog)
-                imapLog.SetLogFilePath(_receiverOptions.ProtocolLog, _receiverOptions.ProtocolLogFileAppend);
-#pragma warning restore CS0618 // Type or member is obsolete
+            var imapLogger = protocolLogger ?? MailKitProtocolLogger.Create(_receiverOptions.ProtocolLogger, _loggerFactory.CreateLogger<MailKitProtocolLogger>());
             _mailFolderClient = new Lazy<MailFolderClient>(() => Services.MailFolderClient.Create(_receiverOptions, _loggerFactory.CreateLogger<MailFolderClient>(), _loggerFactory.CreateLogger<ImapReceiver>()));
             _mailFolderReader = new Lazy<MailFolderReader>(() => MailFolderReader.Create(_receiverOptions, _loggerFactory.CreateLogger<MailFolderReader>(), _loggerFactory.CreateLogger<ImapReceiver>()));
             _mailFolderMonitor = new Lazy<MailFolderMonitor>(() => MailFolderMonitor.Create(_receiverOptions, _loggerFactory.CreateLogger<MailFolderMonitor>(), _loggerFactory.CreateLogger<ImapReceiver>()));
@@ -73,8 +69,8 @@ namespace MailKitSimplified.Receiver.Services
 
         public ImapReceiver SetProtocolLog(string logFilePath, bool append = false)
         {
-            _receiverOptions.ProtocolLog = logFilePath;
-            _receiverOptions.ProtocolLogFileAppend = append;
+            _receiverOptions.ProtocolLogger.FileWriter.FilePath = logFilePath;
+            _receiverOptions.ProtocolLogger.FileWriter.AppendToExisting = append;
             var receiver = Create(_receiverOptions, _logger);
             return receiver;
         }
@@ -219,7 +215,6 @@ namespace MailKitSimplified.Receiver.Services
         public IImapReceiver Clone()
         {
             var receiverOptions = _receiverOptions.Copy();
-            receiverOptions.ProtocolLog = string.Empty; // TODO: fix concurrent writes to the log file
             return Create(receiverOptions, _logger);
         }
 

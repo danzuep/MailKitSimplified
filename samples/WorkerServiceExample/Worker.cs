@@ -33,13 +33,13 @@ public class Worker : BackgroundService
 
     private async Task NotReentrantAsync(CancellationToken cancellationToken = default)
     {
-        var sendTask = DelayedSendAsync(5, cancellationToken);
+        //var sendTask = DelayedSendAsync(5, cancellationToken);
         var newestEmail = await GetNewestMessageSummaryAsync(cancellationToken);
         await _imapReceiver.MonitorFolder
             .SetIgnoreExistingMailOnConnect()
             .OnMessageArrival(OnArrivalAsync)
             .IdleAsync(cancellationToken);
-        await sendTask;
+        //await sendTask;
 
         async Task OnArrivalAsync(IMessageSummary messageSummary)
         {

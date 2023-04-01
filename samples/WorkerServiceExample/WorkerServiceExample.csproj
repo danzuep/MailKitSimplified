@@ -8,11 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MailKitSimplified.Generic" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <!--<ProjectReference Include="..\..\source\MailKitSimplified.Email\MailKitSimplified.Email.csproj" />-->
     <ProjectReference Include="..\..\source\MailKitSimplified.Receiver\MailKitSimplified.Receiver.csproj" />
     <ProjectReference Include="..\..\source\MailKitSimplified.Sender\MailKitSimplified.Sender.csproj" />
   </ItemGroup>

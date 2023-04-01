@@ -13,6 +13,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Receiver.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Sender.Tests", "..\tests\MailKitSimplified.Sender.Tests\MailKitSimplified.Sender.Tests.csproj", "{ABB5675F-F96B-4CFB-9B13-130924172662}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Email", "..\source\MailKitSimplified.Email\MailKitSimplified.Email.csproj", "{2AA310A1-E57A-401B-9A22-E371EBA769C9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Generic", "..\source\MailKitSimplified.Generic\MailKitSimplified.Generic.csproj", "{B6C5DBAB-6175-4997-BD12-D93585F5060E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +43,14 @@ Global
 		{ABB5675F-F96B-4CFB-9B13-130924172662}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ABB5675F-F96B-4CFB-9B13-130924172662}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ABB5675F-F96B-4CFB-9B13-130924172662}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2AA310A1-E57A-401B-9A22-E371EBA769C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AA310A1-E57A-401B-9A22-E371EBA769C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AA310A1-E57A-401B-9A22-E371EBA769C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AA310A1-E57A-401B-9A22-E371EBA769C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6C5DBAB-6175-4997-BD12-D93585F5060E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6C5DBAB-6175-4997-BD12-D93585F5060E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6C5DBAB-6175-4997-BD12-D93585F5060E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6C5DBAB-6175-4997-BD12-D93585F5060E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

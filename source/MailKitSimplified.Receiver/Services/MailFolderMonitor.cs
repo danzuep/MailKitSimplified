@@ -14,9 +14,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Models;
-using MailKitSimplified.Receiver.Services;
 
-namespace MailKitSimplified.Receiver
+namespace MailKitSimplified.Receiver.Services
 {
     public sealed class MailFolderMonitor : IMailFolderMonitor
     {
@@ -196,17 +195,16 @@ namespace MailKitSimplified.Receiver
                 }
                 finally
                 {
-                    _cancel?.Cancel(false);
                     if (_mailFolder != null)
                     {
                         _mailFolder.MessageExpunged -= OnMessageExpunged;
                         _mailFolder.CountChanged -= OnCountChanged;
-
-                        await _mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
-                        await _fetchFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+                        //await _mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+                        //await _fetchFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
                     }
                     await _imapReceiver.DisconnectAsync(CancellationToken.None).ConfigureAwait(false);
 
+                    _cancel?.Cancel(false);
                     _cancel?.Dispose();
                     _arrival?.Dispose();
                     _messageCache?.Clear();
@@ -342,7 +340,7 @@ namespace MailKitSimplified.Receiver
                         if (_arrivalQueue.TryDequeue(out messageSummary))
                             await messageArrivalMethod(messageSummary).ConfigureAwait(false);
                         else if (_arrivalQueue.IsEmpty)
-                            await Task.Delay(100).ConfigureAwait(false);
+                            await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
                     }
                     while (!cancellationToken.IsCancellationRequested);
                 }
@@ -371,7 +369,7 @@ namespace MailKitSimplified.Receiver
                         if (_departureQueue.TryDequeue(out messageSummary))
                             await messageDepartureMethod(messageSummary).ConfigureAwait(false);
                         else if (_departureQueue.IsEmpty)
-                            await Task.Delay(100).ConfigureAwait(false);
+                            await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
                     }
                     while (!cancellationToken.IsCancellationRequested);
                 }
