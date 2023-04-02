@@ -9,10 +9,11 @@ namespace MailKitSimplified.Receiver.Tests
 {
     public class MailKitProtocolLoggerUnitTests
     {
+        private static readonly string _nl = Environment.NewLine;
         internal static readonly string LogFilePath = @"Logs\ImapClient.txt";
-        internal static readonly string TestReply = $"* OK smtp4dev{Environment.NewLine}A00000000 CAPABILITY{Environment.NewLine}";
-        internal readonly int TestReplyMid = 17 - Environment.NewLine.Length;
-        internal readonly int TestReplyEnd = 25 - (Environment.NewLine.Length * 2);
+        internal static readonly string TestReply = $"* OK smtp4dev{_nl}A00000000 CAPABILITY{_nl}";
+        internal readonly int TestReplyMid = 13 + _nl.Length;
+        internal readonly int TestReplyEnd = 19 + _nl.Length;
         private static readonly Uri _localhost = new Uri("imap://localhost:143/?starttls=when-available");
         private static readonly byte[] _testBytes = Encoding.UTF8.GetBytes(TestReply);
         private readonly ILoggerFactory _loggerFactory;

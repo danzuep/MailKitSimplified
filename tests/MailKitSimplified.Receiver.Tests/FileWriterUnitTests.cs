@@ -10,8 +10,9 @@ namespace MailKitSimplified.Receiver.Tests
 {
     public class FileWriterUnitTests
     {
+        private static readonly string _nl = Environment.NewLine;
         private static readonly string _logFilePath = MailKitProtocolLoggerUnitTests.LogFilePath;
-        private static readonly string _testReply = MailKitProtocolLoggerUnitTests.TestReply;
+        private static readonly string _testReply = $"* OK smtp4dev{_nl}A00000000 CAPABILITY{_nl}";
         private readonly IFileSystem _fileSystem = new MockFileSystem();
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<LogFileWriterQueue> _logger;
