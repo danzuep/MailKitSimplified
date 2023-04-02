@@ -10,7 +10,7 @@ using MailKitSimplified.Sender.Models;
 namespace MailKitSimplified.Sender
 {
     [ExcludeFromCodeCoverage]
-    public static class DependencyInjectionExtensions
+    public static class ServiceCollectionExtensions
     {
         /// <summary>
         /// Add the MailKitSimplified.Sender configuration and services.
@@ -25,8 +25,8 @@ namespace MailKitSimplified.Sender
         {
             if (configuration == null)
                 throw new ArgumentNullException(nameof(configuration));
-            var configSection = configuration.GetRequiredSection(sectionName);
-            services.Configure<EmailSenderOptions>(configSection);
+            var smtpSection = configuration.GetRequiredSection(sectionName);
+            services.Configure<EmailSenderOptions>(smtpSection);
             services.AddMailKitSimplifiedEmailSender();
             return services;
         }

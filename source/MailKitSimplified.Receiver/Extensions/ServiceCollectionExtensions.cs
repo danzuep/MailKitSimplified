@@ -7,11 +7,13 @@ using Microsoft.Extensions.Configuration;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Receiver.Services;
+using MailKit.Net.Imap;
+using System.Security.Authentication;
 
 namespace MailKitSimplified.Receiver
 {
     [ExcludeFromCodeCoverage]
-    public static class DependencyInjectionExtensions
+    public static class ServiceCollectionExtensions
     {
         /// <summary>
         /// Add the MailKitSimplified.Receiver configuration and services.
@@ -25,7 +27,7 @@ namespace MailKitSimplified.Receiver
         /// <param name="sectionNameImap">IMAP configuration section name.</param>
         /// <param name="sectionNameMonitor">Folder monitor configuration section name.</param>
         /// <returns><see cref="IServiceCollection"/>.</returns>
-        public static IServiceCollection AddMailKitSimplifiedEmailReceiver(this IServiceCollection services, IConfiguration configuration, string sectionNameImap = EmailReceiverOptions.SectionName, string sectionNameMonitor = FolderMonitorOptions.SectionName)
+        public static IServiceCollection AddMailKitSimplifiedEmailReceiver(this IServiceCollection services, IConfiguration configuration, string sectionNameImap = EmailReceiverOptions.SectionName, string sectionNameMonitor = FolderMonitorOptions.SectionName, string sectionNameMailbox = MailboxOptions.SectionName)
         {
             if (configuration == null)
                 throw new ArgumentNullException(nameof(configuration));
@@ -33,6 +35,12 @@ namespace MailKitSimplified.Receiver
             services.Configure<EmailReceiverOptions>(imapSection);
             var monitorSection = configuration.GetSection(sectionNameMonitor);
             services.Configure<FolderMonitorOptions>(monitorSection);
+            var mailboxSection = configuration.GetSection(sectionNameMailbox);
+            services.Configure<MailboxOptions>(mailboxSection);
+            var protocolLoggerSection = imapSection.GetSection(ProtocolLoggerOptions.SectionName);
+            services.Configure<ProtocolLoggerOptions>(protocolLoggerSection);
+            var fileWriteSection = protocolLoggerSection.GetSection(FileWriterOptions.SectionName);
+            services.Configure<FileWriterOptions>(fileWriteSection);
             services.AddMailKitSimplifiedEmailReceiver();
             return services;
         }
@@ -46,8 +54,14 @@ namespace MailKitSimplified.Receiver
         /// <returns><see cref="IServiceCollection"/>.</returns>
         private static IServiceCollection AddMailKitSimplifiedEmailReceiver(this IServiceCollection services)
         {
+            // Add library dependencies
+            services.AddMemoryCache();
             services.AddSingleton<IFileSystem, FileSystem>();
+            // Add custom services to the container
+            services.AddSingleton<ILogFileWriter, LogFileWriterQueue>();
             services.AddSingleton<IProtocolLogger, MailKitProtocolLogger>();
+            services.AddTransient<IImapReceiverFactory, ImapReceiverFactory>();
+            services.AddTransient<IMailFolderMonitorFactory, MailFolderMonitorFactory>();
             services.AddTransient<IImapReceiver, ImapReceiver>();
             services.AddTransient<IMailFolderClient, MailFolderClient>();
             services.AddTransient<IMailFolderReader, MailFolderReader>();
@@ -80,6 +94,21 @@ namespace MailKitSimplified.Receiver
             if (folderMonitorOptions == null)
                 throw new ArgumentNullException(nameof(folderMonitorOptions));
             services.Configure(folderMonitorOptions);
+            return services;
+        }
+
+        public static IServiceCollection AddTlsImapClient(this IServiceCollection services)
+        {
+            services.AddTransient<IImapClient>((serviceProvider) => {
+                var client = new ImapClient();
+                client.CheckCertificateRevocation = false;
+                client.SslProtocols = SslProtocols.Tls12;
+#if NET5_0_OR_GREATER
+                client.SslProtocols |= SslProtocols.Tls13;
+#endif
+                client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+                return client;
+            });
             return services;
         }
     }

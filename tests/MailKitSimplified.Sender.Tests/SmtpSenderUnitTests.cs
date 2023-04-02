@@ -36,7 +36,7 @@ namespace MailKitSimplified.Sender.Tests
             _smtpClientMock.Setup(_ => _.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
                 .ReturnsAsync("Mail accepted").Verifiable();
             var smtpSenderOptions = Options.Create(new EmailSenderOptions(_localhost, new NetworkCredential()));
-            _smtpSender = new SmtpSender(smtpSenderOptions, loggerMock.Object, protocolLoggerMock.Object, _smtpClientMock.Object);
+            _smtpSender = new SmtpSender(smtpSenderOptions, loggerMock.Object, _smtpClientMock.Object);
         }
 
         [Fact]

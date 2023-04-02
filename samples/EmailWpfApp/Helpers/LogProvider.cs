@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging.Debug;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Console;
-using Microsoft.Extensions.Options;
 
 namespace EmailWpfApp.Helpers
 {
@@ -67,31 +66,11 @@ namespace EmailWpfApp.Helpers
         }
 
         public static void Dispose<T>() => Dispose(typeof(T).Name);
+
         public static void Dispose()
         {
             _loggers?.Clear();
             _loggerFactory?.Dispose();
-        }
-    }
-
-    public class OptionsMonitor<T> : IOptionsMonitor<T> where T : class
-    {
-        private readonly T options;
-
-        public OptionsMonitor(T options)
-        {
-            this.options = options ?? throw new ArgumentNullException(nameof(options));
-        }
-
-        public T CurrentValue => options;
-
-        public T Get(string name) => options;
-
-        public IDisposable OnChange(Action<T, string> listener) => new NullDisposable();
-
-        private class NullDisposable : IDisposable
-        {
-            public void Dispose() { }
         }
     }
 }

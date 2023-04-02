@@ -1,65 +1,38 @@
-﻿using CommunityToolkit.Mvvm.Input;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
+﻿using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.DependencyInjection;
 using MailKitSimplified.Sender.Abstractions;
+using EmailWpfApp.Models;
+using MailKitSimplified.Receiver.Abstractions;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.ObjectModel;
+using System;
+using System.Windows.Controls;
 
 namespace EmailWpfApp.ViewModels
 {
-    class SenderViewModel : BaseViewModel
+    public sealed partial class SenderViewModel : BaseViewModel
     {
-        #region Public Properties
-        public IAsyncRelayCommand SendCommand { get; set; }
+        [ObservableProperty]
+        private string _fromTextBox = string.Empty;
 
-        private string _fromText = string.Empty;
-        public string FromTextBox
-        {
-            get => _fromText;
-            set
-            {
-                _fromText = value;
-                OnPropertyChanged();
-            }
-        }
+        [ObservableProperty]
+        private string _toTextBox = string.Empty;
 
-        private string _toText = string.Empty;
-        public string ToTextBox
-        {
-            get => _toText;
-            set
-            {
-                _toText = value;
-                OnPropertyChanged();
-            }
-        }
+        [ObservableProperty]
+        private string _subjectTextBox = string.Empty;
 
-        private string _subjectText = string.Empty;
-        public string SubjectTextBox
-        {
-            get => _subjectText;
-            set
-            {
-                _subjectText = value;
-                OnPropertyChanged();
-            }
-        }
+        [ObservableProperty]
+        private string _messageTextBox = string.Empty;
 
-        private string _messageText = string.Empty;
-        public string MessageTextBox
-        {
-            get => _messageText;
-            set
-            {
-                _messageText = value;
-                OnPropertyChanged();
-            }
-        }
-        #endregion
+        [ObservableProperty]
+        private bool isInProgress;
 
         private int _count = 0;
 
         public SenderViewModel() : base()
         {
-            SendCommand = new AsyncRelayCommand(SendMailAsync);
             StatusText = string.Empty;
 #if DEBUG
             FromTextBox = "from@localhost";
@@ -69,23 +42,30 @@ namespace EmailWpfApp.ViewModels
 #endif
         }
 
+        [RelayCommand]
         private async Task SendMailAsync()
         {
-            using var smtpSender = App.ServiceProvider?.GetService<ISmtpSender>();
-            if (smtpSender != null)
+            IsInProgress = true;
+            try
             {
-                await smtpSender.WriteEmail
+                using var smtpSender = Ioc.Default.GetRequiredService<ISmtpSender>();
+                if (smtpSender != null)
+                {
+                    await smtpSender.WriteEmail
                     .From(FromTextBox)
-                    .To(ToTextBox)
-                    .Subject(SubjectTextBox)
-                    .BodyHtml(MessageTextBox)
-                    .SendAsync();
-                StatusText = $"Email #{++_count} sent with subject: \"{SubjectTextBox}\".";
+                        .To(ToTextBox)
+                        .Subject(SubjectTextBox)
+                        .BodyHtml(MessageTextBox)
+                        .SendAsync();
+                    StatusText = $"Email #{++_count} sent with subject: \"{SubjectTextBox}\".";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                StatusText = $"Email #{++_count} sent!";
+                ShowAndLogError(ex);
+                System.Diagnostics.Debugger.Break();
             }
+            IsInProgress = false;
         }
     }
 }

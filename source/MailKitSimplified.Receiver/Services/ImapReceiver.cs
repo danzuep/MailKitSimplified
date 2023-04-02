@@ -19,7 +19,11 @@ namespace MailKitSimplified.Receiver.Services
     public sealed class ImapReceiver : IImapReceiver
     {
         private Func<IImapClient, Task> _customAuthenticationMethod;
+        private Lazy<MailFolderClient> _mailFolderClient;
+        private Lazy<MailFolderReader> _mailFolderReader;
+        private Lazy<MailFolderMonitor> _mailFolderMonitor;
 
+        private readonly IProtocolLogger _imapLogger;
         private readonly ILogger<ImapReceiver> _logger;
         private readonly ILoggerFactory _loggerFactory;
         private readonly IImapClient _imapClient;
@@ -34,38 +38,41 @@ namespace MailKitSimplified.Receiver.Services
                 throw new NullReferenceException($"{nameof(EmailReceiverOptions.ImapHost)} is null.");
             if (_receiverOptions.ImapCredential == null)
                 throw new NullReferenceException($"{nameof(EmailReceiverOptions.ImapCredential)} is null.");
-            var imapLogger = protocolLogger ?? new MailKitProtocolLogger(_loggerFactory.CreateLogger<MailKitProtocolLogger>());
-            if (imapLogger is MailKitProtocolLogger imapLog)
-                imapLog.SetLogFilePath(_receiverOptions.ProtocolLog, _receiverOptions.ProtocolLogFileAppend);
-            _imapClient = imapClient ?? new ImapClient(imapLogger);
+            _imapLogger = protocolLogger ?? new MailKitProtocolLogger(new LogFileWriter(_loggerFactory.CreateLogger<LogFileWriter>()), Options.Create(_receiverOptions.ProtocolLogger), _loggerFactory.CreateLogger<MailKitProtocolLogger>());
+            _mailFolderClient = new Lazy<MailFolderClient>(() => Services.MailFolderClient.Create(_receiverOptions, _loggerFactory.CreateLogger<MailFolderClient>(), _loggerFactory.CreateLogger<ImapReceiver>(), _imapLogger));
+            _mailFolderReader = new Lazy<MailFolderReader>(() => MailFolderReader.Create(_receiverOptions, _loggerFactory.CreateLogger<MailFolderReader>(), _loggerFactory.CreateLogger<ImapReceiver>(), _imapLogger));
+            _mailFolderMonitor = new Lazy<MailFolderMonitor>(() => MailFolderMonitor.Create(_receiverOptions, _loggerFactory.CreateLogger<MailFolderMonitor>(), _loggerFactory.CreateLogger<ImapReceiver>(), _imapLogger));
+            _imapClient = imapClient ?? new ImapClient(_imapLogger);
         }
 
-        public static ImapReceiver Create(string imapHost, ushort imapPort = 0, string username = null, string password = null, string mailFolderName = null, string protocolLog = null, bool protocolLogFileAppend = false)
+        public static ImapReceiver Create(string imapHost, ushort imapPort = 0, string username = null, string password = null, string mailFolderName = null, string protocolLog = null, bool protocolLogFileAppend = false, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null)
         {
             var imapCredential = new NetworkCredential(username, password);
-            var receiver = Create(imapHost, imapCredential, imapPort, mailFolderName, protocolLog, protocolLogFileAppend);
+            var receiver = Create(imapHost, imapCredential, imapPort, mailFolderName, protocolLog, protocolLogFileAppend, logger, protocolLogger);
             return receiver;
         }
 
-        public static ImapReceiver Create(string imapHost, NetworkCredential imapCredential, ushort imapPort = 0, string mailFolderName = null, string protocolLog = null, bool protocolLogFileAppend = false)
+        public static ImapReceiver Create(string imapHost, NetworkCredential imapCredential, ushort imapPort = 0, string mailFolderName = null, string protocolLog = null, bool protocolLogFileAppend = false, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null)
         {
             var receiverOptions = new EmailReceiverOptions(imapHost, imapCredential, imapPort, mailFolderName, protocolLog, protocolLogFileAppend);
-            var receiver = Create(receiverOptions);
+            var receiver = Create(receiverOptions, logger, protocolLogger);
             return receiver;
         }
 
-        public static ImapReceiver Create(EmailReceiverOptions emailReceiverOptions, ILogger<ImapReceiver> logger = null)
+        public static ImapReceiver Create(EmailReceiverOptions emailReceiverOptions, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null)
         {
+            if (emailReceiverOptions == null)
+                throw new ArgumentNullException(nameof(emailReceiverOptions));
             var options = Options.Create(emailReceiverOptions);
-            var receiver = new ImapReceiver(options, logger);
+            var receiver = new ImapReceiver(options, logger, protocolLogger);
             return receiver;
         }
 
         public ImapReceiver SetProtocolLog(string logFilePath, bool append = false)
         {
-            _receiverOptions.ProtocolLog = logFilePath;
-            _receiverOptions.ProtocolLogFileAppend = append;
-            var receiver = Create(_receiverOptions, _logger);
+            _receiverOptions.ProtocolLogger.FileWriter.FilePath = logFilePath;
+            _receiverOptions.ProtocolLogger.FileWriter.AppendToExisting = append;
+            var receiver = Create(_receiverOptions, _logger, _imapLogger);
             return receiver;
         }
 
@@ -111,11 +118,11 @@ namespace MailKitSimplified.Receiver.Services
             return MonitorFolder;
         }
 
-        public IMailFolderClient MailFolderClient => new MailFolderClient(this, _loggerFactory.CreateLogger<MailFolderClient>());
+        public IMailFolderClient MailFolderClient => _mailFolderClient.Value;
 
-        public IMailFolderReader ReadMail => new MailFolderReader(this, _loggerFactory.CreateLogger<MailFolderReader>());
+        public IMailFolderReader ReadMail => _mailFolderReader.Value;
 
-        public IMailFolderMonitor MonitorFolder => new MailFolderMonitor(this, null, _loggerFactory.CreateLogger<MailFolderMonitor>());
+        public IMailFolderMonitor MonitorFolder => _mailFolderMonitor.Value;
 
         public async ValueTask<IImapClient> ConnectAuthenticatedImapClientAsync(CancellationToken cancellationToken = default)
         {
@@ -209,8 +216,7 @@ namespace MailKitSimplified.Receiver.Services
         public IImapReceiver Clone()
         {
             var receiverOptions = _receiverOptions.Copy();
-            receiverOptions.ProtocolLog = string.Empty; // TODO: fix concurrent writes to the log file
-            return Create(receiverOptions, _logger);
+            return Create(receiverOptions, _logger, _imapLogger);
         }
 
         public override string ToString() => _receiverOptions.ToString();
@@ -218,6 +224,10 @@ namespace MailKitSimplified.Receiver.Services
         public async Task DisconnectAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogTrace("Disconnecting IMAP email client...");
+            if (_mailFolderClient.IsValueCreated)
+                _mailFolderClient.Value.Dispose();
+            if (_mailFolderReader.IsValueCreated)
+                _mailFolderReader.Value.Dispose();
             if (_imapClient.IsConnected)
                 await _imapClient.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);
         }
@@ -232,6 +242,7 @@ namespace MailKitSimplified.Receiver.Services
         {
             DisconnectAsync().GetAwaiter().GetResult();
             _imapClient.Dispose();
+            _loggerFactory.Dispose();
         }
     }
 }

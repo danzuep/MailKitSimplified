@@ -29,20 +29,19 @@ namespace MailKitSimplified.Sender.Services
         private readonly EmailSenderOptions _senderOptions;
 
         /// <inheritdoc cref="ISmtpSender" />
-        public SmtpSender(IOptions<EmailSenderOptions> senderOptions, ILogger<SmtpSender> logger = null, IProtocolLogger protocolLogger = null, ISmtpClient smtpClient = null)
+        public SmtpSender(IOptions<EmailSenderOptions> senderOptions, ILogger<SmtpSender> logger = null, ISmtpClient smtpClient = null)
         {
             _logger = logger ?? NullLogger<SmtpSender>.Instance;
             _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.SmtpHost))
                 throw new NullReferenceException(nameof(EmailSenderOptions.SmtpHost));
-            var smtpLogger = protocolLogger ?? GetProtocolLogger(smtpClient == null ? _senderOptions.ProtocolLog : null, _senderOptions.ProtocolLogFileAppend);
-            _smtpClient = smtpClient ?? (smtpLogger !=null ? new SmtpClient(smtpLogger) : new SmtpClient());
+            _smtpClient = smtpClient ?? GetSmtpClient();
         }
 
         public static SmtpSender Create(string smtpHost, ushort smtpPort = 0, string username = null, string password = null, string protocolLog = null, bool protocolLogFileAppend = false)
         {
             var smtpCredential = new NetworkCredential(username, password);
-            var sender = Create(smtpHost, smtpCredential, smtpPort, protocolLog);
+            var sender = Create(smtpHost, smtpCredential, smtpPort, protocolLog, protocolLogFileAppend);
             return sender;
         }
 
@@ -87,6 +86,13 @@ namespace MailKitSimplified.Sender.Services
         }
 
         public IEmailWriter WriteEmail => new EmailWriter(this);
+
+        private SmtpClient GetSmtpClient()
+        {
+            var smtpLogger = GetProtocolLogger(_senderOptions.ProtocolLog, _senderOptions.ProtocolLogFileAppend);
+            var smtpClient = smtpLogger != null ? new SmtpClient(smtpLogger) : new SmtpClient();
+            return smtpClient;
+        }
 
         public static IProtocolLogger GetProtocolLogger(string logFilePath = null, bool append = false, IFileSystem fileSystem = null)
         {

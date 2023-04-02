@@ -6,10 +6,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using MailKitSimplified.Receiver.Abstractions;
-using MailKitSimplified.Receiver.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using MailKitSimplified.Receiver.Abstractions;
+using MailKitSimplified.Receiver.Extensions;
+using MailKitSimplified.Receiver.Models;
 
 namespace MailKitSimplified.Receiver.Services
 {
@@ -72,6 +73,15 @@ namespace MailKitSimplified.Receiver.Services
         {
             _logger = logger ?? NullLogger<MailFolderReader>.Instance;
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
+        }
+
+        public static MailFolderReader Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderReader> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null)
+        {
+            if (emailReceiverOptions == null)
+                throw new ArgumentNullException(nameof(emailReceiverOptions));
+            var imapReceiver = ImapReceiver.Create(emailReceiverOptions, logImap, protocolLogger);
+            var mailFolderReader = new MailFolderReader(imapReceiver, logger);
+            return mailFolderReader;
         }
 
         public IMailReader Skip(int skipCount)
@@ -253,12 +263,36 @@ namespace MailKitSimplified.Receiver.Services
             return mimeMessages;
         }
 
+        /// <summary>Query just the arrival dates of messages on the server.</summary>
+        /// <param name="deliveredAfter">Search for messages after this date.</param>
+        /// <param name="deliveredBefore">Search for messages before this date.</param>
+        /// <returns>List of <see cref="IMessageSummary"/> items.</returns>
+        public async Task<IList<IMessageSummary>> SearchBetweenDatesAsync(DateTime deliveredAfter, DateTime? deliveredBefore = null, CancellationToken cancellationToken = default)
+        {
+            DateTime before = deliveredBefore != null ? deliveredBefore.Value : DateTime.Now;
+            _searchQuery = SearchQuery.DeliveredAfter(deliveredAfter).And(SearchQuery.DeliveredBefore(before));
+            var messageSummaries = await GetMessageSummariesAsync(cancellationToken).ConfigureAwait(false);
+            return messageSummaries;
+        }
+
+        /// <summary>Query the server for message IDs with matching keywords in the subject or body text.</summary>
+        /// <param name="keywords">Keywords to search for.</param>
+        /// <returns>List of <see cref="IMessageSummary"/> items.</returns>
+        public async Task<IList<IMessageSummary>> SearchKeywordsAsync(IEnumerable<string> keywords, CancellationToken cancellationToken = default)
+        {
+            var subjectMatch = keywords.MatchAny(SearchQuery.SubjectContains);
+            var bodyMatch = keywords.MatchAny(SearchQuery.BodyContains);
+            _searchQuery = subjectMatch.Or(bodyMatch);
+            var messageSummaries = await GetMessageSummariesAsync(cancellationToken).ConfigureAwait(false);
+            return messageSummaries;
+        }
+
         public IMailFolderReader Copy() => MemberwiseClone() as IMailFolderReader;
 
         public override string ToString() => $"{_imapReceiver} (skip {_skip}, take {_take})";
 
         public async ValueTask DisposeAsync() => await _imapReceiver.DisposeAsync().ConfigureAwait(false);
 
-        public void Dispose() => _imapReceiver?.Dispose();
+        public void Dispose() => _imapReceiver.Dispose();
     }
 }

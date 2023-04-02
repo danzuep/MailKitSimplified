@@ -9,14 +9,14 @@
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="30.0.1" />
-    <PackageReference Include="MailKitSimplified.Sender" Version="2.4.0" />
-    <PackageReference Include="MailKitSimplified.Receiver" Version="2.4.0" />
+    <PackageReference Include="MailKitSimplified.Sender" Version="2.4.7" />
+    <PackageReference Include="MailKitSimplified.Receiver" Version="2.4.7" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="7.0.0" />
-    <PackageReference Include="System.IO.Abstractions" Version="19.0.1" />
+    <PackageReference Include="System.IO.Abstractions" Version="19.1.13" />
   </ItemGroup>
 
 </Project>

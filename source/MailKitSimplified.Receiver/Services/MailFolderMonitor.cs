@@ -15,7 +15,7 @@ using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Models;
 
-namespace MailKitSimplified.Receiver
+namespace MailKitSimplified.Receiver.Services
 {
     public sealed class MailFolderMonitor : IMailFolderMonitor
     {
@@ -58,10 +58,25 @@ namespace MailKitSimplified.Receiver
             };
         }
 
-        public static MailFolderMonitor Create(IImapReceiver imapReceiver, FolderMonitorOptions folderMonitorOptions, ILogger<MailFolderMonitor> logger = null)
+        public static MailFolderMonitor Create(FolderMonitorOptions folderMonitorOptions, ILogger<MailFolderMonitor> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null)
         {
+            if (folderMonitorOptions == null)
+                throw new ArgumentNullException(nameof(folderMonitorOptions));
+            var imapReceiver = ImapReceiver.Create(folderMonitorOptions.EmailReceiverOptions, logImap, protocolLogger);
             var options = Options.Create(folderMonitorOptions);
             var receiver = new MailFolderMonitor(imapReceiver, options, logger);
+            return receiver;
+        }
+
+        public static MailFolderMonitor Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderMonitor> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null)
+        {
+            if (emailReceiverOptions == null)
+                throw new ArgumentNullException(nameof(emailReceiverOptions));
+            var folderMonitorOptions = new FolderMonitorOptions
+            {
+                EmailReceiverOptions = emailReceiverOptions
+            };
+            var receiver = Create(folderMonitorOptions, logger, logImap, protocolLogger);
             return receiver;
         }
 
@@ -180,17 +195,16 @@ namespace MailKitSimplified.Receiver
                 }
                 finally
                 {
-                    _cancel?.Cancel(false);
                     if (_mailFolder != null)
                     {
                         _mailFolder.MessageExpunged -= OnMessageExpunged;
                         _mailFolder.CountChanged -= OnCountChanged;
-
-                        await _mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
-                        await _fetchFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+                        //await _mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+                        //await _fetchFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
                     }
                     await _imapReceiver.DisconnectAsync(CancellationToken.None).ConfigureAwait(false);
 
+                    _cancel?.Cancel(false);
                     _cancel?.Dispose();
                     _arrival?.Dispose();
                     _messageCache?.Clear();
@@ -326,7 +340,7 @@ namespace MailKitSimplified.Receiver
                         if (_arrivalQueue.TryDequeue(out messageSummary))
                             await messageArrivalMethod(messageSummary).ConfigureAwait(false);
                         else if (_arrivalQueue.IsEmpty)
-                            await Task.Delay(100).ConfigureAwait(false);
+                            await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
                     }
                     while (!cancellationToken.IsCancellationRequested);
                 }
@@ -355,7 +369,7 @@ namespace MailKitSimplified.Receiver
                         if (_departureQueue.TryDequeue(out messageSummary))
                             await messageDepartureMethod(messageSummary).ConfigureAwait(false);
                         else if (_departureQueue.IsEmpty)
-                            await Task.Delay(100).ConfigureAwait(false);
+                            await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
                     }
                     while (!cancellationToken.IsCancellationRequested);
                 }

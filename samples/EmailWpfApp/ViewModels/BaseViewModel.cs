@@ -13,15 +13,15 @@ namespace EmailWpfApp.ViewModels
     {
         #region Logger and Status Text
         internal static ILogger logger = LogProvider.GetLogger<BaseViewModel>();
-        public const string StartupText = "Loading...";
+        public static readonly string StartupText = "Loading...";
+
         private string _statusText = StartupText;
         public string StatusText
         {
             get { return _statusText; }
             set
             {
-                _statusText = value;
-                OnPropertyChanged();
+                SetProperty(ref _statusText, value);
 
                 if (!string.IsNullOrWhiteSpace(_statusText) &&
                     !_statusText.StartsWith(StartupText))

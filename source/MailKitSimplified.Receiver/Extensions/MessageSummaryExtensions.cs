@@ -231,7 +231,7 @@ namespace MailKitSimplified.Receiver.Extensions
             return result;
         }
 
-        // TODO: investigate source of the System.NotSupportedException
+        /// <exception cref="NotSupportedException">Thrown if IMailFolder is reused.</exception>
         public static async Task<MimeMessage> GetMimeMessageAsync(this IMessageSummary original, CancellationToken cancellationToken = default, ITransferProgress progress = null)
         {
             if (original?.Folder == null)

@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using EmailWpfApp.Extensions;
+using CommunityToolkit.Mvvm.DependencyInjection;
+using EmailWpfApp.ViewModels;
 
 namespace EmailWpfApp
 {
@@ -10,8 +12,6 @@ namespace EmailWpfApp
     /// </summary>
     public partial class App : Application
     {
-        public static ServiceProvider? ServiceProvider { get; private set; }
-
         public App()
         {
             InitializeComponent();
@@ -20,19 +20,22 @@ namespace EmailWpfApp
                 .Build();
             var services = new ServiceCollection()
                 .AddSingleton<MainWindow>()
+                .AddSingleton<SenderViewModel>()
+                .AddSingleton<ReceiverViewModel>()
+                .AddSingleton<FolderMonitorViewModel>()
                 .ConfigureServices(configuration);
-            ServiceProvider = services.BuildServiceProvider();
+            var serviceProvider = services.BuildServiceProvider();
+            Ioc.Default.ConfigureServices(serviceProvider);
         }
 
         private void OnStartup(object sender, StartupEventArgs e)
         {
-            var mainWindow = ServiceProvider!.GetRequiredService<MainWindow>();
+            var mainWindow = Ioc.Default.GetRequiredService<MainWindow>();
             mainWindow.Show();
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
-            ServiceProvider?.Dispose();
             base.OnExit(e);
         }
     }

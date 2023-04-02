@@ -1,12 +1,18 @@
 ﻿using MimeKit;
 using MailKit.Net.Smtp;
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Generic.Abstractions;
 using MailKitSimplified.Generic.Services;
 using MailKitSimplified.Generic.Models;
 
-namespace WorkerServiceExample.Services
+namespace MailKitSimplified.Email.Services
 {
     internal class GenericEmailSender : IGenericEmailSender
     {
@@ -14,7 +20,7 @@ namespace WorkerServiceExample.Services
         private readonly ISmtpClient _smtpClient;
         private readonly GenericSmtpOptions _senderOptions;
 
-        public GenericEmailSender(IOptions<GenericSmtpOptions> senderOptions, ILogger<GenericEmailSender>? logger = null, ISmtpClient? smtpClient = null)
+        public GenericEmailSender(IOptions<GenericSmtpOptions> senderOptions, ILogger<GenericEmailSender> logger = null, ISmtpClient smtpClient = null)
         {
             _logger = logger ?? NullLogger<GenericEmailSender>.Instance;
             _senderOptions = senderOptions.Value;
@@ -23,7 +29,7 @@ namespace WorkerServiceExample.Services
             _smtpClient = smtpClient ?? new SmtpClient();
         }
 
-        public static GenericEmailSender Create(string smtpHost, ILogger<GenericEmailSender>? logger = null)
+        public static GenericEmailSender Create(string smtpHost, ILogger<GenericEmailSender> logger = null)
         {
             if (string.IsNullOrWhiteSpace(smtpHost))
                 throw new NullReferenceException(nameof(smtpHost));
@@ -62,7 +68,7 @@ namespace WorkerServiceExample.Services
         {
             var mimeMessage = new MimeMessage();
 
-            foreach(var header in email.Headers)
+            foreach (var header in email.Headers)
                 mimeMessage.Headers.Add(header.Key, header.Value);
 
             var from = email.From.Select(m => new MailboxAddress(m.Name, m.EmailAddress));

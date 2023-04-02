@@ -2,6 +2,7 @@
 using System.IO;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using CommunityToolkit.Common;
 
 namespace EmailWpfApp.Models
 {

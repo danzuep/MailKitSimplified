@@ -2,11 +2,14 @@
 using System;
 using System.Text;
 using System.IO;
-using System.IO.Abstractions;
 using System.Globalization;
 using System.Collections.Generic;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using MailKitSimplified.Receiver.Models;
+using MailKitSimplified.Receiver.Abstractions;
+using System.IO.Abstractions;
 
 namespace MailKitSimplified.Receiver.Services
 {
@@ -14,57 +17,52 @@ namespace MailKitSimplified.Receiver.Services
     {
         public IAuthenticationSecretDetector AuthenticationSecretDetector
         {
-            get => _protocolLogger.AuthenticationSecretDetector;
-            set => _protocolLogger.AuthenticationSecretDetector = value;
+            get => _nullLogger.AuthenticationSecretDetector;
+            set => _nullLogger.AuthenticationSecretDetector = value;
+        }
+
+        private readonly ILogger _logger;
+        private readonly ILogFileWriter _fileWriter;
+        private readonly ProtocolLoggerOptions _protocolLoggerOptions;
+        private readonly IProtocolLogger _nullLogger = new ProtocolLogger(Stream.Null);
+
+        public MailKitProtocolLogger(ILogFileWriter fileWriter, IOptions<ProtocolLoggerOptions> options = null, ILogger<MailKitProtocolLogger> logger = null)
+        {
+            _logger = logger ?? NullLogger<MailKitProtocolLogger>.Instance;
+            _protocolLoggerOptions = options?.Value ?? new ProtocolLoggerOptions();
+            _fileWriter = fileWriter ?? LogFileWriter.Create(logger);
+            if (_protocolLoggerOptions.TimestampFormat?.Equals("default", StringComparison.OrdinalIgnoreCase) ?? false)
+                _protocolLoggerOptions.TimestampFormat = ProtocolLoggerOptions.DefaultTimestampFormat;
+        }
+
+        public static MailKitProtocolLogger Create(ProtocolLoggerOptions protocolLoggerOptions, ILogger<MailKitProtocolLogger> logger = null, IFileSystem fileSystem = null)
+        {
+            var options = Options.Create(protocolLoggerOptions);
+            var fileWriter = LogFileWriter.Create(protocolLoggerOptions.FileWriter, logger, fileSystem);
+            var protocolLogger = new MailKitProtocolLogger(fileWriter, options, logger);
+            return protocolLogger;
+        }
+
+        [Obsolete("Use ProtocolLoggerOptions or use any file logger that implements ILogger (e.g NLog or Serilog) instead.")]
+        public IProtocolLogger SetLogFilePath(string logFilePath = null, bool appendToExisting = false, bool useTimestamp = false, bool redactSecrets = true)
+        {
+            if (logFilePath != _protocolLoggerOptions.FileWriter.FilePath)
+                _protocolLoggerOptions.FileWriter.FilePath = logFilePath;
+            _protocolLoggerOptions.FileWriter.AppendToExisting = appendToExisting;
+            _protocolLoggerOptions.TimestampFormat = useTimestamp == true ?
+                ProtocolLoggerOptions.DefaultTimestampFormat : null;
+            if (redactSecrets == false)
+                _nullLogger.AuthenticationSecretDetector = null;
+            return this;
         }
 
         private bool _clientMidline;
         private bool _serverMidline;
 
-        private static readonly string _timestampFormat = "yyyy-MM-ddTHH:mm:ssZ";
-        private static readonly string _serverPrefix = "S: ";
-        private static readonly string _clientPrefix = "C: ";
-
-        private readonly ILogger _logger;
-        private readonly IFileSystem _fileSystem;
-        private IProtocolLogger _protocolLogger = new ProtocolLogger(Stream.Null);
-        private bool _redactSecrets;
-        private bool _useTimestamp;
-        private bool _isFileOpen;
-        
-        public MailKitProtocolLogger(ILogger<MailKitProtocolLogger> logger = null, IFileSystem fileSystem = null)
-        {
-            _logger = logger ?? NullLogger<MailKitProtocolLogger>.Instance;
-            _fileSystem = fileSystem ?? new FileSystem();
-        }
-
-        [Obsolete("Use any file logger that implements ILogger (e.g NLog or Serilog) instead.")]
-        public IProtocolLogger SetLogFilePath(string logFilePath = null, bool appendToExisting = false, bool useTimestamp = false, bool redactSecrets = true)
-        {
-            _useTimestamp = useTimestamp;
-            _redactSecrets = redactSecrets;
-            if (logFilePath?.Equals("console", StringComparison.OrdinalIgnoreCase) ?? false)
-            {
-                _protocolLogger = new ProtocolLogger(Console.OpenStandardError());
-            }
-            else if (!string.IsNullOrWhiteSpace(logFilePath))
-            {
-                if (_isFileOpen)
-                    _protocolLogger.Dispose();
-                var directoryName = _fileSystem.Path.GetDirectoryName(logFilePath);
-                if (!string.IsNullOrWhiteSpace(directoryName))
-                    _fileSystem.Directory.CreateDirectory(directoryName);
-                var mode = appendToExisting ? FileMode.Append : FileMode.Create;
-                var stream = _fileSystem.File.Open(logFilePath, mode, FileAccess.Write, FileShare.Read);
-                _protocolLogger = new ProtocolLogger(stream);
-                _isFileOpen = true;
-                _logger.LogDebug($"Saving logs to file: {logFilePath}");
-            }
-            return this;
-        }
-
         private void Log(byte[] buffer, int offset, int count, bool isClient)
         {
+            if (_protocolLoggerOptions.FileWriter.FilePath == null)
+                return;
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
             if (offset < 0 || offset > buffer.Length)
@@ -72,7 +70,7 @@ namespace MailKitSimplified.Receiver.Services
             if (count < 0 || count > buffer.Length - offset)
                 throw new ArgumentOutOfRangeException("count");
 
-            var sb = new StringBuilder(Environment.NewLine);
+            var sb = new StringBuilder();
             int num = offset + count;
             int i = offset;
             while (i < num)
@@ -82,12 +80,7 @@ namespace MailKitSimplified.Receiver.Services
 
                 if (!(isClient ? _clientMidline : _serverMidline))
                 {
-                    if (_useTimestamp)
-                    {
-                        sb.Append(DateTimeOffset.Now.ToString(_timestampFormat, CultureInfo.InvariantCulture));
-                        sb.Append(' ');
-                    }
-                    sb.Append(isClient ? _clientPrefix : _serverPrefix);
+                    LogTimestamp(sb).Append(isClient ? _protocolLoggerOptions.ClientPrefix : _protocolLoggerOptions.ServerPrefix);
                 }
 
                 if (i < num && buffer[i] == 10)
@@ -107,7 +100,7 @@ namespace MailKitSimplified.Receiver.Services
                     _serverMidline = true;
                 }
 
-                if (isClient && _redactSecrets && AuthenticationSecretDetector != null)
+                if (isClient && AuthenticationSecretDetector != null)
                 {
                     IList<AuthenticationSecret> list = AuthenticationSecretDetector.DetectSecrets(buffer, num2, i - num2);
                     foreach (AuthenticationSecret item in list)
@@ -124,34 +117,39 @@ namespace MailKitSimplified.Receiver.Services
 
                 sb.Append(Encoding.UTF8.GetString(buffer, num2, i - num2));
             }
-            _logger.LogTrace(sb.ToString());
 
-            if (_isFileOpen)
-            {
-                if (isClient)
-                    _protocolLogger?.LogClient(buffer, offset, count);
-                else
-                    _protocolLogger?.LogServer(buffer, offset, count);
-            }
+            WriteToFile(sb);
+        }
+
+        private void WriteToFile(StringBuilder sb)
+        {
+            string textToWrite = LogFileWriterQueue.RemoveLastCharacter(sb, '\n', '\r');
+            _fileWriter.WriteLine(textToWrite);
+            _logger.LogTrace(textToWrite);
         }
 
         public void LogConnect(Uri uri)
         {
-            var sb = new StringBuilder(Environment.NewLine);
-            if (_useTimestamp)
-            {
-                sb.Append(DateTimeOffset.Now.ToString(_timestampFormat, CultureInfo.InvariantCulture));
-                sb.Append(' ');
-            }
-            sb.AppendLine($"Connected to {uri}");
-            _logger.LogDebug(sb.ToString());
+            var sb = new StringBuilder();
+            LogTimestamp(sb).Append($"Connected to {uri}");
 
             if (_clientMidline || _serverMidline)
             {
                 _clientMidline = false;
                 _serverMidline = false;
             }
-            _protocolLogger?.LogConnect(uri);
+            
+            WriteToFile(sb);
+        }
+
+        private StringBuilder LogTimestamp(StringBuilder sb)
+        {
+            if (_protocolLoggerOptions.TimestampFormat != null)
+            {
+                sb.Append(DateTimeOffset.Now.ToString(_protocolLoggerOptions.TimestampFormat, CultureInfo.InvariantCulture));
+                sb.Append(' ');
+            }
+            return sb;
         }
 
         public void LogServer(byte[] buffer, int offset, int count) => Log(buffer, offset, count, isClient: false);
@@ -160,8 +158,10 @@ namespace MailKitSimplified.Receiver.Services
 
         public void Dispose()
         {
-            _isFileOpen = false;
-            _protocolLogger?.Dispose();
+            _nullLogger?.Dispose();
+            _fileWriter.Dispose();
         }
+
+        public override string ToString() => _protocolLoggerOptions.ToString();
     }
 }

@@ -9,6 +9,11 @@ namespace MailKitSimplified.Receiver.Models
         public const int IdleMinutesImap = 29;
 
         /// <summary>
+        /// Specify custom email receiver options.
+        /// </summary>
+        public EmailReceiverOptions EmailReceiverOptions { get; set; } = null;
+
+        /// <summary>
         /// Specify whether to process existing messages, default is false.
         /// </summary>
         public bool ProcessMailOnConnect { get; set; } = false;
@@ -32,6 +37,11 @@ namespace MailKitSimplified.Receiver.Models
         /// Specify number of times to retry on failure, default is 3 times.
         /// </summary>
         public byte MaxRetries { get; set; } = 3;
+
+        /// <summary>
+        /// The length of time the message queues will idle for when empty.
+        /// </summary>
+        public ushort EmptyQueueMaxDelayMs { get; set; } = 100;
 
         public override string ToString() => $"MessageSummaryItems={MessageSummaryItems}, IgnoreExisting={IgnoreExistingMailOnConnect}, IdleMinutes={IdleMinutes}, MaxRetries={MaxRetries}.";
     }

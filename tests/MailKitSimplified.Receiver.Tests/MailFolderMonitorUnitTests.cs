@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
+using MailKitSimplified.Receiver.Services;
 
 namespace MailKitSimplified.Receiver.Tests
 {
@@ -33,14 +33,22 @@ namespace MailKitSimplified.Receiver.Tests
                 .ReturnsAsync(_imapClientMock.Object).Verifiable();
             _imapReceiverMock.SetupGet(_ => _.MailFolderClient)
                 .Returns(_mailFolderClientMock.Object).Verifiable();
-            var options = Options.Create(new FolderMonitorOptions { MessageSummaryItems = MessageSummaryItems.Envelope });
+            var folderMonitorOptions = new FolderMonitorOptions
+            {
+                MessageSummaryItems = MessageSummaryItems.Envelope,
+            };
+            var options = Options.Create(folderMonitorOptions);
             _imapIdleClient = new MailFolderMonitor(_imapReceiverMock.Object, options, loggerFactory.CreateLogger<MailFolderMonitor>());
         }
 
         [Fact]
         public void CreateMailFolderMonitor_WithAnyFolderMonitorOptions_ReturnsMailFolderMonitor()
         {
-            var mailFolderMonitor = MailFolderMonitor.Create(_imapReceiverMock.Object, It.IsAny<FolderMonitorOptions>(), NullLogger<MailFolderMonitor>.Instance);
+            var emailReceiverOptions = new EmailReceiverOptions
+            {
+                ImapHost = "localhost",
+            };
+            var mailFolderMonitor = MailFolderMonitor.Create(emailReceiverOptions);
             Assert.NotNull(mailFolderMonitor);
             Assert.IsAssignableFrom<IMailFolderMonitor>(mailFolderMonitor);
         }

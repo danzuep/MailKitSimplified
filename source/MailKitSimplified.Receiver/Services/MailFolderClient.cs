@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
+using MailKitSimplified.Receiver.Models;
 
 namespace MailKitSimplified.Receiver.Services
 {
@@ -24,6 +25,15 @@ namespace MailKitSimplified.Receiver.Services
         {
             _logger = logger ?? NullLogger<MailFolderClient>.Instance;
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
+        }
+
+        public static MailFolderClient Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderClient> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null)
+        {
+            if (emailReceiverOptions == null)
+                throw new ArgumentNullException(nameof(emailReceiverOptions));
+            var imapReceiver = ImapReceiver.Create(emailReceiverOptions, logImap, protocolLogger);
+            var mailFolderClient = new MailFolderClient(imapReceiver, logger);
+            return mailFolderClient;
         }
 
         public async ValueTask<IMailFolder> ConnectAsync(bool enableWrite = false, CancellationToken cancellationToken = default)
@@ -50,6 +60,7 @@ namespace MailKitSimplified.Receiver.Services
         /// <param name="searchQuery">Mail folder search query.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The first 250 <see cref="UniqueId"/>s.</returns>
+        [Obsolete("Consider using IMailReader.Query() instead.")]
         public async Task<IList<UniqueId>> SearchAsync(SearchQuery searchQuery, CancellationToken cancellationToken = default)
         {
             _ = await ConnectAsync(false, cancellationToken).ConfigureAwait(false);
@@ -61,6 +72,7 @@ namespace MailKitSimplified.Receiver.Services
         /// <param name="deliveredAfter">Search for messages after this date.</param>
         /// <param name="deliveredBefore">Search for messages before this date.</param>
         /// <returns>The first 250 <see cref="UniqueId"/>s.</returns>
+        [Obsolete("Consider using MailFolderReader.SearchBetweenDatesAsync() instead.")]
         public async Task<IList<UniqueId>> SearchBetweenDatesAsync(DateTime deliveredAfter, DateTime? deliveredBefore = null, CancellationToken cancellationToken = default)
         {
             DateTime before = deliveredBefore != null ? deliveredBefore.Value : DateTime.Now;
@@ -72,6 +84,7 @@ namespace MailKitSimplified.Receiver.Services
         /// <summary>Query the server for message IDs with matching keywords in the subject or body text.</summary>
         /// <param name="keywords">Keywords to search for.</param>
         /// <returns>The first 250 <see cref="UniqueId"/>s.</returns>
+        [Obsolete("Consider using MailFolderReader.SearchKeywordsAsync() instead.")]
         public async Task<IList<UniqueId>> SearchKeywordsAsync(IEnumerable<string> keywords, CancellationToken cancellationToken = default)
         {
             var subjectMatch = keywords.MatchAny(SearchQuery.SubjectContains);

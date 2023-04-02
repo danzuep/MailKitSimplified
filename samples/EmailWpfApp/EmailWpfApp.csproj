@@ -5,24 +5,21 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <UserSecretsId>b96c5ad5-42ab-49d4-84e6-4152fe684ab2</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MailKitSimplified.Sender" Version="2.4.7" />
+    <PackageReference Include="MailKitSimplified.Receiver" Version="2.4.7" />
+    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.1.0" />
     <PackageReference Include="CommunityToolkit.Common" Version="8.1.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.1.0" />
-    <PackageReference Include="MailKitSimplified.Sender" Version="2.4.6" />
-    <PackageReference Include="MailKitSimplified.Receiver" Version="2.4.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="7.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Views\SenderView.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
   </ItemGroup>
 
   <ItemGroup>

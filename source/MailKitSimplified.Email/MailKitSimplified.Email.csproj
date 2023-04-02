@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net6.0;net7.0</TargetFrameworks>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
+    <Authors>danzuep</Authors>
+    <Title>Simple MailKit SMTP Sender and IMAP Receiver</Title>
+    <PackageTags>MailKit; SMTP; IMAP; email; send; receive; forward; reply; simply; easily; simple; easy; fluent; C#; .NET</PackageTags>
+    <Description>Easy, fluent way to send, receive, forward, and reply to emails with MailKit.</Description>
+    <PackageIcon>icon.png</PackageIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+      <Link>Resources\LICENSE</Link>
+    </None>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+      <Link>Resources\README.md</Link>
+    </None>
+    <None Include="..\..\resources\icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+      <Link>Resources\icon.png</Link>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Common" Version="8.1.0" />
+    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.1.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.1.0" />
+    <PackageReference Include="MailKitSimplified.Generic" Version="2.0.0" />
+    <PackageReference Include="MailKitSimplified.Sender" Version="2.4.7" />
+    <PackageReference Include="MailKitSimplified.Receiver" Version="2.4.7" />
+  </ItemGroup>
+
+</Project>
