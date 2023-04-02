@@ -22,22 +22,24 @@ namespace MailKitSimplified.Receiver.Services
         }
 
         private readonly ILogger _logger;
-        private readonly IFileWriter _fileWriter;
+        private readonly ILogFileWriter _fileWriter;
         private readonly ProtocolLoggerOptions _protocolLoggerOptions;
         private readonly IProtocolLogger _nullLogger = new ProtocolLogger(Stream.Null);
 
-        public MailKitProtocolLogger(ILogger<MailKitProtocolLogger> logger = null, IFileWriter fileWriter = null, IOptions<ProtocolLoggerOptions> options = null, IFileSystem fileSystem = null)
+        public MailKitProtocolLogger(ILogFileWriter fileWriter, IOptions<ProtocolLoggerOptions> options = null, ILogger<MailKitProtocolLogger> logger = null)
         {
             _logger = logger ?? NullLogger<MailKitProtocolLogger>.Instance;
             _protocolLoggerOptions = options?.Value ?? new ProtocolLoggerOptions();
-            _fileWriter = fileWriter ?? LogFileWriter.Create(_protocolLoggerOptions.FileWriter, logger, fileSystem);
+            _fileWriter = fileWriter ?? LogFileWriter.Create(logger);
+            if (_protocolLoggerOptions.TimestampFormat?.Equals("default", StringComparison.OrdinalIgnoreCase) ?? false)
+                _protocolLoggerOptions.TimestampFormat = ProtocolLoggerOptions.DefaultTimestampFormat;
         }
 
         public static MailKitProtocolLogger Create(ProtocolLoggerOptions protocolLoggerOptions, ILogger<MailKitProtocolLogger> logger = null, IFileSystem fileSystem = null)
         {
             var options = Options.Create(protocolLoggerOptions);
             var fileWriter = LogFileWriter.Create(protocolLoggerOptions.FileWriter, logger, fileSystem);
-            var protocolLogger = new MailKitProtocolLogger(logger, fileWriter, options);
+            var protocolLogger = new MailKitProtocolLogger(fileWriter, options, logger);
             return protocolLogger;
         }
 
@@ -116,9 +118,14 @@ namespace MailKitSimplified.Receiver.Services
                 sb.Append(Encoding.UTF8.GetString(buffer, num2, i - num2));
             }
 
-            var textToWrite = sb.ToString();
+            WriteToFile(sb);
+        }
+
+        private void WriteToFile(StringBuilder sb)
+        {
+            string textToWrite = LogFileWriterQueue.RemoveLastCharacter(sb, '\n', '\r');
+            _fileWriter.WriteLine(textToWrite);
             _logger.LogTrace(textToWrite);
-            _fileWriter.Write(textToWrite);
         }
 
         public void LogConnect(Uri uri)
@@ -131,10 +138,8 @@ namespace MailKitSimplified.Receiver.Services
                 _clientMidline = false;
                 _serverMidline = false;
             }
-
-            var textToWrite = sb.ToString();
-            _logger.LogTrace(textToWrite);
-            _fileWriter.Write(textToWrite);
+            
+            WriteToFile(sb);
         }
 
         private StringBuilder LogTimestamp(StringBuilder sb)
@@ -156,5 +161,7 @@ namespace MailKitSimplified.Receiver.Services
             _nullLogger?.Dispose();
             _fileWriter.Dispose();
         }
+
+        public override string ToString() => _protocolLoggerOptions.ToString();
     }
 }

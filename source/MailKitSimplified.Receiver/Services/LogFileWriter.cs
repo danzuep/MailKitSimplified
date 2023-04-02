@@ -1,8 +1,6 @@
-﻿using System;
-using System.Threading;
+﻿using System.Text;
 using System.Threading.Tasks;
 using System.IO.Abstractions;
-using System.Collections.Concurrent;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -11,39 +9,48 @@ using MailKitSimplified.Receiver.Abstractions;
 
 namespace MailKitSimplified.Receiver.Services
 {
-    public class LogFileWriter : IFileWriter, IDisposable
+    public class LogFileWriter : IFileWriter, ILogFileWriter
     {
         private readonly ILogger _logger;
         private readonly IFileSystem _fileSystem;
         private readonly FileWriterOptions _fileWriteOptions;
-        private readonly ConcurrentQueue<string> _queue = new ConcurrentQueue<string>();
-        private CancellationTokenSource _cts = null;
 
-        public LogFileWriter(ILogger<LogFileWriter> logger = null, IFileSystem fileSystem = null, IOptions<FileWriterOptions> options = null) :
+        public LogFileWriter(ILogger<LogFileWriter> logger, IOptions<FileWriterOptions> options = null, IFileSystem fileSystem = null) :
             this(options, logger, fileSystem)
         {
         }
 
-        private LogFileWriter(IOptions<FileWriterOptions> options, ILogger logger = null, IFileSystem fileSystem = null)
+        private LogFileWriter(IOptions<FileWriterOptions> options = null, ILogger logger = null, IFileSystem fileSystem = null)
         {
             _logger = logger ?? NullLogger<LogFileWriter>.Instance;
             _fileSystem = fileSystem ?? new FileSystem();
             _fileWriteOptions = options?.Value ?? new FileWriterOptions();
-            Initialise();
         }
 
-        public static LogFileWriter Create(FileWriterOptions fileWriteOptions, ILogger logger = null, IFileSystem fileSystem = null)
+        public static LogFileWriter Create(ILogger logger, IOptions<FileWriterOptions> options = null, IFileSystem fileSystem = null) =>
+            new LogFileWriter(options, logger, fileSystem);
+
+        public static LogFileWriter Create(FileWriterOptions fileWriterOptions, ILogger logger = null, IFileSystem fileSystem = null)
         {
-            var options = Options.Create(fileWriteOptions);
-            var protocolLogger = new LogFileWriter(options, logger, fileSystem);
-            return protocolLogger;
+            var options = Options.Create(fileWriterOptions);
+            var logFileWriter = new LogFileWriter(options, logger, fileSystem);
+            return logFileWriter;
         }
 
-        public void Write(string textToEnqueue) => _queue.Enqueue(textToEnqueue);
-
-        private async Task WriteToFile()
+        public void Write(StringBuilder stringBuilder)
         {
-            try
+            var textToWrite = LogFileWriterQueue.RemoveLastCharacter(stringBuilder);
+            WriteLine(textToWrite);
+        }
+
+        public void WriteLine(string textToWrite)
+        {
+            WriteLineAsync(textToWrite).GetAwaiter().GetResult();
+        }
+
+        public async Task WriteLineAsync(string textToWrite)
+        {
+            if (!string.IsNullOrWhiteSpace(_fileWriteOptions.FilePath))
             {
                 var directoryName = _fileSystem.Path.GetDirectoryName(_fileWriteOptions.FilePath);
                 if (!string.IsNullOrWhiteSpace(directoryName))
@@ -53,54 +60,22 @@ namespace MailKitSimplified.Receiver.Services
                     _fileSystem.File.AppendText(_fileWriteOptions.FilePath) :
                     _fileSystem.File.CreateText(_fileWriteOptions.FilePath))
                 {
-                    while (!_cts.Token.IsCancellationRequested)
-                    {
-                        if (_queue.TryDequeue(out string textLine))
-                            await streamWriter.WriteAsync(textLine).ConfigureAwait(false);
-                        else if (_queue.IsEmpty)
-                            await Task.Delay(_fileWriteOptions.FileWriteMaxDelayMs, _cts.Token).ConfigureAwait(false);
-                    }
+                    await streamWriter.WriteLineAsync(textToWrite).ConfigureAwait(false);
                 }
             }
-            catch (OperationCanceledException)
-            {
-                _logger.LogTrace("Text file writing queue cancelled.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, ex.Message);
-            }
         }
 
-        internal void Initialise()
+        public Task<string> ReadAllTextAsync()
         {
-            _cts = new CancellationTokenSource();
-            if (!string.IsNullOrWhiteSpace(_fileWriteOptions.FilePath))
-            {
-                Task.Run(WriteToFile);
-            }
-        }
-
-        public void ResetLogQueue()
-        {
-            CancelLogQueue();
-            Initialise();
-        }
-
-        internal void CancelLogQueue()
-        {
-            if (_cts != null)
-            {
-                _cts.Cancel(false);
-#if NET5_0_OR_GREATER
-                _queue.Clear();
-#endif
-            }
+            var textReadFromFile = !string.IsNullOrWhiteSpace(_fileWriteOptions.FilePath) ?
+                _fileSystem.File.ReadAllText(_fileWriteOptions.FilePath) : string.Empty;
+            return Task.FromResult(textReadFromFile);
         }
 
         public void Dispose()
         {
-            CancelLogQueue();
         }
+
+        public override string ToString() => _fileWriteOptions.ToString();
     }
 }

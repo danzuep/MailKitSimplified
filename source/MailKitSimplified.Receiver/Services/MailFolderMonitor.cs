@@ -58,17 +58,17 @@ namespace MailKitSimplified.Receiver.Services
             };
         }
 
-        public static MailFolderMonitor Create(FolderMonitorOptions folderMonitorOptions, ILogger<MailFolderMonitor> logger = null, ILogger<ImapReceiver> logImap = null)
+        public static MailFolderMonitor Create(FolderMonitorOptions folderMonitorOptions, ILogger<MailFolderMonitor> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null)
         {
             if (folderMonitorOptions == null)
                 throw new ArgumentNullException(nameof(folderMonitorOptions));
-            var imapReceiver = ImapReceiver.Create(folderMonitorOptions.EmailReceiverOptions, logImap);
+            var imapReceiver = ImapReceiver.Create(folderMonitorOptions.EmailReceiverOptions, logImap, protocolLogger);
             var options = Options.Create(folderMonitorOptions);
             var receiver = new MailFolderMonitor(imapReceiver, options, logger);
             return receiver;
         }
 
-        public static MailFolderMonitor Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderMonitor> logger = null, ILogger<ImapReceiver> logImap = null)
+        public static MailFolderMonitor Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderMonitor> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null)
         {
             if (emailReceiverOptions == null)
                 throw new ArgumentNullException(nameof(emailReceiverOptions));
@@ -76,7 +76,7 @@ namespace MailKitSimplified.Receiver.Services
             {
                 EmailReceiverOptions = emailReceiverOptions
             };
-            var receiver = Create(folderMonitorOptions, logger, logImap);
+            var receiver = Create(folderMonitorOptions, logger, logImap, protocolLogger);
             return receiver;
         }
 

@@ -75,11 +75,11 @@ namespace MailKitSimplified.Receiver.Services
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
         }
 
-        public static MailFolderReader Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderReader> logger = null, ILogger<ImapReceiver> logImap = null)
+        public static MailFolderReader Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderReader> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null)
         {
             if (emailReceiverOptions == null)
                 throw new ArgumentNullException(nameof(emailReceiverOptions));
-            var imapReceiver = ImapReceiver.Create(emailReceiverOptions, logImap);
+            var imapReceiver = ImapReceiver.Create(emailReceiverOptions, logImap, protocolLogger);
             var mailFolderReader = new MailFolderReader(imapReceiver, logger);
             return mailFolderReader;
         }

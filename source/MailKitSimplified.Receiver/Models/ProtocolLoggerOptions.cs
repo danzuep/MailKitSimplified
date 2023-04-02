@@ -11,7 +11,7 @@ namespace MailKitSimplified.Receiver.Models
 
         public FileWriterOptions FileWriter { get; set; } = new FileWriterOptions();
 
-        public string TimestampFormat { get; set; } = DefaultTimestampFormat;
+        public string TimestampFormat { get; set; } = null;
 
         public string ServerPrefix { get; set; } = "S: ";
 

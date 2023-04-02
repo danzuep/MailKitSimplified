@@ -1,9 +1,9 @@
-﻿using System;
+﻿using System.Threading.Tasks;
 
 namespace MailKitSimplified.Receiver.Abstractions
 {
-    public interface IFileWriter : IDisposable
+    public interface IFileWriter
     {
-        void Write(string textToEnqueue);
+        Task WriteLineAsync(string textToWrite);
     }
 }
