@@ -6,6 +6,8 @@ using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Sender.Abstractions;
 using System.Diagnostics;
+using MailKitSimplified.Receiver.Models;
+using Microsoft.Extensions.Options;
 
 namespace ExampleNamespace;
 
@@ -109,6 +111,8 @@ public class Worker : BackgroundService
     private async Task ReceiveAsync(CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
+        //ImapReceiver.Create(new EmailReceiverOptions(), null, null);
+        //new ImapReceiver(Options.Create(new EmailReceiverOptions()), logger, new LogFileWriter(), client, loggerFactory);
         var messageSummaries = await _imapReceiver.ReadMail.Skip(0).Take(250, continuous: true)
             .GetMessageSummariesAsync(MessageSummaryItems.UniqueId, cancellationToken);
         stopwatch.Stop();

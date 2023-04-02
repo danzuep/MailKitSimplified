@@ -7,6 +7,8 @@ using Microsoft.Extensions.Configuration;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Receiver.Services;
+using MailKit.Net.Imap;
+using System.Security.Authentication;
 
 namespace MailKitSimplified.Receiver
 {
@@ -92,6 +94,21 @@ namespace MailKitSimplified.Receiver
             if (folderMonitorOptions == null)
                 throw new ArgumentNullException(nameof(folderMonitorOptions));
             services.Configure(folderMonitorOptions);
+            return services;
+        }
+
+        public static IServiceCollection AddTlsImapClient(this IServiceCollection services)
+        {
+            services.AddTransient<IImapClient>((serviceProvider) => {
+                var client = new ImapClient();
+                client.CheckCertificateRevocation = false;
+                client.SslProtocols = SslProtocols.Tls12;
+#if NET5_0_OR_GREATER
+                client.SslProtocols |= SslProtocols.Tls13;
+#endif
+                client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+                return client;
+            });
             return services;
         }
     }

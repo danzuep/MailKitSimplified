@@ -10,7 +10,7 @@ namespace MailKitSimplified.Receiver.Tests
     public class MailKitProtocolLoggerUnitTests
     {
         internal static readonly string LogFilePath = @"Logs\ImapClient.txt";
-        internal const string TestReply = "* OK smtp4dev\r\nA00000000 CAPABILITY\r\n";
+        internal static readonly string TestReply = $"* OK smtp4dev{Environment.NewLine}A00000000 CAPABILITY{Environment.NewLine}";
         private static readonly Uri _localhost = new Uri("imap://localhost:143/?starttls=when-available");
         private static readonly byte[] _testBytes = Encoding.UTF8.GetBytes(TestReply);
         private readonly ILoggerFactory _loggerFactory;

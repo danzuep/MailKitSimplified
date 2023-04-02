@@ -11,7 +11,7 @@ namespace MailKitSimplified.Receiver.Tests
     public class FileWriterUnitTests
     {
         private static readonly string _logFilePath = MailKitProtocolLoggerUnitTests.LogFilePath;
-        private const string _testReply = MailKitProtocolLoggerUnitTests.TestReply;
+        private static readonly string _testReply = MailKitProtocolLoggerUnitTests.TestReply;
         private readonly IFileSystem _fileSystem = new MockFileSystem();
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<LogFileWriterQueue> _logger;
@@ -32,21 +32,19 @@ namespace MailKitSimplified.Receiver.Tests
             return fileWriter;
         }
 
-        [Theory]
-        [InlineData(_testReply)]
-        public async Task LogFileWriter_WriteAsync(string textToWrite)
+        [Fact]
+        public async Task LogFileWriter_WriteAsync()
         {
-            _logFileWriter.Write(new StringBuilder(textToWrite));
+            _logFileWriter.Write(new StringBuilder(_testReply));
             var textFromFile = await _logFileWriter.ReadAllTextAsync();
             Assert.Equal(_testReply, textFromFile);
         }
 
-        [Theory]
-        [InlineData(_testReply)]
-        public async Task LogFileWriter_WriteTwiceAsync(string textToWrite)
+        [Fact]
+        public async Task LogFileWriter_WriteTwiceAsync()
         {
-            _logFileWriter.Write(new StringBuilder(textToWrite));
-            _logFileWriter.Write(new StringBuilder(textToWrite));
+            _logFileWriter.Write(new StringBuilder(_testReply));
+            _logFileWriter.Write(new StringBuilder(_testReply));
             var textFromFile = await _logFileWriter.ReadAllTextAsync();
             Assert.Equal($"{_testReply}{_testReply}", textFromFile);
         }
