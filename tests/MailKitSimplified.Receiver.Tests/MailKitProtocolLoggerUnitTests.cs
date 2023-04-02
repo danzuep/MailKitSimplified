@@ -11,6 +11,8 @@ namespace MailKitSimplified.Receiver.Tests
     {
         internal static readonly string LogFilePath = @"Logs\ImapClient.txt";
         internal static readonly string TestReply = $"* OK smtp4dev{Environment.NewLine}A00000000 CAPABILITY{Environment.NewLine}";
+        internal readonly int TestReplyMid = 17 - Environment.NewLine.Length;
+        internal readonly int TestReplyEnd = 23 - Environment.NewLine.Length;
         private static readonly Uri _localhost = new Uri("imap://localhost:143/?starttls=when-available");
         private static readonly byte[] _testBytes = Encoding.UTF8.GetBytes(TestReply);
         private readonly ILoggerFactory _loggerFactory;
@@ -51,14 +53,14 @@ namespace MailKitSimplified.Receiver.Tests
         [Fact]
         public void MailKitProtocolLogger_LogServer()
         {
-            _mailKitProtocolLogger.LogServer(_testBytes, 0, 15);
+            _mailKitProtocolLogger.LogServer(_testBytes, 0, TestReplyMid);
             _logFileWriterMock.Verify(_ => _.WriteLine(It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
         public void MailKitProtocolLogger_LogClient()
         {
-            _mailKitProtocolLogger.LogClient(_testBytes, 15, 21);
+            _mailKitProtocolLogger.LogClient(_testBytes, TestReplyMid, TestReplyEnd);
             _logFileWriterMock.Verify(_ => _.WriteLine(It.IsAny<string>()), Times.Once);
         }
 
@@ -68,8 +70,8 @@ namespace MailKitSimplified.Receiver.Tests
             var protocolLoggerOptions = new ProtocolLoggerOptions { TimestampFormat = null };
             var mailKitProtocolLogger = CreateMailKitProtocolLogger(protocolLoggerOptions);
             mailKitProtocolLogger.LogConnect(_localhost);
-            mailKitProtocolLogger.LogServer(_testBytes, 0, 15);
-            mailKitProtocolLogger.LogClient(_testBytes, 15, 21);
+            mailKitProtocolLogger.LogServer(_testBytes, 0, TestReplyMid);
+            mailKitProtocolLogger.LogClient(_testBytes, TestReplyMid, TestReplyEnd);
             //_logFileWriterMock.Verify(_ => _.WriteLine(It.IsAny<string>()), Times.Exactly(3));
         }
 
@@ -78,7 +80,7 @@ namespace MailKitSimplified.Receiver.Tests
         public void SetLogFilePath_ToConsole()
         {
             _mailKitProtocolLogger.SetLogFilePath("Console");
-            _mailKitProtocolLogger.LogServer(_testBytes, 0, 15);
+            _mailKitProtocolLogger.LogServer(_testBytes, 0, TestReplyMid);
         }
 
         [Fact]
@@ -86,7 +88,7 @@ namespace MailKitSimplified.Receiver.Tests
         public void SetLogFilePath_ToLogFile()
         {
             _mailKitProtocolLogger.SetLogFilePath(LogFilePath);
-            _mailKitProtocolLogger.LogServer(_testBytes, 0, 15);
+            _mailKitProtocolLogger.LogServer(_testBytes, 0, TestReplyMid);
         }
     }
 }
