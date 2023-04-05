@@ -16,6 +16,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Extensions;
 using MailKitSimplified.Sender.Models;
+using System.Collections.Concurrent;
+using System.Collections;
 
 namespace MailKitSimplified.Sender.Services
 {
@@ -23,7 +25,8 @@ namespace MailKitSimplified.Sender.Services
     public sealed class SmtpSender : ISmtpSender
     {
         private Func<ISmtpClient, Task> _customAuthenticationMethod;
-
+        private CancellationTokenSource _cts = null;
+        private readonly ConcurrentQueue<MimeMessage> _sendQueue = new ConcurrentQueue<MimeMessage>();
         private readonly ILogger<SmtpSender> _logger;
         private readonly ISmtpClient _smtpClient;
         private readonly EmailSenderOptions _senderOptions;
@@ -289,12 +292,60 @@ namespace MailKitSimplified.Sender.Services
             return isSent;
         }
 
+        public void Enqueue(MimeMessage mimeMessage)
+        {
+            if (_cts == null)
+                Initialise();
+            _sendQueue.Enqueue(mimeMessage);
+        }
+
+        private void Initialise()
+        {
+            _cts = new CancellationTokenSource();
+            Task.Run(TrySendAllAsync);
+        }
+
+        private async Task TrySendAllAsync()
+        {
+            while (!_cts.Token.IsCancellationRequested)
+            {
+                if (_sendQueue.TryDequeue(out MimeMessage mimeMessage))
+                {
+                    await TrySendAsync(mimeMessage, _cts.Token).ConfigureAwait(false);
+                }
+                else if (_sendQueue.IsEmpty)
+                {
+                    await Task.Delay(1000, _cts.Token).ConfigureAwait(false);
+                }
+            }
+        }
+
+        public void ResetSendQueue()
+        {
+            CancelSendQueue();
+            Initialise();
+        }
+
+        internal void CancelSendQueue()
+        {
+            if (_cts != null)
+            {
+                if (!_sendQueue.IsEmpty)
+                    _logger.LogWarning($"Send queue cancelled while messages are still sending");
+                _cts.Cancel(false);
+#if NET5_0_OR_GREATER
+                _sendQueue.Clear();
+#endif
+            }
+        }
+
         public ISmtpSender Copy() => MemberwiseClone() as ISmtpSender;
 
         public override string ToString() => _senderOptions.ToString();
 
         public async Task DisconnectAsync(CancellationToken cancellationToken = default)
         {
+            CancelSendQueue();
             _logger.LogTrace("Disconnecting SMTP email client...");
             if (_smtpClient.IsConnected)
                 await _smtpClient.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);

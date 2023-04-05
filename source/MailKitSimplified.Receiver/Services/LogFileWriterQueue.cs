@@ -37,11 +37,15 @@ namespace MailKitSimplified.Receiver.Services
 
         public void WriteLine(string textToWrite)
         {
+            //if (_cts == null)
+            //    Initialise();
             _queue.Enqueue(textToWrite);
         }
 
         public void Write(StringBuilder textToWrite)
         {
+            //if (_cts == null)
+            //    Initialise();
             string textToEnqueue = RemoveLastCharacter(textToWrite, '\n', '\r');
             _queue.Enqueue(textToEnqueue);
         }
@@ -123,6 +127,8 @@ namespace MailKitSimplified.Receiver.Services
         {
             if (_cts != null)
             {
+                if (!_queue.IsEmpty)
+                    _logger.LogWarning($"Log queue cancelled while logs are still being written.");
                 _cts.Cancel(false);
 #if NET5_0_OR_GREATER
                 _queue.Clear();

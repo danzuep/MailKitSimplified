@@ -89,19 +89,23 @@ To asynchronously monitor the mail folder for incoming messages:
 
 ```csharp
 await imapReceiver.MonitorFolder
-    .SetMessageSummaryItems().SetIgnoreExistingMailOnConnect()
-    .OnMessageArrival((messageSummary) => OnArrivalAsync(messageSummary))
+    .SetMessageSummaryItems()
+    .SetIgnoreExistingMailOnConnect()
+    .OnMessageArrival(OnArrivalAsync)
     .IdleAsync(cancellationToken);
 ```
 
-To asynchronously forward message summaries as they arrive:
+To asynchronously forward or reply to message summaries as they arrive:
 
 ```csharp
 async Task OnArrivalAsync(IMessageSummary messageSummary)
 {
-    var mimeReply = await messageSummary.GetForwardMessageAsync("<p>Reply here.</p>");
-    mimeReply.From.Add("from@example.com");
-    mimeReply.To.Add("to@example.com");
+    var mimeForward = await messageSummary.GetForwardMessageAsync(
+        "<p>FYI.</p>", includeMessageId: true);
+    mimeForward.From.Add("from@example.com");
+    mimeForward.To.Add("to@example.com");
+    //logger.LogInformation($"Reply: \r\n{mimeForward.HtmlBody}");
+    //await smtpSender.SendAsync(mimeForward, cancellationToken);
 }
 ```
 

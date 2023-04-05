@@ -38,6 +38,7 @@ public class Worker : BackgroundService
         var sendTask = DelayedSendAsync(1, cancellationToken);
         var newestEmail = await GetNewestMessageSummaryAsync(cancellationToken);
         await _imapReceiver.MonitorFolder
+            .SetMessageSummaryItems()
             .SetIgnoreExistingMailOnConnect()
             .OnMessageArrival(OnArrivalAsync)
             .IdleAsync(cancellationToken);
@@ -63,6 +64,17 @@ public class Worker : BackgroundService
         }
     }
 
+    private async Task ForwardOnArrivalAsync(IMessageSummary messageSummary)
+    {
+        var mimeForward = await messageSummary.GetForwardMessageAsync(
+            "<p>FYI.</p>", includeMessageId: true);
+        mimeForward.From.Add("from@example.com");
+        mimeForward.To.Add("to@example.com");
+        _logger.LogInformation($"Reply: \r\n{mimeForward.HtmlBody}");
+        await _smtpSender.SendAsync(mimeForward); //cancellationToken
+        //_smtpSender.Enqueue(mimeForward);
+    }
+
     public async Task<IMessageSummary?> GetNewestMessageSummaryAsync(CancellationToken cancellationToken = default)
     {
         using var mailFolderClient = _imapReceiver.MailFolderClient;
@@ -86,7 +98,8 @@ public class Worker : BackgroundService
         {
             if (cancellationToken.IsCancellationRequested)
                 break;
-            var mimeReply = await messageSummary.GetReplyMessageAsync("Reply here.", addRecipients: false, includeMessageId: true, cancellationToken: cancellationToken);
+            var mimeReply = await messageSummary.GetReplyMessageAsync(
+                "Reply here.", addRecipients: false, includeMessageId: true, cancellationToken: cancellationToken);
             mimeReply.From.Add("from@localhost");
             mimeReply.To.Add("to@localhost");
             _logger.LogInformation($"Reply: \r\n{mimeReply.HtmlBody}");
