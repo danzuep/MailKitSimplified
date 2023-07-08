@@ -45,26 +45,26 @@ namespace MailKitSimplified.Receiver.Services
             _imapClient = imapClient ?? new ImapClient(_imapLogger);
         }
 
-        public static ImapReceiver Create(string imapHost, ushort imapPort = 0, string username = null, string password = null, string mailFolderName = null, string protocolLog = null, bool protocolLogFileAppend = false, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null)
+        public static ImapReceiver Create(string imapHost, ushort imapPort = 0, string username = null, string password = null, string mailFolderName = null, string protocolLog = null, bool protocolLogFileAppend = false, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null)
         {
             var imapCredential = new NetworkCredential(username, password);
-            var receiver = Create(imapHost, imapCredential, imapPort, mailFolderName, protocolLog, protocolLogFileAppend, logger, protocolLogger);
+            var receiver = Create(imapHost, imapCredential, imapPort, mailFolderName, protocolLog, protocolLogFileAppend, logger, protocolLogger, imapClient);
             return receiver;
         }
 
-        public static ImapReceiver Create(string imapHost, NetworkCredential imapCredential, ushort imapPort = 0, string mailFolderName = null, string protocolLog = null, bool protocolLogFileAppend = false, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null)
+        public static ImapReceiver Create(string imapHost, NetworkCredential imapCredential, ushort imapPort = 0, string mailFolderName = null, string protocolLog = null, bool protocolLogFileAppend = false, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null)
         {
             var receiverOptions = new EmailReceiverOptions(imapHost, imapCredential, imapPort, mailFolderName, protocolLog, protocolLogFileAppend);
-            var receiver = Create(receiverOptions, logger, protocolLogger);
+            var receiver = Create(receiverOptions, logger, protocolLogger, imapClient);
             return receiver;
         }
 
-        public static ImapReceiver Create(EmailReceiverOptions emailReceiverOptions, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null)
+        public static ImapReceiver Create(EmailReceiverOptions emailReceiverOptions, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null)
         {
             if (emailReceiverOptions == null)
                 throw new ArgumentNullException(nameof(emailReceiverOptions));
             var options = Options.Create(emailReceiverOptions);
-            var receiver = new ImapReceiver(options, logger, protocolLogger);
+            var receiver = new ImapReceiver(options, logger, protocolLogger, imapClient);
             return receiver;
         }
 
