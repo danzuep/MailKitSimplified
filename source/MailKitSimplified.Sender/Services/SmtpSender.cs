@@ -41,24 +41,24 @@ namespace MailKitSimplified.Sender.Services
             _smtpClient = smtpClient ?? GetSmtpClient();
         }
 
-        public static SmtpSender Create(string smtpHost, ushort smtpPort = 0, string username = null, string password = null, string protocolLog = null, bool protocolLogFileAppend = false)
+        public static SmtpSender Create(string smtpHost, ushort smtpPort = 0, string username = null, string password = null, string protocolLog = null, bool protocolLogFileAppend = false, ISmtpClient smtpClient = null)
         {
             var smtpCredential = new NetworkCredential(username, password);
-            var sender = Create(smtpHost, smtpCredential, smtpPort, protocolLog, protocolLogFileAppend);
+            var sender = Create(smtpHost, smtpCredential, smtpPort, protocolLog, protocolLogFileAppend, smtpClient);
             return sender;
         }
 
-        public static SmtpSender Create(string smtpHost, NetworkCredential smtpCredential, ushort smtpPort = 0, string protocolLog = null, bool protocolLogFileAppend = false)
+        public static SmtpSender Create(string smtpHost, NetworkCredential smtpCredential, ushort smtpPort = 0, string protocolLog = null, bool protocolLogFileAppend = false, ISmtpClient smtpClient = null)
         {
             var senderOptions = new EmailSenderOptions(smtpHost, smtpCredential, smtpPort, protocolLog, protocolLogFileAppend);
-            var sender = Create(senderOptions);
+            var sender = Create(senderOptions, smtpClient: smtpClient);
             return sender;
         }
 
-        public static SmtpSender Create(EmailSenderOptions emailSenderOptions, ILogger<SmtpSender> logger = null)
+        public static SmtpSender Create(EmailSenderOptions emailSenderOptions, ILogger<SmtpSender> logger = null, ISmtpClient smtpClient = null)
         {
             var senderOptions = Options.Create(emailSenderOptions);
-            var sender = new SmtpSender(senderOptions, logger);
+            var sender = new SmtpSender(senderOptions, logger, smtpClient);
             return sender;
         }
 
