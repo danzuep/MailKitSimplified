@@ -22,17 +22,16 @@ namespace MailKitSimplified.Receiver.Services
         private Lazy<MailFolderClient> _mailFolderClient;
         private Lazy<MailFolderReader> _mailFolderReader;
         private Lazy<MailFolderMonitor> _mailFolderMonitor;
-
-        private readonly IProtocolLogger _imapLogger;
+        private IImapClient _imapClient;
+        private IProtocolLogger _imapLogger;
         private readonly ILogger<ImapReceiver> _logger;
         private readonly ILoggerFactory _loggerFactory;
-        private readonly IImapClient _imapClient;
         private readonly EmailReceiverOptions _receiverOptions;
 
         public ImapReceiver(IOptions<EmailReceiverOptions> receiverOptions, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null, ILoggerFactory loggerFactory = null)
         {
-            _logger = logger ?? NullLogger<ImapReceiver>.Instance;
             _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+            _logger = logger ?? loggerFactory?.CreateLogger<ImapReceiver>() ?? NullLogger<ImapReceiver>.Instance;
             _receiverOptions = receiverOptions.Value;
             if (string.IsNullOrWhiteSpace(_receiverOptions.ImapHost))
                 throw new NullReferenceException($"{nameof(EmailReceiverOptions.ImapHost)} is null.");
@@ -68,12 +67,27 @@ namespace MailKitSimplified.Receiver.Services
             return receiver;
         }
 
+        public static ImapReceiver Create(IImapClient imapClient, EmailReceiverOptions emailReceiverOptions, ILogger<ImapReceiver> logger = null)
+        {
+            if (emailReceiverOptions == null)
+                throw new ArgumentNullException(nameof(emailReceiverOptions));
+            var options = Options.Create(emailReceiverOptions);
+            var receiver = new ImapReceiver(options, logger, null, imapClient);
+            return receiver;
+        }
+
         public ImapReceiver SetProtocolLog(string logFilePath, bool append = false)
         {
             _receiverOptions.ProtocolLogger.FileWriter.FilePath = logFilePath;
             _receiverOptions.ProtocolLogger.FileWriter.AppendToExisting = append;
             var receiver = Create(_receiverOptions, _logger, _imapLogger);
             return receiver;
+        }
+
+        public ImapReceiver SetProtocolLog(IProtocolLogger protocolLogger)
+        {
+            _imapLogger = protocolLogger;
+            return this;
         }
 
         public ImapReceiver SetPort(ushort imapPort)
@@ -91,6 +105,12 @@ namespace MailKitSimplified.Receiver.Services
         public ImapReceiver SetFolder(string mailFolderName)
         {
             _receiverOptions.MailFolderName = mailFolderName;
+            return this;
+        }
+
+        public ImapReceiver SetImapClient(IImapClient imapClient)
+        {
+            _imapClient = imapClient;
             return this;
         }
 
