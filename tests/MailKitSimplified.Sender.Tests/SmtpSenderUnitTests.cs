@@ -13,6 +13,7 @@ using MailKitSimplified.Sender.Models;
 using MailKitSimplified.Sender.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using MailKit.Net.Imap;
+using System.Net.Mail;
 
 namespace MailKitSimplified.Sender.Tests
 {
@@ -27,8 +28,8 @@ namespace MailKitSimplified.Sender.Tests
 
         public SmtpSenderUnitTests()
         {
-            var loggerMock = new Mock<ILogger<SmtpSender>>();
-            var protocolLoggerMock = new Mock<IProtocolLogger>();
+            var loggerMock = Mock.Of<ILogger<SmtpSender>>();
+            var protocolLoggerMock = Mock.Of<IProtocolLogger>();
             _smtpClientMock.Setup(_ => _.ConnectAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<SecureSocketOptions>(), It.IsAny<CancellationToken>())).Verifiable();
             _smtpClientMock.Setup(_ => _.AuthenticateAsync(It.IsAny<ICredentials>(), It.IsAny<CancellationToken>())).Verifiable();
             _smtpClientMock.SetupGet(_ => _.AuthenticationMechanisms).Returns(new HashSet<string>()).Verifiable();
@@ -36,7 +37,7 @@ namespace MailKitSimplified.Sender.Tests
             _smtpClientMock.Setup(_ => _.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
                 .ReturnsAsync("Mail accepted").Verifiable();
             var smtpSenderOptions = Options.Create(new EmailSenderOptions(_localhost, new NetworkCredential()));
-            _smtpSender = new SmtpSender(smtpSenderOptions, loggerMock.Object, _smtpClientMock.Object);
+            _smtpSender = new SmtpSender(smtpSenderOptions, loggerMock, protocolLoggerMock, _smtpClientMock.Object);
         }
 
         [Fact]
@@ -46,6 +47,16 @@ namespace MailKitSimplified.Sender.Tests
             Assert.NotNull(emailSenderOptions);
             Assert.Equal(_localhost, emailSenderOptions.SmtpHost);
             Assert.Equal(_defaultPort, emailSenderOptions.SmtpPort);
+        }
+
+        [Fact]
+        public void CreateEmailSender_WithExistingClient_ReturnsSender()
+        {
+            var emailSenderOptions = new EmailSenderOptions(_localhost);
+            using var smtpSender = SmtpSender.Create(Mock.Of<ISmtpClient>(), emailSenderOptions);
+            Assert.NotNull(smtpSender);
+            Assert.IsAssignableFrom<ISmtpSender>(smtpSender);
+            Assert.Equal(_localhost, emailSenderOptions.SmtpHost);
         }
 
         [Theory]

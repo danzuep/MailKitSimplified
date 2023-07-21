@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
+using MailKit.Net.Smtp;
 
 namespace MailKitSimplified.Receiver.Tests
 {
@@ -42,6 +43,16 @@ namespace MailKitSimplified.Receiver.Tests
             Assert.NotNull(emailReceiverOptions);
             Assert.Equal(_localhost, emailReceiverOptions.ImapHost);
             Assert.Equal(_defaultPort, emailReceiverOptions.ImapPort);
+        }
+
+        [Fact]
+        public void CreateEmailReceiver_WithExistingClient_ReturnsReceiver()
+        {
+            var emailReceiverOptions = new EmailReceiverOptions(_localhost);
+            using var imapReceiver = ImapReceiver.Create(Mock.Of<IImapClient>(), emailReceiverOptions);
+            Assert.NotNull(imapReceiver);
+            Assert.IsAssignableFrom<IImapReceiver>(imapReceiver);
+            Assert.Equal(_localhost, emailReceiverOptions.ImapHost);
         }
 
         [Theory]
