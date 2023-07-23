@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Extensions;
 using MailKitSimplified.Sender.Models;
+using MailKit.Net.Imap;
 
 namespace MailKitSimplified.Sender.Services
 {
@@ -38,8 +39,10 @@ namespace MailKitSimplified.Sender.Services
             _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.SmtpHost))
                 throw new NullReferenceException(nameof(EmailSenderOptions.SmtpHost));
-            _smtpLogger = protocolLogger ?? GetProtocolLogger(_senderOptions.ProtocolLog, _senderOptions.ProtocolLogFileAppend);
-            _smtpClient = smtpClient ?? (_smtpLogger != null ? new SmtpClient(_smtpLogger) : new SmtpClient());
+            if (smtpClient == null)
+                SetProtocolLog(protocolLogger);
+            else
+                SetSmtpClient(smtpClient);
         }
 
         public static SmtpSender Create(string smtpHost, ushort smtpPort = 0, string username = null, string password = null, string protocolLog = null, bool protocolLogFileAppend = false, ILogger<SmtpSender> logger = null, IProtocolLogger protocolLogger = null, ISmtpClient smtpClient = null)
@@ -70,18 +73,41 @@ namespace MailKitSimplified.Sender.Services
             return sender;
         }
 
-        public SmtpSender SetProtocolLog(IProtocolLogger protocolLogger)
+        /// <summary>
+        /// Overwrites the existing ISmtpClient and IProtocolLogger,
+        /// or creates a new ISmtpClient with an IProtocolLogger if it exists.
+        /// </summary>
+        public SmtpSender SetSmtpClient(ISmtpClient smtpClient = null)
         {
-            _smtpLogger = protocolLogger;
+            if (smtpClient != null)
+            {
+                _smtpClient = smtpClient;
+                _smtpLogger = null;
+            }
+            else if (_smtpLogger != null)
+                _smtpClient = new SmtpClient(_smtpLogger);
+            else
+                _smtpClient = new SmtpClient();
             return this;
         }
 
+        /// <summary>
+        /// Creates a new ISmtpClient with the IProtocolLogger.
+        /// </summary>
+        public SmtpSender SetProtocolLog(IProtocolLogger protocolLogger)
+        {
+            _smtpLogger = protocolLogger ?? _senderOptions.CreateProtocolLogger();
+            return SetSmtpClient(null);
+        }
+
+        /// <summary>
+        /// Creates a new IProtocolLogger and ISmtpClient.
+        /// </summary>
         public SmtpSender SetProtocolLog(string logFilePath, bool append = false)
         {
             _senderOptions.ProtocolLog = logFilePath;
             _senderOptions.ProtocolLogFileAppend = append;
-            var sender = Create(_senderOptions, _logger);
-            return sender;
+            return SetProtocolLog(null);
         }
 
         public SmtpSender SetPort(ushort smtpPort)
@@ -96,12 +122,6 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
-        public SmtpSender SetSmtpClient(ISmtpClient smtpClient)
-        {
-            _smtpClient = smtpClient;
-            return this;
-        }
-
         public SmtpSender SetCustomAuthentication(Func<ISmtpClient, Task> customAuthenticationMethod)
         {
             _customAuthenticationMethod = customAuthenticationMethod;
@@ -110,6 +130,7 @@ namespace MailKitSimplified.Sender.Services
 
         public IEmailWriter WriteEmail => new EmailWriter(this);
 
+        [Obsolete("Use EmailSenderOptions.CreateProtocolLogger instead.")]
         public static IProtocolLogger GetProtocolLogger(string logFilePath = null, bool append = false, IFileSystem fileSystem = null)
         {
             IProtocolLogger protocolLogger = null;

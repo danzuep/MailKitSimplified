@@ -1,6 +1,7 @@
 ﻿using MimeKit;
 using MailKit;
 using MailKit.Search;
+using MailKit.Net.Imap;
 using System;
 using System.Linq;
 using System.Threading;
@@ -75,11 +76,18 @@ namespace MailKitSimplified.Receiver.Services
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
         }
 
-        public static MailFolderReader Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderReader> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null)
+        public static MailFolderReader Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderReader> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null)
         {
             if (emailReceiverOptions == null)
                 throw new ArgumentNullException(nameof(emailReceiverOptions));
-            var imapReceiver = ImapReceiver.Create(emailReceiverOptions, logImap, protocolLogger);
+            var imapReceiver = ImapReceiver.Create(emailReceiverOptions, logImap, protocolLogger, imapClient);
+            var mailFolderReader = new MailFolderReader(imapReceiver, logger);
+            return mailFolderReader;
+        }
+
+        public static MailFolderReader Create(IImapClient imapClient, EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderReader> logger = null, ILogger<ImapReceiver> logImap = null)
+        {
+            var imapReceiver = ImapReceiver.Create(imapClient, emailReceiverOptions, logImap);
             var mailFolderReader = new MailFolderReader(imapReceiver, logger);
             return mailFolderReader;
         }

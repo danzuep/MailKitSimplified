@@ -1,5 +1,6 @@
 ﻿using MailKit;
 using MailKit.Search;
+using MailKit.Net.Imap;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,11 +28,16 @@ namespace MailKitSimplified.Receiver.Services
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
         }
 
-        public static MailFolderClient Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderClient> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null)
+        public static MailFolderClient Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderClient> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null)
         {
-            if (emailReceiverOptions == null)
-                throw new ArgumentNullException(nameof(emailReceiverOptions));
-            var imapReceiver = ImapReceiver.Create(emailReceiverOptions, logImap, protocolLogger);
+            var imapReceiver = ImapReceiver.Create(emailReceiverOptions, logImap, protocolLogger, imapClient);
+            var mailFolderClient = new MailFolderClient(imapReceiver, logger);
+            return mailFolderClient;
+        }
+
+        public static MailFolderClient Create(IImapClient imapClient, EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderClient> logger = null, ILogger<ImapReceiver> logImap = null)
+        {
+            var imapReceiver = ImapReceiver.Create(imapClient, emailReceiverOptions, logImap);
             var mailFolderClient = new MailFolderClient(imapReceiver, logger);
             return mailFolderClient;
         }

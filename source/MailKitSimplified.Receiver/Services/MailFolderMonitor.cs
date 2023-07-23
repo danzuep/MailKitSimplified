@@ -58,17 +58,17 @@ namespace MailKitSimplified.Receiver.Services
             };
         }
 
-        public static MailFolderMonitor Create(FolderMonitorOptions folderMonitorOptions, ILogger<MailFolderMonitor> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null)
+        public static MailFolderMonitor Create(FolderMonitorOptions folderMonitorOptions, ILogger<MailFolderMonitor> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null)
         {
             if (folderMonitorOptions == null)
                 throw new ArgumentNullException(nameof(folderMonitorOptions));
-            var imapReceiver = ImapReceiver.Create(folderMonitorOptions.EmailReceiverOptions, logImap, protocolLogger);
+            var imapReceiver = ImapReceiver.Create(folderMonitorOptions.EmailReceiverOptions, logImap, protocolLogger, imapClient);
             var options = Options.Create(folderMonitorOptions);
             var receiver = new MailFolderMonitor(imapReceiver, options, logger);
             return receiver;
         }
 
-        public static MailFolderMonitor Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderMonitor> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null)
+        public static MailFolderMonitor Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderMonitor> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null)
         {
             if (emailReceiverOptions == null)
                 throw new ArgumentNullException(nameof(emailReceiverOptions));
@@ -76,8 +76,22 @@ namespace MailKitSimplified.Receiver.Services
             {
                 EmailReceiverOptions = emailReceiverOptions
             };
-            var receiver = Create(folderMonitorOptions, logger, logImap, protocolLogger);
+            var receiver = Create(folderMonitorOptions, logger, logImap, protocolLogger, imapClient);
             return receiver;
+        }
+
+        public static MailFolderMonitor Create(IImapClient imapClient, EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderMonitor> logger = null, ILogger<ImapReceiver> logImap = null)
+        {
+            if (emailReceiverOptions == null)
+                throw new ArgumentNullException(nameof(emailReceiverOptions));
+            var folderMonitorOptions = new FolderMonitorOptions
+            {
+                EmailReceiverOptions = emailReceiverOptions
+            };
+            var options = Options.Create(folderMonitorOptions);
+            var imapReceiver = ImapReceiver.Create(imapClient, emailReceiverOptions, logImap);
+            var mailFolderMonitor = new MailFolderMonitor(imapReceiver, options, logger);
+            return mailFolderMonitor;
         }
 
         public MailFolderMonitor SetIdleMinutes(byte idleMinutes = FolderMonitorOptions.IdleMinutesImap)

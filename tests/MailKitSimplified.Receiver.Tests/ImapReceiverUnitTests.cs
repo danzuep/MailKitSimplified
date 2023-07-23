@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
-using MailKit.Net.Smtp;
 
 namespace MailKitSimplified.Receiver.Tests
 {
@@ -84,7 +83,7 @@ namespace MailKitSimplified.Receiver.Tests
             using var imapReceiver = ImapReceiver.Create(_localhost)
                 .SetPort(It.IsAny<ushort>())
                 .SetCredential(It.IsAny<string>(), It.IsAny<string>())
-                .SetProtocolLog(It.IsAny<string>())
+                .SetProtocolLog(It.IsAny<string>(), It.IsAny<bool>())
                 .SetFolder(It.IsAny<string>())
                 .SetCustomAuthentication(It.IsAny<Func<IImapClient, Task>>());
             imapReceiver.RemoveAuthenticationMechanism("XOAUTH2");

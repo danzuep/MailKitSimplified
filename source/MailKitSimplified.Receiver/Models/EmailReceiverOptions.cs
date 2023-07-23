@@ -1,12 +1,13 @@
-﻿using System;
+﻿using MailKit;
+using MailKit.Net.Imap;
+using MailKit.Security;
+using System;
 using System.Net;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using MailKit.Net.Imap;
-using MailKit.Security;
 
 namespace MailKitSimplified.Receiver.Models
 {
@@ -63,12 +64,13 @@ namespace MailKitSimplified.Receiver.Models
             ProtocolLogger.FileWriter.AppendToExisting = protocolLogFileAppend;
         }
 
-        public async Task<IImapClient> CreateImapClientAsync(CancellationToken cancellationToken = default)
+        public Task<IImapClient> CreateImapClientAsync(CancellationToken cancellationToken) =>
+            CreateImapClientAsync(null, cancellationToken);
+
+        public async Task<IImapClient> CreateImapClientAsync(IProtocolLogger protocolLogger = null, CancellationToken cancellationToken = default)
         {
-            var imapClient = new ImapClient
-            {
-                Timeout = (int)Timeout.TotalMilliseconds
-            };
+            var imapClient = protocolLogger != null ? new ImapClient(protocolLogger) : new ImapClient();
+            imapClient.Timeout = (int)Timeout.TotalMilliseconds;
             await imapClient.ConnectAsync(ImapHost, ImapPort, SecureSocketOptions.Auto, cancellationToken).ConfigureAwait(false);
             if (imapClient.Capabilities.HasFlag(ImapCapabilities.Compress))
                 await imapClient.CompressAsync(cancellationToken).ConfigureAwait(false);

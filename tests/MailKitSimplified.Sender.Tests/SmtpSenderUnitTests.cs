@@ -5,15 +5,13 @@ global using MailKit;
 global using MailKit.Net.Smtp;
 using MailKit.Security;
 using System.Net;
+using System.IO.Abstractions.TestingHelpers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MailKitSimplified.Sender.Services;
 using MailKitSimplified.Sender.Models;
 using MailKitSimplified.Sender.Abstractions;
-using System.IO.Abstractions.TestingHelpers;
-using MailKit.Net.Imap;
-using System.Net.Mail;
 
 namespace MailKitSimplified.Sender.Tests
 {
@@ -129,7 +127,11 @@ namespace MailKitSimplified.Sender.Tests
         public void GetProtocolLogger_WithAppend_VerifyType()
         {
             _fileSystem.AddFile(_logFilePath, new MockFileData(string.Empty));
-            using var protocolLogger = SmtpSender.GetProtocolLogger(_logFilePath, true, _fileSystem);
+            using var protocolLogger = new EmailSenderOptions
+            {
+                ProtocolLog = _logFilePath,
+                ProtocolLogFileAppend = true
+            }.CreateProtocolLogger(_fileSystem);
             Assert.NotNull(protocolLogger);
             Assert.IsAssignableFrom<IProtocolLogger>(protocolLogger);
         }
@@ -137,7 +139,11 @@ namespace MailKitSimplified.Sender.Tests
         [Fact]
         public void GetProtocolLogger_WithCreate_VerifyType()
         {
-            using var protocolLogger = SmtpSender.GetProtocolLogger(_logFilePath, false, _fileSystem);
+            using var protocolLogger = new EmailSenderOptions
+            {
+                ProtocolLog = _logFilePath,
+                ProtocolLogFileAppend = false
+            }.CreateProtocolLogger(_fileSystem);
             Assert.NotNull(protocolLogger);
             Assert.IsAssignableFrom<IProtocolLogger>(protocolLogger);
         }
