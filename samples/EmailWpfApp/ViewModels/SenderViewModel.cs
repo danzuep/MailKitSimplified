@@ -37,8 +37,8 @@ namespace EmailWpfApp.ViewModels
 #if DEBUG
             FromTextBox = "from@localhost";
             ToTextBox = "to@localhost";
-            SubjectTextBox = "Hey";
             MessageTextBox = "<p>Hi.<p>";
+            SubjectTextBox = "1";
 #endif
         }
 
@@ -58,6 +58,9 @@ namespace EmailWpfApp.ViewModels
                         .BodyHtml(MessageTextBox)
                         .SendAsync();
                     StatusText = $"Email #{++_count} sent with subject: \"{SubjectTextBox}\".";
+#if DEBUG
+                    SubjectTextBox = (_count + 1).ToString();
+#endif
                 }
             }
             catch (Exception ex)

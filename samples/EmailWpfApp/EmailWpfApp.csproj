@@ -22,6 +22,11 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="7.0.0" />
   </ItemGroup>
 
+  <!--<ItemGroup>
+    <ProjectReference Include="..\..\source\MailKitSimplified.Receiver\MailKitSimplified.Receiver.csproj" />
+    <ProjectReference Include="..\..\source\MailKitSimplified.Sender\MailKitSimplified.Sender.csproj" />
+  </ItemGroup>-->
+
   <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

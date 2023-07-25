@@ -15,7 +15,6 @@ using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using EmailWpfApp.Extensions;
 using EmailWpfApp.Models;
-using System.Linq;
 
 namespace EmailWpfApp.ViewModels
 {
@@ -35,7 +34,10 @@ namespace EmailWpfApp.ViewModels
         private string imapHost = "localhost";
 
         [ObservableProperty]
-        private bool isIdleReceiver;
+        private bool isNotReceiving = true;
+
+        [ObservableProperty]
+        private bool isReceiving;
 
         [ObservableProperty]
         private bool isInProgress;
@@ -84,29 +86,9 @@ namespace EmailWpfApp.ViewModels
             }
         }
 
-        [RelayCommand]
-        private async Task ConnectHostAsync()
+        private async Task GetMailFolderNamesAsync(CancellationToken cancellationToken = default)
         {
-            IsInProgress = true;
-            try
-            {
-                Cancel();
-                StatusText = "Getting mail folder names...";
-                await GetMailFolderNamesAsync().ConfigureAwait(false);
-                StatusText = $"Connected to {ImapHost}.";
-                IsIdleReceiver = true;
-            }
-            catch (Exception ex)
-            {
-                ShowAndLogError(ex);
-                System.Diagnostics.Debugger.Break();
-            }
-            IsInProgress = false;
-        }
-
-        private async Task GetMailFolderNamesAsync()
-        {
-            var mailFolderNames = await _imapReceiver.GetMailFolderNamesAsync();
+            var mailFolderNames = await _imapReceiver.GetMailFolderNamesAsync(cancellationToken);
             if (mailFolderNames.Count > 0)
             {
                 ViewModelItems = new ObservableCollection<string>(mailFolderNames);
@@ -127,30 +109,49 @@ namespace EmailWpfApp.ViewModels
             }
         }
 
-        private bool isReceiving = false;
-
         [RelayCommand]
-        private void Cancel()
+        private async Task ConnectHostAsync()
         {
-            if (isReceiving)
+            if (!IsNotReceiving)
             {
                 _cts.Cancel();
-                //_cts.TryReset();
+                _cts.TryReset();
                 _cts = new();
-                IsIdleReceiver = false;
+                IsReceiving = false;
+                IsNotReceiving = !IsReceiving;
                 return;
             }
+            IsInProgress = true;
+            try
+            {
+                StatusText = "Getting mail folder names...";
+                await GetMailFolderNamesAsync(_cts.Token).ConfigureAwait(false);
+                StatusText = $"Connected to {ImapHost}.";
+                IsReceiving = !IsNotReceiving;
+            }
+            catch (OperationCanceledException ex)
+            {
+                UpdateStatusText(ex);
+            }
+            catch (Exception ex)
+            {
+                ShowAndLogError(ex);
+                System.Diagnostics.Debugger.Break();
+            }
+            IsInProgress = false;
         }
 
         [RelayCommand]
         private void Receive()
         {
-            isReceiving = true;
             Task.Run(async () =>
             {
+                IsNotReceiving = false;
                 try
                 {
-                    await GetMailFolderNamesAsync().ConfigureAwait(false);
+                    if (!IsReceiving)
+                        await GetMailFolderNamesAsync().ConfigureAwait(false);
+                    IsReceiving = true;
                     var tasks = new Task[]
                     {
                     _imapReceiver.MonitorFolder.OnMessageArrival(EnqueueAsync).IdleAsync(_cts.Token),
@@ -165,10 +166,10 @@ namespace EmailWpfApp.ViewModels
                 catch (Exception ex)
                 {
                     ShowAndLogError(ex);
-                    //System.Diagnostics.Debugger.Break();
                 }
+                IsReceiving = false;
+                IsNotReceiving = true;
             });
-            isReceiving = false;
         }
 
         private async Task EnqueueAsync(IMessageSummary m) => await _queue.Writer.WriteAsync(m, _cts.Token);

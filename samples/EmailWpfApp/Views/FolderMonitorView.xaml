@@ -51,6 +51,7 @@
                             <Setter Property="HorizontalAlignment" Value="Center" />
                             <Setter Property="Content" Value="_Connect" />
                             <Setter Property="Command" Value="{Binding ConnectHostCommand}" />
+                            <Setter Property="IsChecked" Value="{Binding IsReceiving}" />
                             <Style.Triggers>
                                 <Trigger Property="IsChecked" Value="True">
                                     <Setter Property="Content" Value="_Cancel" />
@@ -76,7 +77,7 @@
                     Content="_Receive"
                     DockPanel.Dock="Right"
                     Style="{StaticResource ButtonStyle}"
-                    IsEnabled="{Binding IsIdleReceiver}"
+                    IsEnabled="{Binding IsNotReceiving}"
                     TabIndex="3" />
                 <ComboBox
                     x:Name="View_FolderComboBox"
