@@ -261,7 +261,7 @@ namespace MailKitSimplified.Receiver.Services
         public IImapReceiver Clone()
         {
             var receiverOptions = _receiverOptions.Copy();
-            return Create(_imapClient, receiverOptions, _logger);
+            return Create(receiverOptions, _logger, _imapLogger);
         }
 
         public override string ToString() => _receiverOptions.ToString();

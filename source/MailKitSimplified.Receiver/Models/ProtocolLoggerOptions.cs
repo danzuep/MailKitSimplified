@@ -12,6 +12,7 @@ namespace MailKitSimplified.Receiver.Models
         public const string DefaultTimestampFormat = "yyyy-MM-ddTHH:mm:ssZ";
         public const string DefaultSmtpLogFilePath = "Logs/SmtpClient.txt";
         public const string DefaultImapLogFilePath = "Logs/ImapClient.txt";
+        private static readonly string MockFileSystemName = "MockFileSystem";
 
         public FileWriterOptions FileWriter { get; set; } = new FileWriterOptions();
 
@@ -31,7 +32,7 @@ namespace MailKitSimplified.Receiver.Models
             else if (!string.IsNullOrWhiteSpace(FileWriter.FilePath))
             {
                 bool isMockFileSystem = fileSystem != null &&
-                    fileSystem.GetType().Name == "MockFileSystem";
+                    fileSystem.GetType().Name == MockFileSystemName;
                 if (fileSystem == null)
                     fileSystem = new FileSystem();
                 var directoryName = fileSystem.Path.GetDirectoryName(FileWriter.FilePath);

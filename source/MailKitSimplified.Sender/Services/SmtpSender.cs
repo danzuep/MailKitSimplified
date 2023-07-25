@@ -17,7 +17,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Extensions;
 using MailKitSimplified.Sender.Models;
-using MailKit.Net.Imap;
 
 namespace MailKitSimplified.Sender.Services
 {
