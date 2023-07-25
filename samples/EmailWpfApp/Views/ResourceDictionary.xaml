@@ -33,7 +33,7 @@
         <Setter Property="MinWidth" Value="100" />
     </Style>
 
-    <Style x:Key="MultilineTextBoxStyle" TargetType="{x:Type TextBox}">
+    <Style x:Key="MultilineTextBoxStyle" BasedOn="{StaticResource TextBoxStyle}" TargetType="{x:Type TextBox}">
         <Setter Property="Margin" Value="5,2,5,2" />
         <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="AcceptsReturn" Value="True" />

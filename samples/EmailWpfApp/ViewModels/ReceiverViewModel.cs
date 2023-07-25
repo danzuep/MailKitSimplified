@@ -26,6 +26,7 @@ namespace EmailWpfApp.ViewModels
         [ObservableProperty]
         private bool isInProgress;
 
+        private readonly Lazy<Task> GetFoldersTask;
         private int _count = 0;
         private static readonly string _inbox = "INBOX";
         private readonly IMailFolderReader _mailFolderReader;
@@ -34,6 +35,7 @@ namespace EmailWpfApp.ViewModels
         public ReceiverViewModel() : base()
         {
             _mailFolderReader = Ioc.Default.GetRequiredService<IMailFolderReader>();
+            GetFoldersTask = new Lazy<Task>(() => GetFoldersAsync());
             //_dbContext = Ioc.Default.GetRequiredService<EmailDbContext>();
             StatusText = string.Empty;
         }
@@ -43,11 +45,11 @@ namespace EmailWpfApp.ViewModels
             IsInProgress = true;
             if (Ioc.Default.GetRequiredService<IImapReceiver>() is IImapReceiver imapReceiver)
             {
-                StatusText = "Getting mail folder names...";
+                UpdateStatusText("Getting mail folder names...");
                 var mailFolderNames = await imapReceiver.GetMailFolderNamesAsync();
                 if (mailFolderNames.Count > 0)
                     ViewModelItems = new ObservableCollection<string>(mailFolderNames);
-                StatusText = string.Empty;
+                UpdateStatusText(string.Empty);
             }
             //else if (_dbContext != null)
             //{
@@ -77,7 +79,7 @@ namespace EmailWpfApp.ViewModels
             {
                 StatusText = "Getting email...";
                 IsInProgress = true;
-                var getFoldersTask = GetFoldersAsync();
+                var getFoldersTask = GetFoldersTask.Value;
                 var mimeMessages = await _mailFolderReader
                     .Take(1, continuous: true).GetMimeMessagesAsync();
                 var emails = mimeMessages.Convert();
@@ -93,7 +95,7 @@ namespace EmailWpfApp.ViewModels
                     StoreEmails(ViewModelDataGrid.AsEnumerable());
                 else
                     StatusText = "No more emails in this folder.";
-                await getFoldersTask;
+                await getFoldersTask.ConfigureAwait(false);
             }
             catch (Exception ex)
             {

@@ -43,13 +43,22 @@
                     Content="IMAP _Host: "
                     Style="{StaticResource LabelStyle}"
                     Target="{Binding ElementName=View_HostTextBox}" />
-                <Button
-                    x:Name="View_ConnectButton"
-                    Command="{Binding ConnectHostCommand}"
-                    Content="_Connect"
-                    DockPanel.Dock="Right"
-                    Style="{StaticResource ButtonStyle}"
-                    TabIndex="1" />
+                <ToggleButton x:Name="View_ConnectButton" DockPanel.Dock="Right">
+                    <ToggleButton.Style>
+                        <Style TargetType="{x:Type ToggleButton}">
+                            <Setter Property="TabIndex" Value="1" />
+                            <Setter Property="MinWidth" Value="100" />
+                            <Setter Property="HorizontalAlignment" Value="Center" />
+                            <Setter Property="Content" Value="_Connect" />
+                            <Setter Property="Command" Value="{Binding ConnectHostCommand}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter Property="Content" Value="_Cancel" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ToggleButton.Style>
+                </ToggleButton>
                 <TextBox
                     x:Name="View_HostTextBox"
                     Style="{StaticResource TextBoxStyle}"
@@ -61,22 +70,14 @@
                     Content="Mail _Folder: "
                     Style="{StaticResource LabelStyle}"
                     Target="{Binding ElementName=View_FolderComboBox}" />
-                <ToggleButton x:Name="View_ChangeButton" DockPanel.Dock="Right">
-                    <ToggleButton.Style>
-                        <Style TargetType="{x:Type ToggleButton}">
-                            <Setter Property="TabIndex" Value="3" />
-                            <Setter Property="MinWidth" Value="100" />
-                            <Setter Property="HorizontalAlignment" Value="Center" />
-                            <Setter Property="Content" Value="_Receive" />
-                            <Setter Property="Command" Value="{Binding ReceiveCommand}" />
-                            <Style.Triggers>
-                                <Trigger Property="IsChecked" Value="True">
-                                    <Setter Property="Content" Value="_Cancel" />
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ToggleButton.Style>
-                </ToggleButton>
+                <Button
+                    x:Name="View_ReceiveButton"
+                    Command="{Binding ReceiveCommand}"
+                    Content="_Receive"
+                    DockPanel.Dock="Right"
+                    Style="{StaticResource ButtonStyle}"
+                    IsEnabled="{Binding IsIdleReceiver}"
+                    TabIndex="3" />
                 <ComboBox
                     x:Name="View_FolderComboBox"
                     ItemsSource="{Binding ViewModelItems}"

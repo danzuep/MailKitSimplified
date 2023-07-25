@@ -15,6 +15,7 @@ using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using EmailWpfApp.Extensions;
 using EmailWpfApp.Models;
+using System.Linq;
 
 namespace EmailWpfApp.ViewModels
 {
@@ -34,6 +35,9 @@ namespace EmailWpfApp.ViewModels
         private string imapHost = "localhost";
 
         [ObservableProperty]
+        private bool isIdleReceiver;
+
+        [ObservableProperty]
         private bool isInProgress;
 
         [ObservableProperty]
@@ -43,7 +47,7 @@ namespace EmailWpfApp.ViewModels
         private string _messageTextBlock = string.Empty;
 
         private static readonly string _inbox = "INBOX";
-        private readonly CancellationTokenSource _cts = new();
+        private CancellationTokenSource _cts = new();
         private readonly BackgroundWorker _worker = new();
         //private readonly EmailDbContext? _dbContext;
         private readonly IImapReceiver _imapReceiver;
@@ -78,7 +82,6 @@ namespace EmailWpfApp.ViewModels
                 };
                 _queue = Channel.CreateUnbounded<IMessageSummary>(channelOptions);
             }
-
         }
 
         [RelayCommand]
@@ -87,9 +90,11 @@ namespace EmailWpfApp.ViewModels
             IsInProgress = true;
             try
             {
+                Cancel();
                 StatusText = "Getting mail folder names...";
                 await GetMailFolderNamesAsync().ConfigureAwait(false);
                 StatusText = $"Connected to {ImapHost}.";
+                IsIdleReceiver = true;
             }
             catch (Exception ex)
             {
@@ -125,33 +130,45 @@ namespace EmailWpfApp.ViewModels
         private bool isReceiving = false;
 
         [RelayCommand]
-        private async Task ReceiveAsync()
+        private void Cancel()
         {
             if (isReceiving)
             {
-                isReceiving = false;
                 _cts.Cancel();
-                _cts.TryReset();
+                //_cts.TryReset();
+                _cts = new();
+                IsIdleReceiver = false;
                 return;
             }
-            try
+        }
+
+        [RelayCommand]
+        private void Receive()
+        {
+            isReceiving = true;
+            Task.Run(async () =>
             {
-                await GetMailFolderNamesAsync().ConfigureAwait(false);
-                //int progressPercentage = Convert.ToInt32((max * 100d) / 100);
-                isReceiving = true;
-                var tasks = new Task[]
+                try
                 {
+                    await GetMailFolderNamesAsync().ConfigureAwait(false);
+                    var tasks = new Task[]
+                    {
                     _imapReceiver.MonitorFolder.OnMessageArrival(EnqueueAsync).IdleAsync(_cts.Token),
                     ProcessQueueAsync(OnArrivalAsync, _cts.Token)
-                };
-                await Task.WhenAll(tasks);
-            }
-            catch (Exception ex)
-            {
-                isReceiving = false;
-                ShowAndLogError(ex);
-                //System.Diagnostics.Debugger.Break();
-            }
+                    };
+                    await Task.WhenAll(tasks);
+                }
+                catch (OperationCanceledException ex)
+                {
+                    UpdateStatusText(ex);
+                }
+                catch (Exception ex)
+                {
+                    ShowAndLogError(ex);
+                    //System.Diagnostics.Debugger.Break();
+                }
+            });
+            isReceiving = false;
         }
 
         private async Task EnqueueAsync(IMessageSummary m) => await _queue.Writer.WriteAsync(m, _cts.Token);
@@ -190,13 +207,20 @@ namespace EmailWpfApp.ViewModels
         {
             UpdateStatusText("Downloading email...");
             IsInProgress = true;
-            var mimeMessage = await messageSummary.GetMimeMessageAsync(_cts.Token);
-            var email = mimeMessage.Convert();
-            UpdateStatusText($"{_imapReceiver} #{messageSummary.Index} received: {email.Subject}.");
-            ViewModelDataGrid.Add(email);
-            if (SelectedEmail == null)
+            try
             {
-                SelectedEmail = email;
+                var mimeMessage = await messageSummary.GetMimeMessageAsync(_cts.Token);
+                var email = mimeMessage.Convert();
+                UpdateStatusText($"{_imapReceiver} #{messageSummary.Index} received: {email.Subject}.");
+                await App.Current.Dispatcher.InvokeAsync(() => ViewModelDataGrid.Add(email));
+                if (SelectedEmail.MailboxIndex == 0 && string.IsNullOrEmpty(SelectedEmail.MessageId))
+                {
+                    SelectedEmail = email;
+                }
+            }
+            catch (Exception ex)
+            {
+                UpdateStatusText(ex);
             }
             IsInProgress = false;
             //UpdateStatusText(string.Empty);

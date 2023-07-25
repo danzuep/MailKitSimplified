@@ -28,4 +28,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\*" LinkBase="_Repository" />
+  </ItemGroup>
+	
 </Project>

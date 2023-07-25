@@ -51,7 +51,7 @@ namespace EmailWpfApp.ViewModels
             StatusText = status;
         }
 
-        internal void ShowAndLogWarning(Exception ex, string? status = null)
+        internal void UpdateStatusText(Exception ex, string? status = null)
         {
             if (status == null)
             {
@@ -59,18 +59,18 @@ namespace EmailWpfApp.ViewModels
                 status = $"{e.GetType().Name}: {e.Message}";
             }
             StatusText = status;
-            logger.LogWarning(status);
+        }
+
+        internal void ShowAndLogWarning(Exception ex, string? status = null)
+        {
+            UpdateStatusText(ex, status);
+            logger.LogWarning(ex, status);
             MessageBox.Show(ex.ToString(), status, MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
         internal void ShowAndLogError(Exception ex, string? status = null)
         {
-            if (status == null)
-            {
-                var e = ex.GetBaseException();
-                status = $"{e.GetType().Name}: {e.Message}";
-            }
-            StatusText = status;
+            UpdateStatusText(ex, status);
             logger.LogError(ex, status);
             MessageBox.Show(ex.ToString(), status, MessageBoxButton.OK, MessageBoxImage.Error);
         }
