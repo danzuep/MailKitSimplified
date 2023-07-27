@@ -19,6 +19,8 @@ namespace MailKitSimplified.Receiver.Models
         public string MailFolderName { get; set; } = _inbox;
         public IList<string> MailFolderNames { get; set; } = new List<string> { _inbox };
 
+        public FolderAccess MailFolderAccess { get; set; } = FolderAccess.None;
+
         [Required]
         public string ImapHost { get; set; }
         public ushort ImapPort { get; set; } = 0;

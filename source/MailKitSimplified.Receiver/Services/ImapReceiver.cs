@@ -133,9 +133,10 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
-        public ImapReceiver SetFolder(string mailFolderName)
+        public ImapReceiver SetFolder(string mailFolderName, FolderAccess folderAccess = FolderAccess.None)
         {
             _receiverOptions.MailFolderName = mailFolderName;
+            _receiverOptions.MailFolderAccess = folderAccess;
             return this;
         }
 
@@ -224,6 +225,11 @@ namespace MailKitSimplified.Receiver.Services
             _logger.LogTrace($"Connecting to mail folder: '{_receiverOptions.MailFolderName}'.");
             var mailFolder = string.IsNullOrWhiteSpace(_receiverOptions.MailFolderName) || _receiverOptions.MailFolderName.Equals("INBOX", StringComparison.OrdinalIgnoreCase) ?
                 _imapClient.Inbox : await _imapClient.GetFolderAsync(_receiverOptions.MailFolderName, cancellationToken).ConfigureAwait(false);
+            if (_receiverOptions.MailFolderAccess != FolderAccess.None)
+            {
+                _ = await mailFolder.OpenAsync(_receiverOptions.MailFolderAccess, cancellationToken).ConfigureAwait(false);
+                _logger.LogTrace($"{this} mail folder opened with {_receiverOptions.MailFolderAccess} access.");
+            }
             return mailFolder;
         }
 

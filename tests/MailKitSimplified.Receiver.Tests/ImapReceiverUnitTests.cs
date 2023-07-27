@@ -84,7 +84,7 @@ namespace MailKitSimplified.Receiver.Tests
                 .SetPort(It.IsAny<ushort>())
                 .SetCredential(It.IsAny<string>(), It.IsAny<string>())
                 .SetProtocolLog(It.IsAny<string>(), It.IsAny<bool>())
-                .SetFolder(It.IsAny<string>())
+                .SetFolder(It.IsAny<string>(), It.IsAny<FolderAccess>())
                 .SetCustomAuthentication(It.IsAny<Func<IImapClient, Task>>());
             imapReceiver.RemoveAuthenticationMechanism("XOAUTH2");
             Assert.NotNull(imapReceiver);
