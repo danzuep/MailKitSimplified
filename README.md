@@ -36,7 +36,7 @@ You're welcome. 🥲
 
 ## Example Usage [![Development](https://github.com/danzuep/MailKitSimplified/actions/workflows/development.yml/badge.svg)](https://github.com/danzuep/MailKitSimplified/actions/workflows/development.yml) [![Release](https://github.com/danzuep/MailKitSimplified/actions/workflows/release.yml/badge.svg)](https://github.com/danzuep/MailKitSimplified/actions/workflows/release.yml)
 
-The examples above will actually work with no other setup if you use something like [smtp4dev](https://github.com/rnwood/smtp4dev) (e.g. `docker run --rm -d -p 3000:80 -p 25:25 -p 143:143 rnwood/smtp4dev`), but below are some more realistic examples. The cancellation token is recommended but not required.
+The examples above will actually work with no other setup if you use something like [smtp4dev](https://github.com/rnwood/smtp4dev) (e.g. `docker run -d -p 3000:80 -p 25:25 -p 143:143 rnwood/smtp4dev`), but below are some more realistic examples. The cancellation token is recommended but not required.
 
 ### Sending Mail
 

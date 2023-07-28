@@ -30,7 +30,7 @@ namespace MailKitSimplified.Email.Services
         {
             _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.Host))
-                throw new ArgumentException("Host was not set.");
+                throw new ArgumentException($"{nameof(EmailOptions.Host)} is not set.");
             _smtpClient = smtpClient ?? _senderOptions.SmtpClient.Value;
             _logger = logger ?? NullLogger<SmtpSender>.Instance;
         }

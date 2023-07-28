@@ -52,7 +52,7 @@ namespace MailKitSimplified.Receiver.Extensions
             if (original == null)
                 throw new ArgumentNullException(nameof(original));
             if (original.Envelope == null)
-                throw new NullReferenceException("IMessageSummary.Envelope is null.");
+                throw new ArgumentException($"{nameof(IMessageSummary)}.{nameof(IMessageSummary.Envelope)} is null.");
 
             // Set the subject with prefix check
             var mimeMessage = new MimeMessage
@@ -316,7 +316,7 @@ namespace MailKitSimplified.Receiver.Extensions
             if (messageSummary == null)
                 throw new ArgumentNullException(nameof(messageSummary));
             if (messageSummary.Folder == null)
-                throw new ArgumentException($"{nameof(IMessageSummary)} {nameof(IMailFolder)} was null.");
+                throw new ArgumentException($"{nameof(IMessageSummary)} {nameof(IMailFolder)} is null.");
             bool peekFolder = !messageSummary.Folder.IsOpen;
             if (peekFolder || messageSummary.Folder.Access != FolderAccess.ReadWrite)
                 _ = await messageSummary.Folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
@@ -327,6 +327,31 @@ namespace MailKitSimplified.Receiver.Extensions
                 await messageSummary.Folder.CloseAsync(delete, cancellationToken).ConfigureAwait(false);
             else if (delete)
                 await messageSummary.Folder.ExpungeAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Add flags with checks to make sure the folder is open and the writeable.
+        /// If there's a delete flag then it calls the Expunge method.
+        /// </summary>
+        /// <param name="mailFolder"><see cref="IMailFolder"/> to modify.</param>
+        /// <param name="messageFlags"><see cref="MessageFlags"/> to add.</param>
+        /// <param name="uniqueIds">UniqueIDs to download.</param>
+        /// <param name="silent">Does not emit an <see cref="IMailFolder.MessageFlagsChanged"/> event if set.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public static async Task AddFlagsAsync(this IMailFolder mailFolder, MessageFlags messageFlags, IEnumerable<UniqueId> uniqueIds, bool silent = true, CancellationToken cancellationToken = default)
+        {
+            if (mailFolder == null)
+                throw new ArgumentNullException(nameof(mailFolder));
+            bool peekFolder = !mailFolder.IsOpen;
+            if (peekFolder || mailFolder.Access != FolderAccess.ReadWrite)
+                _ = await mailFolder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
+            var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : uniqueIds.OrderBy(u => u.Id).ToList();
+            await mailFolder.AddFlagsAsync(ascendingIds, messageFlags, silent).ConfigureAwait(false);
+            bool delete = messageFlags.HasFlag(MessageFlags.Deleted);
+            if (peekFolder)
+                await mailFolder.CloseAsync(delete, cancellationToken).ConfigureAwait(false);
+            else if (delete)
+                await mailFolder.ExpungeAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

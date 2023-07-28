@@ -64,7 +64,7 @@ namespace MailKitSimplified.Receiver.Services
                 throw new ArgumentNullException(nameof(messageSummary));
             var mailFolder = messageSummary.Folder;
             if (mailFolder == null)
-                throw new NullReferenceException("Mail folder property not available.");
+                throw new ArgumentException("Mail folder property not available.");
             bool closeWhenFinished = !mailFolder.IsOpen;
             if (closeWhenFinished)
                 _ = await mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);

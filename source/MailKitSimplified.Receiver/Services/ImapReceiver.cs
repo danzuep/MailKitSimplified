@@ -25,8 +25,8 @@ namespace MailKitSimplified.Receiver.Services
         private IImapClient _imapClient;
         private IProtocolLogger _imapLogger;
         private EmailReceiverOptions _receiverOptions;
-        private readonly ILogger<ImapReceiver> _logger;
-        private readonly ILoggerFactory _loggerFactory;
+        private ILogger<ImapReceiver> _logger;
+        private ILoggerFactory _loggerFactory;
 
         public ImapReceiver(IOptions<EmailReceiverOptions> receiverOptions, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null, ILoggerFactory loggerFactory = null)
         {
@@ -77,9 +77,9 @@ namespace MailKitSimplified.Receiver.Services
                 throw new ArgumentNullException(nameof(emailReceiverOptions));
             _receiverOptions = emailReceiverOptions;
             if (string.IsNullOrWhiteSpace(_receiverOptions.ImapHost))
-                throw new NullReferenceException($"{nameof(EmailReceiverOptions.ImapHost)} is null.");
+                throw new ArgumentException($"{nameof(EmailReceiverOptions.ImapHost)} is not set.");
             if (_receiverOptions.ImapCredential == null)
-                throw new NullReferenceException($"{nameof(EmailReceiverOptions.ImapCredential)} is null.");
+                throw new ArgumentException($"{nameof(EmailReceiverOptions.ImapCredential)} is null.");
             _mailFolderClient = new Lazy<MailFolderClient>(() => Services.MailFolderClient.Create(
                 _imapClient, _receiverOptions, _loggerFactory.CreateLogger<MailFolderClient>(), _loggerFactory.CreateLogger<ImapReceiver>()));
             _mailFolderReader = new Lazy<MailFolderReader>(() => MailFolderReader.Create(
@@ -162,6 +162,17 @@ namespace MailKitSimplified.Receiver.Services
         {
             _receiverOptions.MailFolderName = mailFolderName;
             _receiverOptions.MailFolderAccess = folderAccess;
+            return SetOptions(_receiverOptions);
+        }
+
+        /// <summary>
+        /// For those not using dependency injection.
+        /// <example>LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole());</example>
+        /// </summary>
+        public ImapReceiver SetLogger(ILoggerFactory loggerFactory, ILogger<ImapReceiver> logger = null)
+        {
+            _loggerFactory = loggerFactory ?? _loggerFactory ?? NullLoggerFactory.Instance;
+            _logger = logger ?? _logger ?? _loggerFactory.CreateLogger<ImapReceiver>();
             return SetOptions(_receiverOptions);
         }
 

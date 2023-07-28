@@ -28,7 +28,7 @@ namespace MailKitSimplified.Sender.Services
         private Func<ISmtpClient, Task> _customAuthenticationMethod;
         private CancellationTokenSource _cts = null;
         private readonly ConcurrentQueue<MimeMessage> _sendQueue = new ConcurrentQueue<MimeMessage>();
-        private readonly ILogger<SmtpSender> _logger;
+        private ILogger<SmtpSender> _logger;
         private readonly EmailSenderOptions _senderOptions;
 
         /// <inheritdoc cref="ISmtpSender" />
@@ -37,7 +37,7 @@ namespace MailKitSimplified.Sender.Services
             _logger = logger ?? NullLogger<SmtpSender>.Instance;
             _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.SmtpHost))
-                throw new NullReferenceException(nameof(EmailSenderOptions.SmtpHost));
+                throw new ArgumentException($"{nameof(EmailSenderOptions.SmtpHost)} is not set.");
             if (smtpClient == null)
                 SetProtocolLog(protocolLogger);
             else
@@ -107,6 +107,16 @@ namespace MailKitSimplified.Sender.Services
             _senderOptions.ProtocolLog = logFilePath;
             _senderOptions.ProtocolLogFileAppend = append;
             return SetProtocolLog(null);
+        }
+
+        /// <summary>
+        /// For those not using dependency injection.
+        /// <example>LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole()).CreateLogger<SmtpSender>();</example>
+        /// </summary>
+        public SmtpSender SetLogger(ILogger<SmtpSender> logger)
+        {
+            _logger = logger ?? NullLogger<SmtpSender>.Instance;
+            return this;
         }
 
         public SmtpSender SetPort(ushort smtpPort)
@@ -380,8 +390,15 @@ namespace MailKitSimplified.Sender.Services
         {
             CancelSendQueue();
             _logger.LogTrace("Disconnecting SMTP email client...");
-            if (_smtpClient.IsConnected)
-                await _smtpClient.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                if (_smtpClient.IsConnected)
+                    await _smtpClient.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, ex.Message);
+            }
         }
 
         public async ValueTask DisposeAsync()

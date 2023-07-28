@@ -2,6 +2,7 @@
 using MailKit.Search;
 using MailKit.Net.Imap;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -98,6 +99,16 @@ namespace MailKitSimplified.Receiver.Services
             var query = subjectMatch.Or(bodyMatch);
             var uniqueIds = await SearchAsync(query, cancellationToken).ConfigureAwait(false);
             return uniqueIds;
+        }
+
+        [Obsolete("Consider using IMailReader.Query() instead.")]
+        public async Task<IMessageSummary> GetNewestMessageSummaryAsync(MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default)
+        {
+            var mailFolder = await ConnectAsync(true, cancellationToken).ConfigureAwait(false);
+            var index = mailFolder.Count > 0 ? mailFolder.Count - 1 : mailFolder.Count;
+            var messageSummaries = await mailFolder.FetchAsync(index, index, filter, cancellationToken).ConfigureAwait(false);
+            await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+            return messageSummaries.FirstOrDefault();
         }
 
         public IMailFolderClient Copy() => MemberwiseClone() as IMailFolderClient;

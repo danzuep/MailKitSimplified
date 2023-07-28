@@ -72,7 +72,7 @@ namespace MailKitSimplified.Receiver.Services
             var emailReceiverOptions = emailReceivers?.SingleOrDefault(c => c.ImapHost == imapHost);
             if (emailReceiverOptions == null)
             {
-                throw new NullReferenceException($"No {MailboxOptions.SectionName} configuration was found for {imapHost}.");
+                throw new ArgumentException($"No {MailboxOptions.SectionName} configuration was found for {imapHost}.");
             }
             return emailReceiverOptions;
         }

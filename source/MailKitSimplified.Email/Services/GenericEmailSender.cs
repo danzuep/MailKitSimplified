@@ -25,14 +25,14 @@ namespace MailKitSimplified.Email.Services
             _logger = logger ?? NullLogger<GenericEmailSender>.Instance;
             _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.Host))
-                throw new NullReferenceException(nameof(GenericSmtpOptions.Host));
+                throw new ArgumentException($"{nameof(GenericSmtpOptions.Host)} is not set.");
             _smtpClient = smtpClient ?? new SmtpClient();
         }
 
         public static GenericEmailSender Create(string smtpHost, ILogger<GenericEmailSender> logger = null)
         {
             if (string.IsNullOrWhiteSpace(smtpHost))
-                throw new NullReferenceException(nameof(smtpHost));
+                throw new ArgumentNullException(nameof(smtpHost));
             ushort smtpPort = 0;
             string[] hostParts = smtpHost.Split(':');
             if (hostParts.Length == 2 && ushort.TryParse(hostParts[1], out smtpPort))
@@ -56,7 +56,7 @@ namespace MailKitSimplified.Email.Services
         public GenericEmailSender SetCredential(string username, string password)
         {
             if (string.IsNullOrWhiteSpace(username))
-                throw new NullReferenceException(nameof(username));
+                throw new ArgumentNullException(nameof(username));
             _senderOptions.Username = username;
             _senderOptions.Password = password;
             return this;

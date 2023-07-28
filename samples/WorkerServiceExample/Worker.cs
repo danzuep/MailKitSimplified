@@ -48,8 +48,9 @@ public class Worker : BackgroundService
         {
             try
             {
-                if (messageSummary.UniqueId > newestEmail?.UniqueId)
+                if (messageSummary.UniqueId.Id > newestEmail?.UniqueId.Id)
                 {
+                    await messageSummary.AddFlagsAsync(MessageFlags.Seen);
                     var mimeMessage = await messageSummary.GetMimeMessageAsync();
                     //var mimeMessage = await _imapReceiver.ReadMail.GetMimeMessageAsync(messageSummary.UniqueId);
                     _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} arrived, {mimeMessage.MessageId}.");
@@ -79,7 +80,7 @@ public class Worker : BackgroundService
     {
         using var mailFolderClient = _imapReceiver.MailFolderClient;
         var mailFolder = await mailFolderClient.ConnectAsync(false, cancellationToken).ConfigureAwait(false);
-        var index = mailFolder.Count - 1;
+        var index = mailFolder.Count > 0 ? mailFolder.Count - 1 : mailFolder.Count;
         var filter = MessageSummaryItems.UniqueId;
         var messageSummaries = await mailFolder.FetchAsync(index, index, filter, cancellationToken).ConfigureAwait(false);
         await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
@@ -90,7 +91,7 @@ public class Worker : BackgroundService
     {
         var stopwatch = Stopwatch.StartNew();
         var messageSummaries = await _imapReceiver.ReadMail
-            .Skip(31).Take(1).Items(MessageSummaryItems.Envelope)
+            .Skip(0).Take(1).Items(MessageSummaryItems.Envelope)
             .GetMessageSummariesAsync(cancellationToken);
         stopwatch.Stop();
         _logger.LogInformation($"Received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
