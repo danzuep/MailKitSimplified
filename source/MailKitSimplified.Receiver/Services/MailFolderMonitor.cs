@@ -112,7 +112,7 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
-        public IMailFolderMonitor SetMessageSummaryItems(MessageSummaryItems itemSelection = MessageSummaryItems.Envelope | MessageSummaryItems.BodyStructure)
+        public IMailFolderMonitor SetMessageSummaryItems(MessageSummaryItems itemSelection = MessageSummaryItems.Envelope | MessageSummaryItems.BodyStructure | MessageSummaryItems.Flags)
         {
             _folderMonitorOptions.MessageSummaryItems = itemSelection;
             return this;
@@ -183,7 +183,7 @@ namespace MailKitSimplified.Receiver.Services
                     _canIdle = _imapClient.Capabilities.HasFlag(ImapCapabilities.Idle);
                     _fetchClient = await _fetchReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
                     _fetchFolder = await _fetchReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
-                    _ = await _fetchFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
+                    _ = await _fetchFolder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
                     _mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
                     _ = await _mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
                     _logger.LogDebug($"{_imapReceiver} ({_mailFolder.Count}) idle monitor started.");
@@ -243,8 +243,8 @@ namespace MailKitSimplified.Receiver.Services
                 _ = await _fetchReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
                 if (!_fetchFolder.IsOpen)
                 {
-                    _ = await _fetchFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
-                    _logger.LogTrace($"{_fetchFolder.FullName} mail folder re-opened with ReadOnly access.");
+                    _ = await _fetchFolder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
+                    _logger.LogTrace($"{_fetchFolder.FullName} mail folder re-opened with ReadWrite access.");
                 }
             }
         }

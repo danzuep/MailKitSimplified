@@ -126,7 +126,9 @@ namespace MailKitSimplified.Receiver.Services
             if (_take == 0)
                 return null;
             var mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
-            _ = await mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
+            bool closeWhenFinished = !mailFolder.IsOpen;
+            if (!mailFolder.IsOpen)
+                _ = await mailFolder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
             if (_skip >= mailFolder.Count || (_skip > _queryAmount && _searchQuery != _queryAll))
             {
                 if (_skip < mailFolder.Count)
@@ -137,7 +139,8 @@ namespace MailKitSimplified.Receiver.Services
                 }
                 else
                     _logger.LogWarning($"Skip({_skip}) exceeded SearchQuery limit of 250 results.");
-                await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+                if (closeWhenFinished)
+                    await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
                 return null;
             }
             return mailFolder;

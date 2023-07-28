@@ -251,7 +251,7 @@ namespace MailKitSimplified.Receiver.Extensions
         /// Downloads the text/html part of the body if it exists, otherwise downloads the text/plain part.
         /// </summary>
         /// <param name="messageSummary"><see cref="IMessageSummary"/> body to download.</param>
-        /// <param name="cancellationToken">Cancellation token</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns><see cref="TextPart"/> of the message body <see cref="MimeEntity"/>.</returns>
         public static async Task<string> GetBodyTextAsync(this IMessageSummary messageSummary, CancellationToken cancellationToken = default)
         {
@@ -301,6 +301,32 @@ namespace MailKitSimplified.Receiver.Extensions
                 }
             }
             return mimeAttachments;
+        }
+
+        /// <summary>
+        /// Add flags with checks to make sure the folder is open and the writeable.
+        /// If there's a delete flag then it calls the Expunge method.
+        /// </summary>
+        /// <param name="messageSummary"><see cref="IMessageSummary"/> body to download.</param>
+        /// <param name="messageFlags"><see cref="MessageFlags"/> to add.</param>
+        /// <param name="silent">Does not emit an <see cref="IMailFolder.MessageFlagsChanged"/> event if set.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public static async Task AddFlagsAsync(this IMessageSummary messageSummary, MessageFlags messageFlags, bool silent = true, CancellationToken cancellationToken = default)
+        {
+            if (messageSummary == null)
+                throw new ArgumentNullException(nameof(messageSummary));
+            if (messageSummary.Folder == null)
+                throw new ArgumentException($"{nameof(IMessageSummary)} {nameof(IMailFolder)} was null.");
+            bool peekFolder = !messageSummary.Folder.IsOpen;
+            if (peekFolder || messageSummary.Folder.Access != FolderAccess.ReadWrite)
+                _ = await messageSummary.Folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
+            if (!messageSummary.Flags.HasValue || !messageSummary.Flags.Value.HasFlag(messageFlags))
+                await messageSummary.Folder.AddFlagsAsync(messageSummary.UniqueId, messageFlags, silent).ConfigureAwait(false);
+            bool delete = messageFlags.HasFlag(MessageFlags.Deleted);
+            if (peekFolder)
+                await messageSummary.Folder.CloseAsync(delete, cancellationToken).ConfigureAwait(false);
+            else if (delete)
+                await messageSummary.Folder.ExpungeAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }
