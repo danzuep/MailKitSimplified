@@ -18,20 +18,20 @@ namespace MailKitSimplified.Receiver.Services
 {
     public sealed class ImapReceiver : IImapReceiver
     {
-        private Func<IImapClient, Task> _customAuthenticationMethod;
         private Lazy<MailFolderClient> _mailFolderClient;
         private Lazy<MailFolderReader> _mailFolderReader;
         private Lazy<MailFolderMonitor> _mailFolderMonitor;
+        private Func<IImapClient, Task> _customAuthenticationMethod;
         private IImapClient _imapClient;
         private IProtocolLogger _imapLogger;
-        private EmailReceiverOptions _receiverOptions;
         private ILogger<ImapReceiver> _logger;
         private ILoggerFactory _loggerFactory;
+        private EmailReceiverOptions _receiverOptions;
 
         public ImapReceiver(IOptions<EmailReceiverOptions> receiverOptions, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null, ILoggerFactory loggerFactory = null)
         {
             _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
-            _logger = logger ?? loggerFactory?.CreateLogger<ImapReceiver>() ?? NullLogger<ImapReceiver>.Instance;
+            _logger = logger ?? _loggerFactory.CreateLogger<ImapReceiver>();
             SetOptions(receiverOptions?.Value);
             if (imapClient == null)
                 SetProtocolLog(protocolLogger);

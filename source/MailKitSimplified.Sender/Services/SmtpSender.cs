@@ -23,18 +23,20 @@ namespace MailKitSimplified.Sender.Services
     /// <inheritdoc cref="ISmtpSender" />
     public sealed class SmtpSender : ISmtpSender
     {
-        private ISmtpClient _smtpClient;
-        private IProtocolLogger _smtpLogger;
-        private Func<ISmtpClient, Task> _customAuthenticationMethod;
         private CancellationTokenSource _cts = null;
         private readonly ConcurrentQueue<MimeMessage> _sendQueue = new ConcurrentQueue<MimeMessage>();
+        private Func<ISmtpClient, Task> _customAuthenticationMethod;
+        private ISmtpClient _smtpClient;
+        private IProtocolLogger _smtpLogger;
         private ILogger<SmtpSender> _logger;
+        private ILoggerFactory _loggerFactory;
         private readonly EmailSenderOptions _senderOptions;
 
         /// <inheritdoc cref="ISmtpSender" />
-        public SmtpSender(IOptions<EmailSenderOptions> senderOptions, ILogger<SmtpSender> logger = null, IProtocolLogger protocolLogger = null, ISmtpClient smtpClient = null)
+        public SmtpSender(IOptions<EmailSenderOptions> senderOptions, ILogger<SmtpSender> logger = null, IProtocolLogger protocolLogger = null, ISmtpClient smtpClient = null, ILoggerFactory loggerFactory = null)
         {
-            _logger = logger ?? NullLogger<SmtpSender>.Instance;
+            _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+            _logger = logger ?? _loggerFactory.CreateLogger<SmtpSender>();
             _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.SmtpHost))
                 throw new ArgumentException($"{nameof(EmailSenderOptions.SmtpHost)} is not set.");
@@ -44,31 +46,31 @@ namespace MailKitSimplified.Sender.Services
                 SetSmtpClient(smtpClient);
         }
 
-        public static SmtpSender Create(string smtpHost, ushort smtpPort = 0, string username = null, string password = null, string protocolLog = null, bool protocolLogFileAppend = false, ILogger<SmtpSender> logger = null, IProtocolLogger protocolLogger = null, ISmtpClient smtpClient = null)
+        public static SmtpSender Create(string smtpHost, ushort smtpPort = 0, string username = null, string password = null, string protocolLog = null, bool protocolLogFileAppend = false, ILogger<SmtpSender> logger = null, IProtocolLogger protocolLogger = null, ISmtpClient smtpClient = null, ILoggerFactory loggerFactory = null)
         {
             var smtpCredential = new NetworkCredential(username, password);
-            var sender = Create(smtpHost, smtpCredential, smtpPort, protocolLog, protocolLogFileAppend, logger, protocolLogger, smtpClient);
+            var sender = Create(smtpHost, smtpCredential, smtpPort, protocolLog, protocolLogFileAppend, logger, protocolLogger, smtpClient, loggerFactory);
             return sender;
         }
 
-        public static SmtpSender Create(string smtpHost, NetworkCredential smtpCredential, ushort smtpPort = 0, string protocolLog = null, bool protocolLogFileAppend = false, ILogger<SmtpSender> logger = null, IProtocolLogger protocolLogger = null, ISmtpClient smtpClient = null)
+        public static SmtpSender Create(string smtpHost, NetworkCredential smtpCredential, ushort smtpPort = 0, string protocolLog = null, bool protocolLogFileAppend = false, ILogger<SmtpSender> logger = null, IProtocolLogger protocolLogger = null, ISmtpClient smtpClient = null, ILoggerFactory loggerFactory = null)
         {
             var senderOptions = new EmailSenderOptions(smtpHost, smtpCredential, smtpPort, protocolLog, protocolLogFileAppend);
-            var sender = Create(senderOptions, logger, protocolLogger, smtpClient);
+            var sender = Create(senderOptions, logger, protocolLogger, smtpClient, loggerFactory);
             return sender;
         }
 
-        public static SmtpSender Create(EmailSenderOptions emailSenderOptions, ILogger<SmtpSender> logger = null, IProtocolLogger protocolLogger = null, ISmtpClient smtpClient = null)
+        public static SmtpSender Create(EmailSenderOptions emailSenderOptions, ILogger<SmtpSender> logger = null, IProtocolLogger protocolLogger = null, ISmtpClient smtpClient = null, ILoggerFactory loggerFactory = null)
         {
             var senderOptions = Options.Create(emailSenderOptions);
-            var sender = new SmtpSender(senderOptions, logger, protocolLogger, smtpClient);
+            var sender = new SmtpSender(senderOptions, logger, protocolLogger, smtpClient, loggerFactory);
             return sender;
         }
 
-        public static SmtpSender Create(ISmtpClient smtpClient, EmailSenderOptions emailSenderOptions, ILogger<SmtpSender> logger = null)
+        public static SmtpSender Create(ISmtpClient smtpClient, EmailSenderOptions emailSenderOptions, ILogger<SmtpSender> logger = null, ILoggerFactory loggerFactory = null)
         {
             var senderOptions = Options.Create(emailSenderOptions);
-            var sender = new SmtpSender(senderOptions, logger, null, smtpClient);
+            var sender = new SmtpSender(senderOptions, logger, null, smtpClient, loggerFactory);
             return sender;
         }
 
@@ -111,11 +113,12 @@ namespace MailKitSimplified.Sender.Services
 
         /// <summary>
         /// For those not using dependency injection.
-        /// <example>LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole()).CreateLogger<SmtpSender>();</example>
+        /// <example>LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole());</example>
         /// </summary>
-        public SmtpSender SetLogger(ILogger<SmtpSender> logger)
+        public SmtpSender SetLogger(ILoggerFactory loggerFactory, ILogger<SmtpSender> logger)
         {
-            _logger = logger ?? NullLogger<SmtpSender>.Instance;
+            _loggerFactory = loggerFactory ?? _loggerFactory ?? NullLoggerFactory.Instance;
+            _logger = logger ?? _logger ?? _loggerFactory.CreateLogger<SmtpSender>();
             return this;
         }
 
@@ -154,7 +157,7 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
-        public IEmailWriter WriteEmail => new EmailWriter(this);
+        public IEmailWriter WriteEmail => new EmailWriter(this, _loggerFactory.CreateLogger<EmailWriter>());
 
         [Obsolete("Use EmailSenderOptions.CreateProtocolLogger instead.")]
         public static IProtocolLogger GetProtocolLogger(string logFilePath = null, bool append = false, IFileSystem fileSystem = null)
