@@ -24,6 +24,8 @@ namespace MailKitSimplified.Receiver.Models
         [Required]
         public string ImapHost { get; set; }
         public ushort ImapPort { get; set; } = 0;
+        public SecureSocketOptions SocketOptions { get; set; } = SecureSocketOptions.Auto;
+        public ImapCapabilities CapabilitiesToRemove { get; set; } = ImapCapabilities.None;
         public NetworkCredential ImapCredential { get; set; } = new NetworkCredential();
         public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(1);
 

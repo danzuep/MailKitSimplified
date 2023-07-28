@@ -19,6 +19,8 @@ namespace MailKitSimplified.Sender.Models
         [Required]
         public string SmtpHost { get; set; }
         public ushort SmtpPort { get; set; } = 0;
+        public SecureSocketOptions SocketOptions { get; set; } = SecureSocketOptions.Auto;
+        public SmtpCapabilities CapabilitiesToRemove { get; set; } = SmtpCapabilities.None;
         public NetworkCredential SmtpCredential { get; set; } = null;
         public string ProtocolLog { get; set; } = null;
         public bool ProtocolLogFileAppend { get; set; } = false;

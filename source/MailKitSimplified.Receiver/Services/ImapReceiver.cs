@@ -89,16 +89,6 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
-        public ImapReceiver RemoveAuthenticationMechanism(string authenticationMechanismsName)
-        {
-            if (_imapClient.AuthenticationMechanisms.Contains(authenticationMechanismsName))
-            {
-                _imapClient.AuthenticationMechanisms.Remove(authenticationMechanismsName);
-                return SetImapClient(_imapClient);
-            }
-            return this;
-        }
-
         /// <summary>
         /// Overwrites the existing IImapClient and IProtocolLogger,
         /// or creates a new IImapClient with an IProtocolLogger if it exists.
@@ -146,9 +136,10 @@ namespace MailKitSimplified.Receiver.Services
             return SetProtocolLog(_imapLogger);
         }
 
-        public ImapReceiver SetPort(ushort imapPort)
+        public ImapReceiver SetPort(ushort imapPort, SecureSocketOptions socketOptions = SecureSocketOptions.Auto)
         {
             _receiverOptions.ImapPort = imapPort;
+            _receiverOptions.SocketOptions = socketOptions;
             return SetOptions(_receiverOptions);
         }
 
@@ -174,6 +165,22 @@ namespace MailKitSimplified.Receiver.Services
             _loggerFactory = loggerFactory ?? _loggerFactory ?? NullLoggerFactory.Instance;
             _logger = logger ?? _logger ?? _loggerFactory.CreateLogger<ImapReceiver>();
             return SetOptions(_receiverOptions);
+        }
+
+        public ImapReceiver RemoveCapabilities(ImapCapabilities capabilities)
+        {
+            _receiverOptions.CapabilitiesToRemove = capabilities;
+            return this;
+        }
+
+        public ImapReceiver RemoveAuthenticationMechanism(string authenticationMechanismsName)
+        {
+            if (_imapClient.AuthenticationMechanisms.Contains(authenticationMechanismsName))
+            {
+                _imapClient.AuthenticationMechanisms.Remove(authenticationMechanismsName);
+                return SetImapClient(_imapClient);
+            }
+            return this;
         }
 
         public ImapReceiver SetCustomAuthentication(Func<IImapClient, Task> customAuthenticationMethod)
@@ -219,10 +226,12 @@ namespace MailKitSimplified.Receiver.Services
         {
             if (!_imapClient.IsConnected)
             {
-                await _imapClient.ConnectAsync(_receiverOptions.ImapHost, _receiverOptions.ImapPort, SecureSocketOptions.Auto, cancellationToken).ConfigureAwait(false);
+                await _imapClient.ConnectAsync(_receiverOptions.ImapHost, _receiverOptions.ImapPort, _receiverOptions.SocketOptions, cancellationToken).ConfigureAwait(false);
+                _logger.LogTrace($"IMAP client connected to {_receiverOptions.ImapHost}.");
+                if (_imapClient is ImapClient client)
+                    client.Capabilities &= ~_receiverOptions.CapabilitiesToRemove;
                 if (_imapClient.Capabilities.HasFlag(ImapCapabilities.Compress))
                     await _imapClient.CompressAsync(cancellationToken).ConfigureAwait(false);
-                _logger.LogTrace($"IMAP client connected to {_receiverOptions.ImapHost}.");
             }
         }
 

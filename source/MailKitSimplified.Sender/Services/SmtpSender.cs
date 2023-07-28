@@ -119,15 +119,32 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
-        public SmtpSender SetPort(ushort smtpPort)
+        public SmtpSender SetPort(ushort smtpPort, SecureSocketOptions socketOptions = SecureSocketOptions.Auto)
         {
             _senderOptions.SmtpPort = smtpPort;
+            _senderOptions.SocketOptions = socketOptions;
             return this;
         }
 
         public SmtpSender SetCredential(string username, string password)
         {
             _senderOptions.SmtpCredential = new NetworkCredential(username, password);
+            return this;
+        }
+
+        public SmtpSender RemoveCapabilities(SmtpCapabilities capabilities)
+        {
+            _senderOptions.CapabilitiesToRemove = capabilities;
+            return this;
+        }
+
+        public SmtpSender RemoveAuthenticationMechanism(string authenticationMechanismsName)
+        {
+            if (_smtpClient.AuthenticationMechanisms.Contains(authenticationMechanismsName))
+            {
+                _smtpClient.AuthenticationMechanisms.Remove(authenticationMechanismsName);
+                return SetSmtpClient(_smtpClient);
+            }
             return this;
         }
 
@@ -177,8 +194,10 @@ namespace MailKitSimplified.Sender.Services
         {
             if (!_smtpClient.IsConnected && !string.IsNullOrEmpty(_senderOptions.SmtpHost))
             {
-                await _smtpClient.ConnectAsync(_senderOptions.SmtpHost, _senderOptions.SmtpPort, cancellationToken: cancellationToken).ConfigureAwait(false);
+                await _smtpClient.ConnectAsync(_senderOptions.SmtpHost, _senderOptions.SmtpPort, _senderOptions.SocketOptions, cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace($"SMTP client connected to {_senderOptions.SmtpHost}.");
+                if (_smtpClient is SmtpClient client)
+                    client.Capabilities &= ~_senderOptions.CapabilitiesToRemove;
                 if (_smtpClient.Capabilities.HasFlag(SmtpCapabilities.Size))
                     _logger.LogDebug($"The SMTP server has a size restriction on messages: {_smtpClient.MaxSize}.");
             }
@@ -206,12 +225,6 @@ namespace MailKitSimplified.Sender.Services
                 }
                 _logger.LogTrace($"SMTP client authenticated with {_senderOptions.SmtpHost}.");
             }
-        }
-
-        public void RemoveAuthenticationMechanism(string authenticationMechanismsName)
-        {
-            if (_smtpClient.AuthenticationMechanisms.Contains(authenticationMechanismsName))
-                _smtpClient.AuthenticationMechanisms.Remove(authenticationMechanismsName);
         }
 
         public static bool ValidateEmailAddresses(IEnumerable<string> sourceEmailAddresses, IEnumerable<string> destinationEmailAddresses, ILogger logger)

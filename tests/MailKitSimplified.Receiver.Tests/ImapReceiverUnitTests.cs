@@ -81,7 +81,7 @@ namespace MailKitSimplified.Receiver.Tests
         public void CreateImapReceiver_WithFluentMethods_ReturnsImapReceiver()
         {
             using var imapReceiver = ImapReceiver.Create(_localhost)
-                .SetPort(It.IsAny<ushort>())
+                .SetPort(It.IsAny<ushort>(), It.IsAny<SecureSocketOptions>())
                 .SetCredential(It.IsAny<string>(), It.IsAny<string>())
                 .SetProtocolLog(It.IsAny<string>(), It.IsAny<bool>())
                 .SetFolder(It.IsAny<string>(), It.IsAny<FolderAccess>())
