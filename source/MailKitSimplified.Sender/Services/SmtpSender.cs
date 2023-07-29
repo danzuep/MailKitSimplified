@@ -325,10 +325,10 @@ namespace MailKitSimplified.Sender.Services
         {
             _ = ValidateMimeMessage(mimeMessage, _logger);
             _ = await ConnectSmtpClientAsync(cancellationToken).ConfigureAwait(false);
-            _logger.LogTrace($"Sending {GetEnvelope(mimeMessage, includeTextBody: true)}");
+            _logger.LogTrace($"{_senderOptions} sending {GetEnvelope(mimeMessage, includeTextBody: true)}");
             string serverResponse = await _smtpClient.SendAsync(mimeMessage, cancellationToken, transferProgress).ConfigureAwait(false);
             _logger.LogTrace($"{_senderOptions} server response: \"{serverResponse}\".");
-            _logger.LogDebug($"Sent Message-ID {mimeMessage.MessageId}.");
+            _logger.LogDebug($"{_senderOptions} sent Message-ID {mimeMessage.MessageId}.");
         }
 
         public async Task<bool> TrySendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)

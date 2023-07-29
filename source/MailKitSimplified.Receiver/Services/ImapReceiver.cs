@@ -18,7 +18,6 @@ namespace MailKitSimplified.Receiver.Services
 {
     public sealed class ImapReceiver : IImapReceiver
     {
-        private Lazy<MailFolderClient> _mailFolderClient;
         private Lazy<MailFolderReader> _mailFolderReader;
         private Lazy<MailFolderMonitor> _mailFolderMonitor;
         private Func<IImapClient, Task> _customAuthenticationMethod;
@@ -80,8 +79,6 @@ namespace MailKitSimplified.Receiver.Services
                 throw new ArgumentException($"{nameof(EmailReceiverOptions.ImapHost)} is not set.");
             if (_receiverOptions.ImapCredential == null)
                 throw new ArgumentException($"{nameof(EmailReceiverOptions.ImapCredential)} is null.");
-            _mailFolderClient = new Lazy<MailFolderClient>(() => Services.MailFolderClient.Create(
-                _imapClient, _receiverOptions, _loggerFactory.CreateLogger<MailFolderClient>(), _loggerFactory.CreateLogger<ImapReceiver>()));
             _mailFolderReader = new Lazy<MailFolderReader>(() => MailFolderReader.Create(
                 _imapClient, _receiverOptions, _loggerFactory.CreateLogger<MailFolderReader>(), _loggerFactory.CreateLogger<ImapReceiver>()));
             _mailFolderMonitor = new Lazy<MailFolderMonitor>(() => MailFolderMonitor.Create(
@@ -104,8 +101,6 @@ namespace MailKitSimplified.Receiver.Services
                 _imapClient = new ImapClient(_imapLogger);
             else
                 _imapClient = new ImapClient();
-            _mailFolderClient = new Lazy<MailFolderClient>(() => Services.MailFolderClient.Create(
-                _imapClient, _receiverOptions, _loggerFactory.CreateLogger<MailFolderClient>(), _loggerFactory.CreateLogger<ImapReceiver>()));
             _mailFolderReader = new Lazy<MailFolderReader>(() => MailFolderReader.Create(
                 _imapClient, _receiverOptions, _loggerFactory.CreateLogger<MailFolderReader>(), _loggerFactory.CreateLogger<ImapReceiver>()));
             return this;
@@ -189,6 +184,7 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
+        [Obsolete("Use ReadFrom instead.")]
         public IMailFolderClient GetFolder(string mailFolderName)
         {
             _receiverOptions.MailFolderName = mailFolderName;
@@ -207,7 +203,8 @@ namespace MailKitSimplified.Receiver.Services
             return MonitorFolder;
         }
 
-        public IMailFolderClient MailFolderClient => _mailFolderClient.Value;
+        [Obsolete("Use ReadMail instead.")]
+        public IMailFolderClient MailFolderClient => Services.MailFolderClient.Create(_imapClient, _receiverOptions, _loggerFactory.CreateLogger<MailFolderClient>(), _loggerFactory.CreateLogger<ImapReceiver>());
 
         public IMailFolderReader ReadMail => _mailFolderReader.Value;
 
@@ -305,6 +302,30 @@ namespace MailKitSimplified.Receiver.Services
             return mailFolderNames;
         }
 
+        /// <summary>
+        /// Add flags with checks to make sure the folder is open and writeable.
+        /// If there's a delete flag then it calls the Expunge method.
+        /// </summary>
+        /// <param name="uniqueIds">UniqueIDs to download.</param>
+        /// <param name="messageFlags"><see cref="MessageFlags"/> to add.</param>
+        /// <param name="silent">Does not emit an <see cref="IMailFolder.MessageFlagsChanged"/> event if set.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task AddFlagsAsync(IEnumerable<UniqueId> uniqueIds, MessageFlags messageFlags, bool silent = true, CancellationToken cancellationToken = default)
+        {
+            var mailFolder = await ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
+            bool peekFolder = !mailFolder.IsOpen;
+            if (peekFolder || mailFolder.Access != FolderAccess.ReadWrite)
+                _ = await mailFolder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
+            var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : uniqueIds.OrderBy(u => u.Id).ToList();
+            await mailFolder.AddFlagsAsync(ascendingIds, messageFlags, silent, cancellationToken).ConfigureAwait(false);
+            bool delete = messageFlags.HasFlag(MessageFlags.Deleted);
+            if (peekFolder)
+                await mailFolder.CloseAsync(delete, cancellationToken).ConfigureAwait(false);
+            else if (delete)
+                await mailFolder.ExpungeAsync(cancellationToken).ConfigureAwait(false);
+            _logger.LogDebug($"{messageFlags} flag(s) added to {ascendingIds.Count} message(s) in {_receiverOptions}.");
+        }
+
         public IImapReceiver Clone()
         {
             var receiverOptions = _receiverOptions.Copy();
@@ -316,23 +337,20 @@ namespace MailKitSimplified.Receiver.Services
         public async Task DisconnectAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogTrace("Disconnecting IMAP email client...");
-            if (_mailFolderClient.IsValueCreated)
-                _mailFolderClient.Value.Dispose();
-            if (_mailFolderReader.IsValueCreated)
-                _mailFolderReader.Value.Dispose();
             if (_imapClient.IsConnected)
                 await _imapClient.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);
         }
 
         public async ValueTask DisposeAsync()
         {
-            await DisconnectAsync().ConfigureAwait(false);
+            await DisconnectAsync(CancellationToken.None).ConfigureAwait(false);
             _imapClient.Dispose();
+            _loggerFactory.Dispose();
         }
 
         public void Dispose()
         {
-            DisconnectAsync().GetAwaiter().GetResult();
+            DisconnectAsync(CancellationToken.None).GetAwaiter().GetResult();
             _imapClient.Dispose();
             _loggerFactory.Dispose();
         }

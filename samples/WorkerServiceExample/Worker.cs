@@ -33,14 +33,15 @@ public class Worker : BackgroundService
 
     private async Task NotReentrantAsync(CancellationToken cancellationToken = default)
     {
-        var sendTask = DelayedSendAsync(1, cancellationToken);
+        using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var newestEmail = await GetNewestMessageSummaryAsync(cancellationToken);
-        await _imapReceiver.MonitorFolder
-            .SetMessageSummaryItems()
+        var sendTask = DelayedSendAsync(1, cancellationToken);
+        await _imapReceiver.MonitorFolder.SetMessageSummaryItems()
             .SetIgnoreExistingMailOnConnect()
             .OnMessageArrival(OnArrivalAsync)
-            .IdleAsync(cancellationToken);
+            .IdleAsync(cancellationTokenSource.Token);
         await sendTask;
+        _logger.LogInformation($"{_imapReceiver} NotReentrant test complete.");
 
         async Task OnArrivalAsync(IMessageSummary messageSummary)
         {
@@ -53,6 +54,7 @@ public class Worker : BackgroundService
                     await messageSummary.AddFlagsAsync(MessageFlags.Seen);
                     _logger.LogDebug($"{_imapReceiver} message #{messageSummary.UniqueId} message downloaded, Seen flag added.");
                     _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} arrival processed, {mimeMessage.MessageId}.");
+                    cancellationTokenSource.Cancel();
                 }
                 else
                     _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} arrived.");

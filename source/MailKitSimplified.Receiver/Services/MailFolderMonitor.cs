@@ -210,27 +210,30 @@ namespace MailKitSimplified.Receiver.Services
                 }
                 finally
                 {
-                    if (_mailFolder != null)
-                    {
-                        _mailFolder.MessageExpunged -= OnMessageExpunged;
-                        _mailFolder.CountChanged -= OnCountChanged;
-                        //await _mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
-                        //await _fetchFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
-                    }
-                    await _imapReceiver.DisconnectAsync(CancellationToken.None).ConfigureAwait(false);
-
-                    _cancel?.Cancel(false);
-                    _cancel?.Dispose();
-                    _arrival?.Dispose();
-                    _messageCache?.Clear();
-#if NET6_0_OR_GREATER
-                    _arrivalQueue?.Clear();
-                    _departureQueue?.Clear();
-#endif
+                    Disconnect(throwOnFirstException: false);
                 }
             }
         }
-        
+
+        private void Disconnect(bool throwOnFirstException)
+        {
+            _logger.LogTrace("Disconnecting IMAP idle client...");
+            if (_mailFolder != null)
+            {
+                _mailFolder.MessageExpunged -= OnMessageExpunged;
+                _mailFolder.CountChanged -= OnCountChanged;
+            }
+
+            _cancel?.Cancel(throwOnFirstException);
+            _messageCache?.Clear();
+#if NET6_0_OR_GREATER
+            _arrivalQueue?.Clear();
+            _departureQueue?.Clear();
+#endif
+            _arrival?.Dispose();
+            _cancel?.Dispose();
+        }
+
         private async ValueTask ReconnectAsync(CancellationToken cancellationToken = default)
         {
             if (!cancellationToken.IsCancellationRequested)

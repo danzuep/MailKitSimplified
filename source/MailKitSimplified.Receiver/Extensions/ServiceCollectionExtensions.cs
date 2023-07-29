@@ -63,7 +63,7 @@ namespace MailKitSimplified.Receiver
             services.AddTransient<IImapReceiverFactory, ImapReceiverFactory>();
             services.AddTransient<IMailFolderMonitorFactory, MailFolderMonitorFactory>();
             services.AddTransient<IImapReceiver, ImapReceiver>();
-            services.AddTransient<IMailFolderClient, MailFolderClient>();
+            //services.AddTransient<IMailFolderClient, MailFolderClient>();
             services.AddTransient<IMailFolderReader, MailFolderReader>();
             services.AddTransient<IMailFolderMonitor, MailFolderMonitor>();
             return services;

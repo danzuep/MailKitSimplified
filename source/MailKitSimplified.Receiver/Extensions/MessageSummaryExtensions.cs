@@ -306,7 +306,7 @@ namespace MailKitSimplified.Receiver.Extensions
         }
 
         /// <summary>
-        /// Add flags with checks to make sure the folder is open and the writeable.
+        /// Add flags with checks to make sure the folder is open and writeable.
         /// If there's a delete flag then it calls the Expunge method.
         /// </summary>
         /// <param name="messageSummary"><see cref="IMessageSummary"/> body to download.</param>
@@ -329,31 +329,6 @@ namespace MailKitSimplified.Receiver.Extensions
                 await messageSummary.Folder.CloseAsync(delete, cancellationToken).ConfigureAwait(false);
             else if (delete)
                 await messageSummary.Folder.ExpungeAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Add flags with checks to make sure the folder is open and the writeable.
-        /// If there's a delete flag then it calls the Expunge method.
-        /// </summary>
-        /// <param name="mailFolder"><see cref="IMailFolder"/> to modify.</param>
-        /// <param name="messageFlags"><see cref="MessageFlags"/> to add.</param>
-        /// <param name="uniqueIds">UniqueIDs to download.</param>
-        /// <param name="silent">Does not emit an <see cref="IMailFolder.MessageFlagsChanged"/> event if set.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        public static async Task AddFlagsAsync(this IMailFolder mailFolder, MessageFlags messageFlags, IEnumerable<UniqueId> uniqueIds, bool silent = true, CancellationToken cancellationToken = default)
-        {
-            if (mailFolder == null)
-                throw new ArgumentNullException(nameof(mailFolder));
-            bool peekFolder = !mailFolder.IsOpen;
-            if (peekFolder || mailFolder.Access != FolderAccess.ReadWrite)
-                _ = await mailFolder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
-            var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : uniqueIds.OrderBy(u => u.Id).ToList();
-            await mailFolder.AddFlagsAsync(ascendingIds, messageFlags, silent, cancellationToken).ConfigureAwait(false);
-            bool delete = messageFlags.HasFlag(MessageFlags.Deleted);
-            if (peekFolder)
-                await mailFolder.CloseAsync(delete, cancellationToken).ConfigureAwait(false);
-            else if (delete)
-                await mailFolder.ExpungeAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }
