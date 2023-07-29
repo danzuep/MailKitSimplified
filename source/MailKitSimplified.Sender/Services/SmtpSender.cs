@@ -244,14 +244,14 @@ namespace MailKitSimplified.Sender.Services
             int sourceEmailAddressCount = 0, destinationEmailAddressCount = 0;
             foreach (var from in sourceEmailAddresses)
             {
-                if (!from.Contains("@"))
+                if (!from.Contains('@'))
                 {
                     logger.LogWarning($"From address is invalid ({from})");
                     isValid = false;
                 }
                 foreach (var to in destinationEmailAddresses)
                 {
-                    if (!to.Contains("@"))
+                    if (!to.Contains('@'))
                     {
                         logger.LogWarning($"To address is invalid ({to})");
                         isValid = false;
@@ -298,7 +298,7 @@ namespace MailKitSimplified.Sender.Services
             string envelope = string.Empty;
             using (var text = new StringWriter())
             {
-                text.Write("Message-Id: {0}. ", mimeMessage.MessageId);
+                text.Write("Message-ID: {0}. ", mimeMessage.MessageId);
                 text.Write("Date: {0}. ", mimeMessage.Date);
                 if (mimeMessage.From.Count > 0)
                     text.Write("From: {0}. ", string.Join("; ", mimeMessage.From));
@@ -327,7 +327,8 @@ namespace MailKitSimplified.Sender.Services
             _ = await ConnectSmtpClientAsync(cancellationToken).ConfigureAwait(false);
             _logger.LogTrace($"Sending {GetEnvelope(mimeMessage, includeTextBody: true)}");
             string serverResponse = await _smtpClient.SendAsync(mimeMessage, cancellationToken, transferProgress).ConfigureAwait(false);
-            _logger.LogTrace($"Server response: \"{serverResponse}\".");
+            _logger.LogTrace($"{_senderOptions} server response: \"{serverResponse}\".");
+            _logger.LogDebug($"Sent Message-ID {mimeMessage.MessageId}.");
         }
 
         public async Task<bool> TrySendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
@@ -340,15 +341,15 @@ namespace MailKitSimplified.Sender.Services
             }
             catch (AuthenticationException ex)
             {
-                _logger.LogError(ex, $"Failed to authenticate with mail server. {_senderOptions}");
+                _logger.LogError(ex, $"Failed to authenticate with mail server {_senderOptions}.");
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogError(ex, $"Failed to connect to mail server. {_senderOptions}");
+                _logger.LogError(ex, $"Failed to connect to mail server {_senderOptions}.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to send email. {mimeMessage}");
+                _logger.LogError(ex, $"Failed to send email through {_senderOptions}. {mimeMessage}");
             }
             return isSent;
         }

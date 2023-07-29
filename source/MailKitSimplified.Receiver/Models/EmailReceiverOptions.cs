@@ -85,6 +85,6 @@ namespace MailKitSimplified.Receiver.Models
 
         public EmailReceiverOptions Copy() => MemberwiseClone() as EmailReceiverOptions;
 
-        public override string ToString() => $"{ImapHost}:{ImapPort} {ImapCredential.UserName} {MailFolderName}";
+        public override string ToString() => $"{ImapHost} {ImapCredential.UserName} {MailFolderName}";
     }
 }

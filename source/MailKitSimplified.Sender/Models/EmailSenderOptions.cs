@@ -86,6 +86,6 @@ namespace MailKitSimplified.Sender.Models
 
         public EmailSenderOptions Copy() => MemberwiseClone() as EmailSenderOptions;
 
-        public override string ToString() => $"{SmtpHost}:{SmtpPort}";
+        public override string ToString() => SmtpHost;
     }
 }

@@ -186,7 +186,8 @@ namespace MailKitSimplified.Receiver.Services
                     _ = await _fetchFolder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
                     _mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
                     _ = await _mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
-                    _logger.LogDebug($"{_imapReceiver} ({_mailFolder.Count}) idle monitor started.");
+                    var connectOption = _folderMonitorOptions.IgnoreExistingMailOnConnect ? "ignoring" : "fetching";
+                    _logger.LogInformation($"{_imapReceiver} ({_mailFolder.Count}) idle monitor started, {connectOption} existing emails.");
 
                     _mailFolder.CountChanged += OnCountChanged;
                     _mailFolder.MessageExpunged += OnMessageExpunged;
@@ -338,7 +339,15 @@ namespace MailKitSimplified.Receiver.Services
                 _arrival = new CancellationTokenSource();
             var newMail = _messageCache.TryAddUniqueRange(fetched);
             if (!firstConnection || (firstConnection && !_folderMonitorOptions.IgnoreExistingMailOnConnect))
-                newMail.ActionEach(_arrivalQueue.Enqueue, cancellationToken);
+            {
+                foreach (var mailItem in newMail)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
+                    _logger.LogDebug($"{_imapReceiver} message #{mailItem.UniqueId} arrived.");
+                    _arrivalQueue.Enqueue(mailItem);
+                }
+            }
             return newMail.Count;
         }
 

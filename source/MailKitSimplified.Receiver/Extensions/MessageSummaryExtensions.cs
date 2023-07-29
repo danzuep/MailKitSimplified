@@ -204,7 +204,9 @@ namespace MailKitSimplified.Receiver.Extensions
             }
             else
             {
-                string GetHtml(InternetAddressList contacts) => contacts.Mailboxes.Select(a => $"\"{a.Name}\" &lt;{a.Address}&gt;").ToEnumeratedString("; ");
+                string GetHtml(InternetAddressList contacts) =>
+                    contacts.Mailboxes.Select(a => $"\"{a.Name}\" &lt;{a.Address}&gt;")
+                    .ToEnumeratedString("; ");
                 stringBuilder.AppendLine("<div>");
                 stringBuilder.AppendLine(message ?? string.Empty);
                 stringBuilder.AppendLine("</div><br /><blockquote><hr /><div>");
@@ -321,7 +323,7 @@ namespace MailKitSimplified.Receiver.Extensions
             if (peekFolder || messageSummary.Folder.Access != FolderAccess.ReadWrite)
                 _ = await messageSummary.Folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
             if (!messageSummary.Flags.HasValue || !messageSummary.Flags.Value.HasFlag(messageFlags))
-                await messageSummary.Folder.AddFlagsAsync(messageSummary.UniqueId, messageFlags, silent).ConfigureAwait(false);
+                await messageSummary.Folder.AddFlagsAsync(messageSummary.UniqueId, messageFlags, silent, cancellationToken).ConfigureAwait(false);
             bool delete = messageFlags.HasFlag(MessageFlags.Deleted);
             if (peekFolder)
                 await messageSummary.Folder.CloseAsync(delete, cancellationToken).ConfigureAwait(false);
@@ -346,7 +348,7 @@ namespace MailKitSimplified.Receiver.Extensions
             if (peekFolder || mailFolder.Access != FolderAccess.ReadWrite)
                 _ = await mailFolder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
             var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : uniqueIds.OrderBy(u => u.Id).ToList();
-            await mailFolder.AddFlagsAsync(ascendingIds, messageFlags, silent).ConfigureAwait(false);
+            await mailFolder.AddFlagsAsync(ascendingIds, messageFlags, silent, cancellationToken).ConfigureAwait(false);
             bool delete = messageFlags.HasFlag(MessageFlags.Deleted);
             if (peekFolder)
                 await mailFolder.CloseAsync(delete, cancellationToken).ConfigureAwait(false);

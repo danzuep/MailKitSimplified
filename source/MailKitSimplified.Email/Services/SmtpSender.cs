@@ -35,7 +35,7 @@ namespace MailKitSimplified.Email.Services
             _logger = logger ?? NullLogger<SmtpSender>.Instance;
         }
 
-        public ISmtpClient GetSmtpClient() => _smtpClient;
+        public ISmtpClient SmtpClient => _smtpClient;
 
         public static bool ValidateEmailAddresses(IEnumerable<string> sourceEmailAddresses, IEnumerable<string> destinationEmailAddresses, ILogger logger)
         {
@@ -49,14 +49,14 @@ namespace MailKitSimplified.Email.Services
             int sourceEmailAddressCount = 0, destinationEmailAddressCount = 0;
             foreach (var from in sourceEmailAddresses)
             {
-                if (!from.Contains("@"))
+                if (!from.Contains('@'))
                 {
                     logger.LogWarning($"From address is invalid ({from})");
                     isValid = false;
                 }
                 foreach (var to in destinationEmailAddresses)
                 {
-                    if (!to.Contains("@"))
+                    if (!to.Contains('@'))
                     {
                         logger.LogWarning($"To address is invalid ({to})");
                         isValid = false;
@@ -132,7 +132,8 @@ namespace MailKitSimplified.Email.Services
             await _smtpClient.CheckAsync(_senderOptions, cancellationToken);
             _logger.LogTrace($"Sending {GetEnvelope(mimeMessage, includeTextBody: true)}");
             string serverResponse = await _smtpClient.SendAsync(mimeMessage, cancellationToken, transferProgress).ConfigureAwait(false);
-            _logger.LogTrace($"Server response: \"{serverResponse}\".");
+            _logger.LogTrace($"{_senderOptions} server response: \"{serverResponse}\".");
+            _logger.LogDebug($"Sent Message-ID {mimeMessage.MessageId}.");
         }
 
         public async Task<bool> TrySendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)

@@ -6,8 +6,6 @@ using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Sender.Abstractions;
 using System.Diagnostics;
-using MailKitSimplified.Receiver.Models;
-using Microsoft.Extensions.Options;
 
 namespace ExampleNamespace;
 
@@ -50,10 +48,11 @@ public class Worker : BackgroundService
             {
                 if (messageSummary.UniqueId.Id > newestEmail?.UniqueId.Id)
                 {
-                    await messageSummary.AddFlagsAsync(MessageFlags.Seen);
                     var mimeMessage = await messageSummary.GetMimeMessageAsync();
                     //var mimeMessage = await _imapReceiver.ReadMail.GetMimeMessageAsync(messageSummary.UniqueId);
-                    _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} arrived, {mimeMessage.MessageId}.");
+                    await messageSummary.AddFlagsAsync(MessageFlags.Seen);
+                    _logger.LogDebug($"{_imapReceiver} message #{messageSummary.UniqueId} message downloaded, Seen flag added.");
+                    _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} arrival processed, {mimeMessage.MessageId}.");
                 }
                 else
                     _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} arrived.");
@@ -71,7 +70,7 @@ public class Worker : BackgroundService
             "<p>FYI.</p>", includeMessageId: true);
         mimeForward.From.Add("from@example.com");
         mimeForward.To.Add("to@example.com");
-        _logger.LogInformation($"Reply: \r\n{mimeForward.HtmlBody}");
+        _logger.LogInformation($"{_imapReceiver} reply: \r\n{mimeForward.HtmlBody}");
         await _smtpSender.SendAsync(mimeForward); //cancellationToken
         //_smtpSender.Enqueue(mimeForward);
     }
@@ -94,7 +93,7 @@ public class Worker : BackgroundService
             .Skip(0).Take(1).Items(MessageSummaryItems.Envelope)
             .GetMessageSummariesAsync(cancellationToken);
         stopwatch.Stop();
-        _logger.LogInformation($"Received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
+        _logger.LogInformation($"{_imapReceiver} received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
         foreach (var messageSummary in messageSummaries)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -103,7 +102,7 @@ public class Worker : BackgroundService
                 "Reply here.", addRecipients: false, includeMessageId: true, cancellationToken: cancellationToken);
             mimeReply.From.Add("from@localhost");
             mimeReply.To.Add("to@localhost");
-            _logger.LogInformation($"Reply: \r\n{mimeReply.HtmlBody}");
+            _logger.LogInformation($"{_imapReceiver} reply: \r\n{mimeReply.HtmlBody}");
             //await _smtpSender.SendAsync(mimeReply, cancellationToken);
         }
     }
@@ -115,11 +114,11 @@ public class Worker : BackgroundService
             .Take(1).Query(SearchQuery.NotSeen)
             .GetMimeMessagesAsync(cancellationToken);
         stopwatch.Stop();
-        _logger.LogInformation($"Received {mimeMessages.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s.");
+        _logger.LogInformation($"{_imapReceiver} received {mimeMessages.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s.");
         var mimeReply = mimeMessages.Single()
             .GetReplyMessage("Reply here.", addRecipients: false, includeMessageId: true, cancellationToken: cancellationToken)
             .From("from@localhost").To("to@localhost");
-        _logger.LogInformation($"Reply: \r\n{mimeReply.HtmlBody}");
+        _logger.LogInformation($"{_imapReceiver} reply: \r\n{mimeReply.HtmlBody}");
     }
 
     private async Task ReceiveAsync(CancellationToken cancellationToken = default)
@@ -130,7 +129,7 @@ public class Worker : BackgroundService
         var messageSummaries = await _imapReceiver.ReadMail.Skip(0).Take(250, continuous: true)
             .GetMessageSummariesAsync(MessageSummaryItems.UniqueId, cancellationToken);
         stopwatch.Stop();
-        _logger.LogInformation($"Received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n3}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
+        _logger.LogInformation($"{_imapReceiver} received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n3}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
     }
 
     private async Task QueryAsync(CancellationToken cancellationToken = default)
@@ -139,7 +138,7 @@ public class Worker : BackgroundService
         var messageSummaries = await _imapReceiver.ReadMail.Query(MailFolderReader.QueryMessageId(""))
             .GetMessageSummariesAsync(MailFolderReader.CoreMessageItems, cancellationToken);
         stopwatch.Stop();
-        _logger.LogInformation($"Received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
+        _logger.LogInformation($"{_imapReceiver} received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
     }
 
     private async Task DelayedSendAsync(int secondsDelay, CancellationToken cancellationToken = default)

@@ -170,6 +170,7 @@ namespace MailKitSimplified.Receiver.Services
                 int endIndex = _take < 0 ? _all : _skip + _take - 1;
                 filteredSummaries = await mailFolder.FetchAsync(_skip, endIndex, filter, cancellationToken).ConfigureAwait(false);
             }
+            _logger.LogTrace($"{_imapReceiver} received {filteredSummaries.Count} email(s).");
             if (_continueTake && _take > 0)
                 _skip += _take;
             await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
@@ -215,6 +216,7 @@ namespace MailKitSimplified.Receiver.Services
                     mimeMessages.Add(mimeMessage);
                 }
             }
+            _logger.LogTrace($"{_imapReceiver} received {mimeMessages.Count} email(s).");
             if (_continueTake && _take > 0)
             {
                 if (_skip < mailFolder.Count)
@@ -239,6 +241,7 @@ namespace MailKitSimplified.Receiver.Services
             var ascendingUids = uniqueIds.OrderBy(u => u.Id).ToList();
             var messageSummaries = await mailFolder.FetchAsync(ascendingUids, filter, cancellationToken).ConfigureAwait(false);
             filteredSummaries = messageSummaries.Where(m => uniqueIds.Contains(m.UniqueId)).Reverse().ToList();
+            _logger.LogTrace($"{_imapReceiver} received {filteredSummaries.Count} email(s).");
             await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
 
             return filteredSummaries ?? Array.Empty<IMessageSummary>();
@@ -250,6 +253,7 @@ namespace MailKitSimplified.Receiver.Services
             var mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
             _ = await mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
             mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
+            _logger.LogTrace($"{_imapReceiver} received {mimeMessage.MessageId}.");
             await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
             return mimeMessage;
         }
@@ -269,9 +273,33 @@ namespace MailKitSimplified.Receiver.Services
                     if (mimeMessage != null)
                         mimeMessages.Add(mimeMessage);
                 }
+                _logger.LogTrace($"{_imapReceiver} received {mimeMessages.Count} email(s).");
                 await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
             }
             return mimeMessages;
+        }
+
+        [Obsolete("Consider using GetMimeMessagesAsync() instead.")]
+        public IEnumerable<MimeMessage> GetMimeMessages(IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default, ITransferProgress progress = null)
+        {
+            if (uniqueIds != null)
+            {
+                var mailFolder = _imapReceiver.ConnectMailFolderAsync(cancellationToken).GetAwaiter().GetResult();
+                lock (mailFolder.SyncRoot)
+                {
+                    _ = mailFolder.Open(FolderAccess.ReadOnly, cancellationToken);
+                    foreach (var uniqueId in uniqueIds)
+                    {
+                        if (cancellationToken.IsCancellationRequested)
+                            break;
+                        var mimeMessage = mailFolder.GetMessage(uniqueId, cancellationToken, progress);
+                        _logger.LogTrace($"{_imapReceiver} received {mimeMessage.MessageId}.");
+                        if (mimeMessage != null)
+                            yield return mimeMessage;
+                    }
+                    mailFolder.Close(false, CancellationToken.None);
+                }
+            }
         }
 
         /// <summary>Query just the arrival dates of messages on the server.</summary>

@@ -14,6 +14,7 @@ using MailKitSimplified.Receiver.Models;
 
 namespace MailKitSimplified.Receiver.Services
 {
+    [Obsolete("Consider using MailFolderReader instead.")]
     public sealed class MailFolderClient : IMailFolderClient
     {
         public string MailFolderName => _mailFolder?.FullName ?? _imapReceiver.ToString();
@@ -23,12 +24,14 @@ namespace MailKitSimplified.Receiver.Services
         private readonly ILogger _logger;
         private readonly IImapReceiver _imapReceiver;
 
+        [Obsolete("Consider using MailFolderReader instead.")]
         public MailFolderClient(IImapReceiver imapReceiver, ILogger<MailFolderClient> logger = null)
         {
             _logger = logger ?? NullLogger<MailFolderClient>.Instance;
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
         }
 
+        [Obsolete("Consider using MailFolderReader instead.")]
         public static MailFolderClient Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderClient> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null)
         {
             var imapReceiver = ImapReceiver.Create(emailReceiverOptions, logImap, protocolLogger, imapClient);
@@ -36,6 +39,7 @@ namespace MailKitSimplified.Receiver.Services
             return mailFolderClient;
         }
 
+        [Obsolete("Consider using MailFolderReader instead.")]
         public static MailFolderClient Create(IImapClient imapClient, EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderClient> logger = null, ILogger<ImapReceiver> logImap = null)
         {
             var imapReceiver = ImapReceiver.Create(imapClient, emailReceiverOptions, logImap);
@@ -43,6 +47,7 @@ namespace MailKitSimplified.Receiver.Services
             return mailFolderClient;
         }
 
+        [Obsolete("Consider using MailFolderReader.OpenMailFolderAsync() instead.")]
         public async ValueTask<IMailFolder> ConnectAsync(bool enableWrite = false, CancellationToken cancellationToken = default)
         {
             if (_mailFolder == null)
