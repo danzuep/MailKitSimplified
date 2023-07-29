@@ -146,6 +146,31 @@ namespace MailKitSimplified.Receiver.Services
             return mailFolder;
         }
 
+        /// <summary>
+        /// Add flags with checks to make sure the folder is open and writeable.
+        /// If there's a delete flag then it calls the Expunge method.
+        /// </summary>
+        /// <param name="mailFolder"><see cref="IMailFolder"/> to modify.</param>
+        /// <param name="messageFlags"><see cref="MessageFlags"/> to add.</param>
+        /// <param name="uniqueIds">UniqueIDs to download.</param>
+        /// <param name="silent">Does not emit an <see cref="IMailFolder.MessageFlagsChanged"/> event if set.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task AddFlagsAsync(MessageFlags messageFlags, bool silent = true, CancellationToken cancellationToken = default)
+        {
+            var messageSummaries = await GetMessageSummariesAsync(MessageSummaryItems.Flags, cancellationToken).ConfigureAwait(false);
+            var mailFolder = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
+            bool peekFolder = !mailFolder.IsOpen;
+            if (peekFolder || mailFolder.Access != FolderAccess.ReadWrite)
+                _ = await mailFolder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
+            var ascendingIds = messageSummaries.Select(m => m.UniqueId).OrderBy(u => u.Id).ToList();
+            await mailFolder.AddFlagsAsync(ascendingIds, messageFlags, silent, cancellationToken).ConfigureAwait(false);
+            bool delete = messageFlags.HasFlag(MessageFlags.Deleted);
+            if (peekFolder)
+                await mailFolder.CloseAsync(delete, cancellationToken).ConfigureAwait(false);
+            else if (delete)
+                await mailFolder.ExpungeAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         public async Task<IList<IMessageSummary>> GetMessageSummariesAsync(MessageSummaryItems filter, CancellationToken cancellationToken = default)
         {
             var mailFolder = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
