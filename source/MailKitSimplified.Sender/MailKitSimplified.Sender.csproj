@@ -4,24 +4,30 @@
     <TargetFrameworks>netstandard2.0;net6.0;net7.0</TargetFrameworks>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
+    <Authors>Daniel Collingwood</Authors>
+    <PackageId>MailKitSimplified.Sender</PackageId>
+    <Title>Simple MailKit SMTP Sender</Title>
+    <Description>Easy, fluent way to send emails with MailKit.</Description>
+    <PackageTags>SMTP; MailKit; email; sender; send; simply; easily; simple; easy; fluent; C#; .NET</PackageTags>
+    <PackageIcon>icon.png</PackageIcon>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
-    <Authors>danzuep</Authors>
-    <Title>Simple MailKit SMTP Sender</Title>
-    <PackageTags>SMTP; MailKit; email; sender; send; simply; easily; simple; easy; fluent; C#; .NET</PackageTags>
-    <Description>Easy, fluent way to send emails with MailKit.</Description>
-    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
+    <PackageReleaseNotes>
+      2.5.0 Reuse existing ISmtpClient
+      2.3.0 Forwarding and replies
+      0.1.3 First version of SmtpSender
+    </PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MailKit" Version="4.0.0" />
-    <PackageReference Include="MimeKit" Version="4.0.0" />
+    <PackageReference Include="MailKit" Version="4.1.0" />
+    <PackageReference Include="MimeKit" Version="4.1.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageReference Include="System.IO.Abstractions" Version="19.2.29" />
   </ItemGroup>

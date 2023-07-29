@@ -213,7 +213,7 @@ namespace MailKitSimplified.Receiver.Services
 
         public IMailFolderMonitor MonitorFolder => _mailFolderMonitor.Value;
 
-        public IImapClient GetImapClient() => _imapClient;
+        public IImapClient ImapClient => _imapClient;
 
         public async ValueTask<IImapClient> ConnectAuthenticatedImapClientAsync(CancellationToken cancellationToken = default)
         {

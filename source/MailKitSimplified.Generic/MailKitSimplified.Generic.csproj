@@ -4,15 +4,19 @@
     <TargetFrameworks>netstandard2.0;net6.0;net7.0</TargetFrameworks>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
+    <Authors>Daniel Collingwood</Authors>
+    <PackageId>MailKitSimplified.Generic</PackageId>
+    <Title>Generic Email Writer and SMTP Sender</Title>
+    <Description>Simple, generic SMTP email interfaces and models.</Description>
+    <PackageTags>SMTP; email; simple; easy; fluent; C#; .NET; ASP.NET</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
-    <Authors>danzuep</Authors>
-    <Title>Generic Email Writer and SMTP Sender</Title>
-    <PackageTags>email; SMTP; simple; easy; fluent; C#; .NET; ASP.NET</PackageTags>
-    <Description>Simple, generic SMTP email interfaces and models.</Description>
+    <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
+    <PackageReleaseNotes>
+      2.0.0 Generic Email Writer and SMTP Sender
+    </PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,7 +32,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageReference Include="System.IO.Abstractions" Version="19.2.29" />
   </ItemGroup>

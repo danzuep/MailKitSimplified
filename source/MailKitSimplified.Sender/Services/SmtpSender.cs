@@ -183,6 +183,8 @@ namespace MailKitSimplified.Sender.Services
             return protocolLogger;
         }
 
+        public ISmtpClient SmtpClient => _smtpClient;
+
         public async ValueTask<ISmtpClient> ConnectSmtpClientAsync(CancellationToken cancellationToken = default) =>
             await GetConnectedAuthenticatedAsync(cancellationToken).ConfigureAwait(false);
 

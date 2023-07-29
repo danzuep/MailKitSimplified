@@ -4,29 +4,36 @@
     <TargetFrameworks>netstandard2.0;net6.0;net7.0</TargetFrameworks>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
+    <Authors>Daniel Collingwood</Authors>
+    <PackageId>MailKitSimplified.Receiver</PackageId>
+    <Title>Simple MailKit IMAP Receiver</Title>
+    <Description>Easy, fluent way to receive, forward, and reply to emails with MailKit.</Description>
+    <PackageTags>IMAP; MailKit; email; receiver; receive; forward; reply; simply; easily; simple; easy; fluent; C#; .NET</PackageTags>
+    <PackageIcon>icon.png</PackageIcon>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
-    <Authors>danzuep</Authors>
-    <Title>Simple MailKit IMAP Receiver</Title>
-    <PackageTags>IMAP; MailKit; email; receiver; receive; forward; reply; simply; easily; simple; easy; fluent; C#; .NET</PackageTags>
-    <Description>Easy, fluent way to receive, forward, and reply to emails with MailKit.</Description>
-    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
+    <PackageReleaseNotes>
+      2.5.0 Reuse existing IImapClient
+      2.4.0 MailReader Query
+      2.0.0 MailFolderMonitor IdleClient
+      1.1.0 ImapReceiver and MailReader
+    </PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MailKit" Version="4.0.0" />
-    <PackageReference Include="MimeKit" Version="4.0.0" />
+    <PackageReference Include="MailKit" Version="4.1.0" />
+    <PackageReference Include="MimeKit" Version="4.1.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageReference Include="System.IO.Abstractions" Version="19.2.29" />
-    <PackageReference Include="System.Text.Json" Version="7.0.2" />
+    <PackageReference Include="System.Text.Json" Version="7.0.3" />
   </ItemGroup>
 
   <ItemGroup>
