@@ -330,5 +330,26 @@ namespace MailKitSimplified.Receiver.Extensions
             else if (delete)
                 await messageSummary.Folder.ExpungeAsync(cancellationToken).ConfigureAwait(false);
         }
+
+        public static async Task<UniqueId?> MoveToAsync(this IMessageSummary messageSummary, IMailFolder destination, CancellationToken cancellationToken = default)
+        {
+            UniqueId? resultUid = null;
+            if (messageSummary.UniqueId.IsValid && destination != null)
+            {
+                try
+                {
+                    bool peekSourceFolder = !messageSummary.Folder.IsOpen;
+                    if (peekSourceFolder || messageSummary.Folder.Access != FolderAccess.ReadWrite)
+                        _ = await messageSummary.Folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
+                    resultUid = await messageSummary.Folder.MoveToAsync(messageSummary.UniqueId, destination, cancellationToken).ConfigureAwait(false);
+                    if (peekSourceFolder)
+                        await messageSummary.Folder.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                }
+            }
+            return resultUid;
+        }
     }
 }

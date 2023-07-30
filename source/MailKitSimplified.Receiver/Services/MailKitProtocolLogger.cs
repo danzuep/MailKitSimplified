@@ -2,6 +2,7 @@
 using System;
 using System.Text;
 using System.IO;
+using System.IO.Abstractions;
 using System.Globalization;
 using System.Collections.Generic;
 using Microsoft.Extensions.Options;
@@ -9,7 +10,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Receiver.Abstractions;
-using System.IO.Abstractions;
 
 namespace MailKitSimplified.Receiver.Services
 {

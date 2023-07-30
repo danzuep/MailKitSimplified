@@ -24,18 +24,42 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
+        using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         //await GetMessageSummaryRepliesAsync(cancellationToken);
         //await ReceiveAsync(cancellationToken);
         //await QueryAsync(cancellationToken);
         //await MonitorAsync(cancellationToken);
+        await DeleteSeenAsync(cancellationTokenSource);
         await NotReentrantAsync(cancellationToken);
+    }
+
+    private async Task MoveSeenToSentAsync(CancellationTokenSource cancellationTokenSource)
+    {
+        var filteredMessages = await _imapReceiver.ReadMail.Query(SearchQuery.Seen)
+            .GetMessageSummariesAsync(cancellationTokenSource.Token);
+        _logger.LogInformation($"{_imapReceiver} folder query returned {filteredMessages.Count} messages.");
+        var sentFolder = ((MailFolderClient)_imapReceiver.MailFolderClient)
+            .GetSentFolder(cancellationTokenSource.Token);
+        var messagesDeleted = await _imapReceiver.MailFolderClient
+            .MoveToAsync(filteredMessages.Select(m => m.UniqueId), sentFolder, cancellationTokenSource.Token);
+        _logger.LogInformation($"Deleted {messagesDeleted} messages from {_imapReceiver} {filteredMessages.Count} Seen messages.");
+    }
+
+    private async Task DeleteSeenAsync(CancellationTokenSource cancellationTokenSource)
+    {
+        var filteredMessages = await _imapReceiver.ReadMail.Query(SearchQuery.Seen)
+            .GetMessageSummariesAsync(cancellationTokenSource.Token);
+        _logger.LogInformation($"{_imapReceiver} folder query returned {filteredMessages.Count} messages.");
+        var messagesDeleted = await _imapReceiver.MailFolderClient
+            .DeleteMessagesAsync(TimeSpan.Zero, SearchQuery.Seen, cancellationTokenSource.Token);
+        _logger.LogInformation($"Deleted {messagesDeleted} messages from {_imapReceiver} {filteredMessages.Count} Seen messages.");
     }
 
     private async Task NotReentrantAsync(CancellationToken cancellationToken = default)
     {
         using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var sendTask = DelayedSendAsync(500, cancellationToken);
         var newestEmail = await GetNewestMessageSummaryAsync(cancellationToken);
-        var sendTask = DelayedSendAsync(1, cancellationToken);
         await _imapReceiver.MonitorFolder.SetMessageSummaryItems()
             .SetIgnoreExistingMailOnConnect()
             .OnMessageArrival(OnArrivalAsync)
@@ -143,9 +167,9 @@ public class Worker : BackgroundService
         _logger.LogInformation($"{_imapReceiver} received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
     }
 
-    private async Task DelayedSendAsync(int secondsDelay, CancellationToken cancellationToken = default)
+    private async Task DelayedSendAsync(int millisecondsDelay, CancellationToken cancellationToken = default)
     {
-        await Task.Delay(secondsDelay * 1000, cancellationToken);
+        await Task.Delay(millisecondsDelay, cancellationToken);
         var id = $"{Guid.NewGuid():N}";
         bool isSent = await _smtpSender.WriteEmail
             .From("me@localhost")
@@ -158,7 +182,7 @@ public class Worker : BackgroundService
 
     private async Task MonitorAsync(CancellationToken cancellationToken = default)
     {
-        var sendTask = DelayedSendAsync(5, cancellationToken);
+        var sendTask = DelayedSendAsync(1000, cancellationToken);
         await _imapReceiver.MonitorFolder
             .SetMessageSummaryItems()
             .SetIgnoreExistingMailOnConnect()

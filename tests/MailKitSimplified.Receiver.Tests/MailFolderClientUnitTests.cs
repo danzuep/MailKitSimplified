@@ -14,6 +14,8 @@ namespace MailKitSimplified.Receiver.Tests
         public MailFolderClientUnitTests()
         {
             // Arrange
+            _mailFolderMock.SetupGet(_ => _.IsOpen).Returns(false).Verifiable();
+            _mailFolderMock.SetupGet(_ => _.Access).Returns(FolderAccess.None).Verifiable();
             _mailFolderMock.Setup(_ => _.OpenAsync(It.IsAny<FolderAccess>(), It.IsAny<CancellationToken>())).Verifiable();
             _mailFolderMock.Setup(_ => _.CloseAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).Verifiable();
             _imapReceiverMock.Setup(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()))
@@ -92,43 +94,42 @@ namespace MailKitSimplified.Receiver.Tests
             Assert.IsAssignableFrom<IMailFolder>(mailFolder);
         }
 
-        [Fact]
-        public async Task SearchAsync_WithSingleQuery_ReturnsUniqueIds()
-        {
-            // Arrange
-            _mailFolderMock.Setup(_ => _.SearchAsync(It.IsAny<SearchQuery>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<UniqueId>()).Verifiable();
-            // Act
-            var uniqueIds = await _mailFolderClient.SearchAsync(SearchQuery.Recent, CancellationToken.None);
-            // Assert
-            Assert.NotNull(uniqueIds);
-            Assert.IsAssignableFrom<IList<UniqueId>>(uniqueIds);
-        }
+        //[Fact]
+        //public async Task AddFlagsAsync_WithSingleQuery_ReturnsChangeCount()
+        //{
+        //    // Arrange
+        //    _mailFolderMock.Setup(_ => _.AddFlagsAsync(It.IsAny<UniqueId>(), It.IsAny<MessageFlags>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+        //        .Verifiable();
+        //    // Act
+        //    var changeCount = await _mailFolderClient.AddFlagsAsync(SearchQuery.All, MessageFlags.None, silent: true, CancellationToken.None);
+        //    // Assert
+        //    Assert.IsAssignableFrom<int>(changeCount);
+        //}
 
-        [Fact]
-        public async Task SearchKeywordsAsync_ReturnsUniqueIds()
-        {
-            // Arrange
-            _mailFolderMock.Setup(_ => _.SearchAsync(It.IsAny<SearchQuery>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<UniqueId>()).Verifiable();
-            // Act
-            var uniqueIds = await _mailFolderClient.SearchKeywordsAsync(new List<string>(), CancellationToken.None);
-            // Assert
-            Assert.NotNull(uniqueIds);
-            Assert.IsAssignableFrom<IList<UniqueId>>(uniqueIds);
-        }
+        //[Fact]
+        //public async Task MoveToAsync_WithDestinationFolder_ReturnsUniqueId()
+        //{
+        //    // Arrange
+        //    _mailFolderMock.Setup(_ => _.MoveToAsync(It.IsAny<UniqueId>(), It.IsAny<IMailFolder>(), It.IsAny<CancellationToken>()))
+        //        .ReturnsAsync(UniqueId.MinValue).Verifiable();
+        //    // Act
+        //    var uniqueId = await _mailFolderClient.MoveToAsync(UniqueId.MinValue, "INBOX", CancellationToken.None);
+        //    // Assert
+        //    Assert.NotNull(uniqueId);
+        //    Assert.IsAssignableFrom<UniqueId>(uniqueId);
+        //}
 
-        [Fact]
-        public async Task SearchBetweenDatesAsync_ReturnsUniqueIds()
-        {
-            // Arrange
-            _mailFolderMock.Setup(_ => _.SearchAsync(It.IsAny<SearchQuery>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<UniqueId>()).Verifiable();
-            // Act
-            var uniqueIds = await _mailFolderClient.SearchBetweenDatesAsync(DateTime.Now, null, CancellationToken.None);
-            // Assert
-            Assert.NotNull(uniqueIds);
-            Assert.IsAssignableFrom<IList<UniqueId>>(uniqueIds);
-        }
+        //[Fact]
+        //public async Task MoveToAsync_WithUidsAndDestinationFolder_ReturnsUniqueIdMap()
+        //{
+        //    // Arrange
+        //    _mailFolderMock.Setup(_ => _.MoveToAsync(It.IsAny<UniqueId>(), It.IsAny<IMailFolder>(), It.IsAny<CancellationToken>()))
+        //        .ReturnsAsync(UniqueId.MinValue).Verifiable();
+        //    var uids = new UniqueId[] { UniqueId.MinValue, UniqueId.MaxValue };
+        //    // Act
+        //    var uniqueIdMap = await _mailFolderClient.MoveToAsync(uids, "INBOX", CancellationToken.None);
+        //    // Assert
+        //    Assert.IsAssignableFrom<UniqueIdMap>(uniqueIdMap);
+        //}
     }
 }

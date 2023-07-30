@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Receiver.Services;
+using MailKit.Search;
 
 namespace MailKitSimplified.Receiver.Tests
 {

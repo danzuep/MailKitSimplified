@@ -121,10 +121,10 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
-        private async Task<IMailFolder> OpenMailFolderAsync(CancellationToken cancellationToken = default)
+        private async Task<(IMailFolder, bool)> OpenMailFolderAsync(CancellationToken cancellationToken = default)
         {
             if (_take == 0)
-                return null;
+                return (null, false);
             var mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
             bool closeWhenFinished = !mailFolder.IsOpen;
             if (!mailFolder.IsOpen)
@@ -139,11 +139,8 @@ namespace MailKitSimplified.Receiver.Services
                 }
                 else
                     _logger.LogWarning($"Skip({_skip}) exceeded SearchQuery limit of 250 results.");
-                if (closeWhenFinished)
-                    await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
-                return null;
             }
-            return mailFolder;
+            return (mailFolder, closeWhenFinished);
         }
 
         private async Task<IList<IMessageSummary>> GetMessageSummariesAsync(IMailFolder mailFolder, MessageSummaryItems filter, CancellationToken cancellationToken = default)
@@ -178,9 +175,12 @@ namespace MailKitSimplified.Receiver.Services
 
         public async Task<IList<IMessageSummary>> GetMessageSummariesAsync(MessageSummaryItems filter, CancellationToken cancellationToken = default)
         {
-            var mailFolder = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
+            if (_take == 0)
+                return Array.Empty<IMessageSummary>();
+            (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
             var messageSummaries = await GetMessageSummariesAsync(mailFolder, filter, cancellationToken).ConfigureAwait(false);
-            await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+            if (closeWhenFinished)
+                await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
             return messageSummaries;
         }
 
@@ -189,13 +189,10 @@ namespace MailKitSimplified.Receiver.Services
 
         public async Task<IList<MimeMessage>> GetMimeMessagesAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
         {
-            if (_take == 0)
-                return Array.Empty<MimeMessage>();
-            var mailFolder = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
-            if (mailFolder == null)
-                return Array.Empty<MimeMessage>();
-
             var mimeMessages = new List<MimeMessage>();
+            if (_take == 0)
+                return mimeMessages;
+            (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
             if (_take == _all || _searchQuery != _queryAll)
             {
                 if (_take > _queryAmount)
@@ -230,7 +227,8 @@ namespace MailKitSimplified.Receiver.Services
                 else
                     _skip = mailFolder.Count;
             }
-            await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+            if (closeWhenFinished)
+                await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
 
             return mimeMessages;
         }

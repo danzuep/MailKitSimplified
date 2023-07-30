@@ -39,7 +39,8 @@ namespace MailKitSimplified.Receiver.Services
         {
             //if (_cts == null)
             //    Initialise();
-            _queue.Enqueue(textToWrite);
+            if (!_cts.IsCancellationRequested)
+                _queue.Enqueue(textToWrite);
         }
 
         public void Write(StringBuilder textToWrite)
@@ -47,7 +48,8 @@ namespace MailKitSimplified.Receiver.Services
             //if (_cts == null)
             //    Initialise();
             string textToEnqueue = RemoveLastCharacter(textToWrite, '\n', '\r');
-            _queue.Enqueue(textToEnqueue);
+            if (!_cts.IsCancellationRequested)
+                _queue.Enqueue(textToEnqueue);
         }
 
         public static string RemoveLastCharacter(StringBuilder sb, params char[] toRemove)
@@ -63,13 +65,21 @@ namespace MailKitSimplified.Receiver.Services
 
         public async Task<string> ReadAllTextAsync()
         {
-            do
+            string textFromFile = null;
+            try
             {
-                await Task.Delay(_fileWriteOptions.FileWriteMaxDelayMs, _cts.Token).ConfigureAwait(false);
+                do
+                {
+                    await Task.Delay(_fileWriteOptions.FileWriteMaxDelayMs, _cts.Token).ConfigureAwait(false);
+                }
+                while (!_queue.IsEmpty);
+                textFromFile = _fileSystem.File.ReadAllText(_fileWriteOptions.FilePath);
             }
-            while (!_queue.IsEmpty);
-            var textFromFile = _fileSystem.File.ReadAllText(_fileWriteOptions.FilePath);
-            return textFromFile;
+            catch (OperationCanceledException)
+            {
+                _logger.LogTrace("Text file reading cancelled.");
+            }
+            return textFromFile ?? string.Empty;
         }
 
         private async Task WriteToFileAsync()
@@ -127,9 +137,9 @@ namespace MailKitSimplified.Receiver.Services
         {
             if (_cts != null)
             {
+                _cts.Cancel(false);
                 if (!_queue.IsEmpty)
                     _logger.LogWarning($"Log queue cancelled while logs are still being written.");
-                _cts.Cancel(false);
 #if NET5_0_OR_GREATER
                 _queue.Clear();
 #endif

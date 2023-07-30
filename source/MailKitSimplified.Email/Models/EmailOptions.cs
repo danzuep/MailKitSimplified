@@ -79,7 +79,8 @@ namespace MailKitSimplified.Email.Models
             return this;
         }
 
-        public int Timeout => (int)(TimeLimit?.TotalMilliseconds ?? 120000); // 2 mins
+        private readonly int _2minsMs = 120000; // 2 mins in milliseconds
+        public int Timeout => (int)(TimeLimit?.TotalMilliseconds ?? _2minsMs);
 
         public Lazy<SmtpClient> SmtpClient =>
             new Lazy<SmtpClient>(() => new SmtpClient

@@ -39,6 +39,7 @@ namespace MailKitSimplified.Sender
         /// <returns><see cref="IServiceCollection"/>.</returns>
         private static IServiceCollection AddMailKitSimplifiedEmailSender(this IServiceCollection services)
         {
+            //services.AddSingleton<IProtocolLogger, NullProtocolLogger>();
             services.AddSingleton<IFileSystem, FileSystem>();
             services.AddTransient<IEmailWriter, EmailWriter>();
             services.AddTransient<ISmtpSender, SmtpSender>();

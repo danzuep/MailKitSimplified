@@ -107,6 +107,8 @@ namespace MailKitSimplified.Receiver.Tests
         public async Task GetMessageAsync_WithNullMessageSummary_ReturnsMimeMessages()
         {
             // Arrange
+            _mailFolderMock.Setup(_ => _.SearchAsync(It.IsAny<SearchQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Array.Empty<UniqueId>()).Verifiable();
             _mailFolderMock.Setup(_ => _.GetMessageAsync(It.IsAny<int>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
                 .ReturnsAsync(new MimeMessage()).Verifiable();
             // Act

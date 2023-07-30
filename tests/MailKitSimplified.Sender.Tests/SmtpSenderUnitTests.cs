@@ -26,6 +26,7 @@ namespace MailKitSimplified.Sender.Tests
 
         public SmtpSenderUnitTests()
         {
+            // Arrange
             var loggerMock = Mock.Of<ILogger<SmtpSender>>();
             var protocolLoggerMock = Mock.Of<IProtocolLogger>();
             _smtpClientMock.Setup(_ => _.ConnectAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<SecureSocketOptions>(), It.IsAny<CancellationToken>())).Verifiable();
@@ -35,7 +36,27 @@ namespace MailKitSimplified.Sender.Tests
             _smtpClientMock.Setup(_ => _.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
                 .ReturnsAsync("Mail accepted").Verifiable();
             var smtpSenderOptions = Options.Create(new EmailSenderOptions(_localhost, new NetworkCredential()));
-            _smtpSender = new SmtpSender(smtpSenderOptions, loggerMock, protocolLoggerMock, _smtpClientMock.Object);
+            _smtpSender = new SmtpSender(smtpSenderOptions, loggerMock, protocolLoggerMock, _smtpClientMock.Object, NullLoggerFactory.Instance);
+        }
+
+        [Fact]
+        public void SmtpClient_VerifyType()
+        {
+            // Act
+            using var smtpClient = _smtpSender.SmtpClient;
+            // Assert
+            Assert.NotNull(smtpClient);
+            Assert.IsAssignableFrom<ISmtpClient>(smtpClient);
+        }
+
+        [Fact]
+        public void WriteEmail_VerifyType()
+        {
+            // Act
+            var emailWriter = _smtpSender.WriteEmail;
+            // Assert
+            Assert.NotNull(emailWriter);
+            Assert.IsAssignableFrom<IEmailWriter>(emailWriter);
         }
 
         [Fact]
@@ -113,14 +134,6 @@ namespace MailKitSimplified.Sender.Tests
             Assert.IsAssignableFrom<ISmtpClient>(smtpClient);
             _smtpClientMock.Verify(_ => _.ConnectAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<SecureSocketOptions>(), It.IsAny<CancellationToken>()), Times.Once);
             _smtpClientMock.Verify(_ => _.AuthenticateAsync(It.IsAny<ICredentials>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public void WriteEmail_WithSmtpSender_VerifyType()
-        {
-            var emailWriter = _smtpSender.WriteEmail;
-            Assert.NotNull(emailWriter);
-            Assert.IsAssignableFrom<IEmailWriter>(emailWriter);
         }
 
         [Fact]

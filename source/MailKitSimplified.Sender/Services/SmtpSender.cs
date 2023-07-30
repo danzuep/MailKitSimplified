@@ -112,7 +112,7 @@ namespace MailKitSimplified.Sender.Services
         }
 
         /// <summary>
-        /// For those not using dependency injection.
+        /// Logging setup for those not using dependency injection.
         /// <example>LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole());</example>
         /// </summary>
         public SmtpSender SetLogger(ILoggerFactory loggerFactory, ILogger<SmtpSender> logger)
@@ -120,6 +120,16 @@ namespace MailKitSimplified.Sender.Services
             _loggerFactory = loggerFactory ?? _loggerFactory ?? NullLoggerFactory.Instance;
             _logger = logger ?? _logger ?? _loggerFactory.CreateLogger<SmtpSender>();
             return this;
+        }
+
+        /// <summary>
+        /// Logging setup for those not using dependency injection.
+        /// <example>SetLogger(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole());</example>
+        /// </summary>
+        public SmtpSender SetLogger(Action<ILoggingBuilder> configure)
+        {
+            var loggerFactory = LoggerFactory.Create(configure);
+            return SetLogger(loggerFactory, null);
         }
 
         public SmtpSender SetPort(ushort smtpPort, SecureSocketOptions socketOptions = SecureSocketOptions.Auto)
@@ -157,8 +167,6 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
-        public IEmailWriter WriteEmail => new EmailWriter(this, _loggerFactory.CreateLogger<EmailWriter>());
-
         [Obsolete("Use EmailSenderOptions.CreateProtocolLogger instead.")]
         public static IProtocolLogger GetProtocolLogger(string logFilePath = null, bool append = false, IFileSystem fileSystem = null)
         {
@@ -183,6 +191,8 @@ namespace MailKitSimplified.Sender.Services
             return protocolLogger;
         }
 
+        public IEmailWriter WriteEmail => new EmailWriter(this, _loggerFactory.CreateLogger<EmailWriter>());
+
         public ISmtpClient SmtpClient => _smtpClient;
 
         public async ValueTask<ISmtpClient> ConnectSmtpClientAsync(CancellationToken cancellationToken = default) =>
@@ -201,7 +211,7 @@ namespace MailKitSimplified.Sender.Services
             {
                 await _smtpClient.ConnectAsync(_senderOptions.SmtpHost, _senderOptions.SmtpPort, _senderOptions.SocketOptions, cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace($"SMTP client connected to {_senderOptions.SmtpHost}.");
-                if (_smtpClient is SmtpClient client)
+                if (_smtpClient is SmtpClient client && _senderOptions.CapabilitiesToRemove != SmtpCapabilities.None)
                     client.Capabilities &= ~_senderOptions.CapabilitiesToRemove;
                 if (_smtpClient.Capabilities.HasFlag(SmtpCapabilities.Size))
                     _logger.LogDebug($"The SMTP server has a size restriction on messages: {_smtpClient.MaxSize}.");

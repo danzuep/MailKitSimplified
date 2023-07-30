@@ -19,6 +19,11 @@ namespace MailKitSimplified.Sender.Abstractions
         IEmailWriter WriteEmail { get; }
 
         /// <summary>
+        /// Get the underlying <see cref="ISmtpClient"/>.
+        /// </summary>
+        ISmtpClient SmtpClient { get; }
+
+        /// <summary>
         /// Connect and authenticate the SMTP client.
         /// </summary>
         /// <param name="cancellationToken">Stop connecting the client.</param>

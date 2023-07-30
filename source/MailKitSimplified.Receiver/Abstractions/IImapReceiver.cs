@@ -26,6 +26,11 @@ namespace MailKitSimplified.Receiver.Abstractions
         IMailFolderClient MailFolderClient { get; }
 
         /// <summary>
+        /// Get the underlying <see cref="IImapClient"/>.
+        /// </summary>
+        IImapClient ImapClient { get; }
+
+        /// <summary>
         /// Connect and authenticate the IMAP client.
         /// </summary>
         /// <param name="cancellationToken">Stop connecting the client.</param>

@@ -122,6 +122,16 @@ namespace MailKitSimplified.Receiver.Tests
         }
 
         [Fact]
+        public void ImapClient_VerifyType()
+        {
+            // Act
+            using var imapClient = _imapReceiver.ImapClient;
+            // Assert
+            Assert.NotNull(imapClient);
+            Assert.IsAssignableFrom<IImapClient>(imapClient);
+        }
+
+        [Fact]
         public void MailFolderClient_VerifyType()
         {
             // Act
