@@ -17,6 +17,14 @@ namespace MailKitSimplified.Sender.Abstractions
     public interface IEmailWriter
     {
         /// <summary>
+        /// Set a default sender's details and add to the email.
+        /// </summary>
+        /// <param name="name">Name of sender.</param>
+        /// <param name="address">Email address of sender.</param>
+        /// <returns><see cref="IEmailWriter"/> interface.</returns>
+        IEmailWriter DefaultFrom(string name, string address);
+
+        /// <summary>
         /// Add a sender's details to the email.
         /// </summary>
         /// <param name="name">Name of sender.</param>

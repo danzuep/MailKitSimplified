@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using MimeKit;
 
 namespace MailKitSimplified.Sender.Models
 {
@@ -25,6 +26,8 @@ namespace MailKitSimplified.Sender.Models
         public string ProtocolLog { get; set; } = null;
         public bool ProtocolLogFileAppend { get; set; } = false;
         public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(1);
+
+        public MailboxAddress DefaultFrom { get; set; } = null;
 
         // Constructor required for Configuration mapping.
         public EmailSenderOptions() { }

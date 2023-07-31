@@ -195,6 +195,8 @@ namespace MailKitSimplified.Sender.Services
 
         public ISmtpClient SmtpClient => _smtpClient;
 
+        public MailboxAddress DefaultFrom => _senderOptions.DefaultFrom;
+
         public async ValueTask<ISmtpClient> ConnectSmtpClientAsync(CancellationToken cancellationToken = default) =>
             await GetConnectedAuthenticatedAsync(cancellationToken).ConfigureAwait(false);
 

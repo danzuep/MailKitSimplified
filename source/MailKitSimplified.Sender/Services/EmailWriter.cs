@@ -35,6 +35,9 @@ namespace MailKitSimplified.Sender.Services
             _logger = logger ?? NullLogger<EmailWriter>.Instance;
             _emailClient = emailClient ?? throw new ArgumentNullException(nameof(emailClient));
             _fileSystem = fileSystem ?? new FileSystem();
+            _defaultFrom = emailClient.DefaultFrom != null && !string.IsNullOrEmpty(emailClient.DefaultFrom.Address)
+                ? emailClient.DefaultFrom
+                : null;
         }
 
         public IEmailWriter DefaultFrom(string name, string address)
