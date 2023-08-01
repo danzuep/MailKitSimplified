@@ -7,7 +7,7 @@ version: 2
 updates:
   # Maintain dependencies for nuget
   - package-ecosystem: "nuget"
-    directory: "/"
+    directory: "/source"
     schedule:
       interval: "weekly"
       # Disable future pull requests for nuget dependencies
