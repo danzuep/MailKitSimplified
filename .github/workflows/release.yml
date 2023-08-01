@@ -19,8 +19,8 @@ concurrency:
 
 jobs:
   pipeline:
-    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
-    name: 🪜 CI/CD
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.merged == true }}
+    name: 🧱 CI/CD
     uses: ./.github/workflows/_pipeline.yml
     with:
       environment: release

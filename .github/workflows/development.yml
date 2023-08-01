@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   pipeline:
-    name: 🪜 CI/CD
+    name: 🧱 CI/CD
     uses: ./.github/workflows/_pipeline.yml
     with:
       environment: development

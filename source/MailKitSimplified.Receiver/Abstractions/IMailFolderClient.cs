@@ -1,4 +1,5 @@
-﻿using MailKit;
+﻿using MimeKit;
+using MailKit;
 using MailKit.Search;
 using System;
 using System.Collections.Generic;
@@ -89,6 +90,11 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns><see cref="UniqueIdMap"/> of the messages moved to the <see cref="IMailFolder"/> destination.</returns>
         Task<UniqueIdMap> MoveToAsync(IEnumerable<UniqueId> messageUids, string destinationFolder, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Asynchronously append the specified message to the folder and return the UniqueId assigned to the message.
+        /// </summary>
+        Task<UniqueId?> AppendSentMessageAsync(MimeMessage message, MessageFlags messageFlags = MessageFlags.Seen, CancellationToken cancellationToken = default, ITransferProgress transferProgress = null);
 
         /// <summary>
         /// Mail folder summary.

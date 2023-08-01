@@ -1,14 +1,14 @@
 ﻿using MailKit;
+using MailKit.Net.Imap;
 using System;
 using System.IO.Abstractions;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Receiver.Services;
-using MailKit.Net.Imap;
-using System.Security.Authentication;
 
 namespace MailKitSimplified.Receiver
 {
@@ -33,6 +33,7 @@ namespace MailKitSimplified.Receiver
                 throw new ArgumentNullException(nameof(configuration));
             var imapSection = configuration.GetRequiredSection(sectionNameImap);
             services.Configure<EmailReceiverOptions>(imapSection);
+            services.Configure<FolderClientOptions>(imapSection);
             var monitorSection = configuration.GetSection(sectionNameMonitor);
             services.Configure<FolderMonitorOptions>(monitorSection);
             var mailboxSection = configuration.GetSection(sectionNameMailbox);

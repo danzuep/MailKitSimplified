@@ -23,7 +23,7 @@ jobs:
     secrets: inherit
 
   deploy:
-    if: ${{ inputs.environment == 'release' }} # && {{ github.event_name != 'pull_request' }}
+    if: ${{ inputs.environment == 'release' && github.event_name != 'pull_request' }}
     needs: build
     uses: ./.github/workflows/_deploy-nuget.yml
     with:
