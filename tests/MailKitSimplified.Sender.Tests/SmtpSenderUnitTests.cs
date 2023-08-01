@@ -108,8 +108,12 @@ namespace MailKitSimplified.Sender.Tests
             using var smtpSender = SmtpSender.Create(_localhost)
                 .SetPort(It.IsAny<ushort>(), It.IsAny<SecureSocketOptions>())
                 .SetCredential(It.IsAny<string>(), It.IsAny<string>())
+                .SetCustomAuthentication(It.IsAny<Func<ISmtpClient, Task>>())
+                .SetSmtpClient(It.IsAny<ISmtpClient>())
+                .SetProtocolLog(It.IsAny<IProtocolLogger>())
                 .SetProtocolLog(It.IsAny<string>())
-                .SetCustomAuthentication(It.IsAny<Func<ISmtpClient, Task>>());
+                .SetLogger(It.IsAny<ILoggerFactory>(), It.IsAny<ILogger<SmtpSender>>())
+                .RemoveCapabilities(It.IsAny<SmtpCapabilities>());
             smtpSender.RemoveAuthenticationMechanism("XOAUTH2");
             // Assert
             Assert.NotNull(smtpSender);

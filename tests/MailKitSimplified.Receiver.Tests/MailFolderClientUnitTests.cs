@@ -1,12 +1,15 @@
 using MailKit;
 using MailKit.Search;
+using Microsoft.Extensions.Options;
 using MailKitSimplified.Receiver.Abstractions;
+using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Receiver.Services;
 
 namespace MailKitSimplified.Receiver.Tests
 {
     public class MailFolderClientUnitTests
     {
+        private readonly IOptions<FolderClientOptions> _options;
         private readonly Mock<IMailFolder> _mailFolderMock = new();
         private readonly Mock<IImapReceiver> _imapReceiverMock = new();
         private readonly MailFolderClient _mailFolderClient;
@@ -20,13 +23,14 @@ namespace MailKitSimplified.Receiver.Tests
             _mailFolderMock.Setup(_ => _.CloseAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).Verifiable();
             _imapReceiverMock.Setup(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_mailFolderMock.Object).Verifiable();
-            _mailFolderClient = new MailFolderClient(_imapReceiverMock.Object);
+            _options = Options.Create(new FolderClientOptions());
+            _mailFolderClient = new MailFolderClient(_imapReceiverMock.Object, _options);
         }
 
         [Fact]
         public void Dispose_UsingMailFolderClient()
         {
-            using var mailFolderClient = new MailFolderClient(_imapReceiverMock.Object);
+            using var mailFolderClient = new MailFolderClient(_imapReceiverMock.Object, _options);
             mailFolderClient.Dispose();
             Assert.NotNull(mailFolderClient);
             Assert.IsAssignableFrom<IMailFolderClient>(mailFolderClient);
@@ -35,7 +39,7 @@ namespace MailKitSimplified.Receiver.Tests
         [Fact]
         public async Task DisposeAsync_WithMailFolderClient()
         {
-            using var mailFolderClient = new MailFolderClient(_imapReceiverMock.Object);
+            using var mailFolderClient = new MailFolderClient(_imapReceiverMock.Object, _options);
             await mailFolderClient.DisposeAsync();
             Assert.IsAssignableFrom<IMailFolderClient>(mailFolderClient);
         }

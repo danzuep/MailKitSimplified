@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using MailKitSimplified.Sender.Models;
 
 namespace MailKitSimplified.Sender.Abstractions
 {
@@ -17,12 +18,26 @@ namespace MailKitSimplified.Sender.Abstractions
     public interface IEmailWriter
     {
         /// <summary>
+        /// Set the EmailWriter options with a default sender.
+        /// </summary>
+        /// <param name="options">EmailWriter options with a default sender.</param>
+        /// <returns><see cref="IEmailWriter"/> interface.</returns>
+        IEmailWriter SetOptions(EmailWriterOptions options);
+
+        /// <summary>
         /// Set a default sender's details and add to the email.
         /// </summary>
         /// <param name="name">Name of sender.</param>
         /// <param name="address">Email address of sender.</param>
         /// <returns><see cref="IEmailWriter"/> interface.</returns>
         IEmailWriter DefaultFrom(string name, string address);
+
+        /// <summary>
+        /// Set a default sender's details and add to the email.
+        /// </summary>
+        /// <param name="emailAddress">Email address of the default sender.</param>
+        /// <returns><see cref="IEmailWriter"/> interface.</returns>
+        IEmailWriter DefaultFrom(string emailAddress);
 
         /// <summary>
         /// Add a sender's details to the email.

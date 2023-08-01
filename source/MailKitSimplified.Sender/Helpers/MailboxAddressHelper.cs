@@ -28,11 +28,26 @@ namespace MailKitSimplified.Sender.Helpers
             return contact;
         }
 
-        private static string GetNameFromEmailAddress(string emailAddress)
+        public static MailboxAddress GenerateGuidIfFromNotSet(string exampleEmailAddress)
+        {
+            string domain = string.IsNullOrEmpty(exampleEmailAddress) ?
+                "localhost" : GetDomainFromEmailAddress(exampleEmailAddress);
+            var contact = new MailboxAddress(string.Empty, $"{Guid.NewGuid():N}@{domain}");
+            return contact;
+        }
+
+        internal static string GetNameFromEmailAddress(string emailAddress)
         {
             var email = emailAddress?.Split('@')?.FirstOrDefault();
             string name = SpaceReplaceTitleCase(email, _emailReplace) ?? string.Empty;
             return name;
+        }
+
+        internal static string GetDomainFromEmailAddress(string emailAddress)
+        {
+            if (emailAddress?.IndexOf('@') is int index && index >= 0)
+                return emailAddress.Substring(index + 1);
+            return emailAddress;
         }
 
         private static string SpaceReplaceTitleCase(string value, char[] replace)

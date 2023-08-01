@@ -3,6 +3,9 @@ using System.IO.Abstractions.TestingHelpers;
 using Microsoft.Extensions.Logging;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Services;
+using Microsoft.Extensions.Options;
+using System.Net;
+using MailKitSimplified.Sender.Models;
 
 namespace MailKitSimplified.Sender.Tests
 {
@@ -28,7 +31,10 @@ namespace MailKitSimplified.Sender.Tests
             _smtpSenderMock.Setup(_ => _.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>())).Verifiable();
             _smtpSenderMock.Setup(_ => _.TrySendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
                 .ReturnsAsync(true).Verifiable();
-            _testEmail = new EmailWriter(_smtpSenderMock.Object, _loggerFactory.CreateLogger<EmailWriter>(), _fileSystem)
+            var options = Options.Create(new EmailWriterOptions());
+            _testEmail = new EmailWriter(_smtpSenderMock.Object, _loggerFactory.CreateLogger<EmailWriter>(), _fileSystem, options)
+                .SetOptions(options.Value)
+                .DefaultFrom("no-reply@example.com")
                 .From("My Name", "me@localhost")
                 .To("Your Name", "you@localhost")
                 .Subject("Hello World")

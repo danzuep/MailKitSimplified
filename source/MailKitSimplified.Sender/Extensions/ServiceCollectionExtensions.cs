@@ -19,14 +19,16 @@ namespace MailKitSimplified.Sender
         /// </summary>
         /// <param name="services">Collection of service descriptors.</param>
         /// <param name="configuration">Application configuration properties.</param>
-        /// <param name="sectionName">Configuration section name.</param>
+        /// <param name="smtpSectionName">SMTP configuration section name.</param>
         /// <returns><see cref="IServiceCollection"/>.</returns>
-        public static IServiceCollection AddMailKitSimplifiedEmailSender(this IServiceCollection services, IConfiguration configuration, string sectionName = EmailSenderOptions.SectionName)
+        public static IServiceCollection AddMailKitSimplifiedEmailSender(this IServiceCollection services, IConfiguration configuration, string smtpSectionName = EmailSenderOptions.SectionName)
         {
             if (configuration == null)
                 throw new ArgumentNullException(nameof(configuration));
-            var smtpSection = configuration.GetRequiredSection(sectionName);
+            var smtpSection = configuration.GetRequiredSection(smtpSectionName);
             services.Configure<EmailSenderOptions>(smtpSection);
+            var writerSection = smtpSection.GetSection(EmailWriterOptions.SectionName);
+            services.Configure<EmailWriterOptions>(writerSection);
             services.AddMailKitSimplifiedEmailSender();
             return services;
         }

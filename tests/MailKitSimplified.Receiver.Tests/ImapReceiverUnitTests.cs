@@ -135,7 +135,7 @@ namespace MailKitSimplified.Receiver.Tests
         public void MailFolderClient_VerifyType()
         {
             // Act
-            using var mailFolderClient = _imapReceiver.MailFolderClient;
+            using var mailFolderClient = _imapReceiver.ReadFolder;
             // Assert
             Assert.NotNull(mailFolderClient);
             Assert.IsAssignableFrom<IMailFolderClient>(mailFolderClient);

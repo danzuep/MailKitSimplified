@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Extensions;
 using MailKitSimplified.Sender.Models;
+using MailKitSimplified.Sender.Helpers;
 
 namespace MailKitSimplified.Sender.Services
 {
@@ -191,11 +192,11 @@ namespace MailKitSimplified.Sender.Services
             return protocolLogger;
         }
 
-        public IEmailWriter WriteEmail => new EmailWriter(this, _loggerFactory.CreateLogger<EmailWriter>());
+        public IEmailWriter WriteEmail =>
+            new EmailWriter(this, _loggerFactory.CreateLogger<EmailWriter>())
+                .SetOptions(_senderOptions.EmailWriter);
 
         public ISmtpClient SmtpClient => _smtpClient;
-
-        public MailboxAddress DefaultFrom => _senderOptions.DefaultFrom;
 
         public async ValueTask<ISmtpClient> ConnectSmtpClientAsync(CancellationToken cancellationToken = default) =>
             await GetConnectedAuthenticatedAsync(cancellationToken).ConfigureAwait(false);
@@ -297,10 +298,6 @@ namespace MailKitSimplified.Sender.Services
                     .Concat(mimeMessage.Cc.Mailboxes.Select(m => m.Address))
                     .Concat(mimeMessage.Bcc.Mailboxes.Select(m => m.Address));
                 isValid = ValidateEmailAddresses(from, toCcBcc, logger);
-                if (mimeMessage.ReplyTo.Count == 0 && mimeMessage.From.Count == 0)
-                    mimeMessage.ReplyTo.Add(new MailboxAddress("Unmonitored", $"noreply@localhost"));
-                if (mimeMessage.From.Count == 0)
-                    mimeMessage.From.Add(new MailboxAddress("LocalHost", $"{Guid.NewGuid():N}@localhost"));
             }
             return isValid;
         }
@@ -335,6 +332,11 @@ namespace MailKitSimplified.Sender.Services
 
         public async Task SendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
         {
+            if (mimeMessage.ReplyTo.Count == 0 && mimeMessage.From.Count == 0 &&
+                _senderOptions.EmailWriter.DefaultReplyTo != null)
+                mimeMessage.ReplyTo.Add(_senderOptions.EmailWriter.DefaultReplyTo);
+            if (mimeMessage.From.Count == 0 && _senderOptions.EmailWriter.GenerateGuidIfFromNotSet)
+                mimeMessage.From.Add(MailboxAddressHelper.GenerateGuidIfFromNotSet(_senderOptions.EmailWriter?.DefaultReplyTo?.Address));
             _ = ValidateMimeMessage(mimeMessage, _logger);
             _ = await ConnectSmtpClientAsync(cancellationToken).ConfigureAwait(false);
             _logger.LogTrace($"{_senderOptions} sending {GetEnvelope(mimeMessage, includeTextBody: true)}");

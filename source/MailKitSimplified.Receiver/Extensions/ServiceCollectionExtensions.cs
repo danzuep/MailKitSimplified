@@ -26,18 +26,21 @@ namespace MailKitSimplified.Receiver
         /// <param name="configuration">Application configuration properties.</param>
         /// <param name="sectionNameImap">IMAP configuration section name.</param>
         /// <param name="sectionNameMonitor">Folder monitor configuration section name.</param>
+        /// <param name="sectionNameMailbox">Mailbox options configuration section name.</param>
+        /// <param name="sectionNameFolder">MailFolder client configuration section name.</param>
         /// <returns><see cref="IServiceCollection"/>.</returns>
-        public static IServiceCollection AddMailKitSimplifiedEmailReceiver(this IServiceCollection services, IConfiguration configuration, string sectionNameImap = EmailReceiverOptions.SectionName, string sectionNameMonitor = FolderMonitorOptions.SectionName, string sectionNameMailbox = MailboxOptions.SectionName)
+        public static IServiceCollection AddMailKitSimplifiedEmailReceiver(this IServiceCollection services, IConfiguration configuration, string sectionNameImap = EmailReceiverOptions.SectionName, string sectionNameMonitor = FolderMonitorOptions.SectionName, string sectionNameMailbox = MailboxOptions.SectionName, string sectionNameFolder = EmailReceiverOptions.SectionName)
         {
             if (configuration == null)
                 throw new ArgumentNullException(nameof(configuration));
             var imapSection = configuration.GetRequiredSection(sectionNameImap);
             services.Configure<EmailReceiverOptions>(imapSection);
-            services.Configure<FolderClientOptions>(imapSection);
             var monitorSection = configuration.GetSection(sectionNameMonitor);
             services.Configure<FolderMonitorOptions>(monitorSection);
             var mailboxSection = configuration.GetSection(sectionNameMailbox);
             services.Configure<MailboxOptions>(mailboxSection);
+            var folderSection = configuration.GetRequiredSection(sectionNameFolder);
+            services.Configure<FolderClientOptions>(folderSection);
             var protocolLoggerSection = imapSection.GetSection(ProtocolLoggerOptions.SectionName);
             services.Configure<ProtocolLoggerOptions>(protocolLoggerSection);
             var fileWriteSection = protocolLoggerSection.GetSection(FileWriterOptions.SectionName);

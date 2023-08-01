@@ -24,11 +24,6 @@ namespace MailKitSimplified.Sender.Abstractions
         ISmtpClient SmtpClient { get; }
 
         /// <summary>
-        /// Get a default sender's details from the configuration file.
-        /// </summary>
-        MailboxAddress DefaultFrom { get; }
-
-        /// <summary>
         /// Connect and authenticate the SMTP client.
         /// </summary>
         /// <param name="cancellationToken">Stop connecting the client.</param>

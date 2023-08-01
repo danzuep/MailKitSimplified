@@ -10,11 +10,13 @@ using System.IO.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Helpers;
 using MailKitSimplified.Sender.Extensions;
+using MailKitSimplified.Sender.Models;
 
 namespace MailKitSimplified.Sender.Services
 {
@@ -30,19 +32,39 @@ namespace MailKitSimplified.Sender.Services
         private readonly IFileSystem _fileSystem;
 
         /// <inheritdoc cref="IEmailWriter" />
-        public EmailWriter(ISmtpSender emailClient, ILogger<EmailWriter> logger = null, IFileSystem fileSystem = null)
+        public EmailWriter(ISmtpSender emailClient, ILogger<EmailWriter> logger = null, IFileSystem fileSystem = null, IOptions<EmailWriterOptions> options = null)
         {
             _logger = logger ?? NullLogger<EmailWriter>.Instance;
             _emailClient = emailClient ?? throw new ArgumentNullException(nameof(emailClient));
             _fileSystem = fileSystem ?? new FileSystem();
-            _defaultFrom = emailClient.DefaultFrom != null && !string.IsNullOrEmpty(emailClient.DefaultFrom.Address)
-                ? emailClient.DefaultFrom
-                : null;
+            SetEmailWriterDefaultFrom(options?.Value?.DefaultFrom);
+        }
+
+        private void SetEmailWriterDefaultFrom(MailboxAddress defaultFrom)
+        {
+            if (!string.IsNullOrWhiteSpace(defaultFrom?.Address))
+            {
+                _defaultFrom = defaultFrom;
+                _mimeMessage.From.Add(_defaultFrom);
+            }
+        }
+
+        public IEmailWriter SetOptions(EmailWriterOptions options)
+        {
+            SetEmailWriterDefaultFrom(options?.DefaultFrom);
+            return this;
         }
 
         public IEmailWriter DefaultFrom(string name, string address)
         {
             _defaultFrom = new MailboxAddress(name, address);
+            _mimeMessage.From.Add(_defaultFrom);
+            return this;
+        }
+
+        public IEmailWriter DefaultFrom(string addresses)
+        {
+            _defaultFrom = MailboxAddressHelper.GetContactFromEmailAddress(addresses);
             _mimeMessage.From.Add(_defaultFrom);
             return this;
         }

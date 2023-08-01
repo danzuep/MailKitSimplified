@@ -26,7 +26,7 @@ namespace MailKitSimplified.Receiver.Services
         private readonly ILogger _logger;
         private readonly IImapReceiver _imapReceiver;
 
-        public MailFolderClient(IImapReceiver imapReceiver, IOptions<FolderClientOptions> options, ILogger<MailFolderClient> logger = null)
+        public MailFolderClient(IImapReceiver imapReceiver, IOptions<FolderClientOptions> options = null, ILogger<MailFolderClient> logger = null)
         {
             _logger = logger ?? NullLogger<MailFolderClient>.Instance;
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
