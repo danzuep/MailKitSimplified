@@ -40,7 +40,7 @@ namespace MailKitSimplified.Sender.Services
             SetEmailWriterDefaultFrom(options?.Value?.DefaultFrom);
         }
 
-        private void SetEmailWriterDefaultFrom(MailboxAddress defaultFrom)
+        internal void SetEmailWriterDefaultFrom(MailboxAddress defaultFrom)
         {
             if (!string.IsNullOrWhiteSpace(defaultFrom?.Address))
             {

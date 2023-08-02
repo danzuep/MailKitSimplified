@@ -52,7 +52,8 @@ namespace EmailWpfApp.ViewModels
                 if (smtpSender != null)
                 {
                     await smtpSender.WriteEmail
-                    .From(FromTextBox)
+                        .DefaultFrom(FromTextBox)
+                        .From(FromTextBox)
                         .To(ToTextBox)
                         .Subject(SubjectTextBox)
                         .BodyHtml(MessageTextBox)

@@ -168,6 +168,12 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
+        public SmtpSender SetDefaultFrom(MailboxAddress mailboxAddress)
+        {
+            _senderOptions.EmailWriter.DefaultFrom = mailboxAddress;
+            return this;
+        }
+
         [Obsolete("Use EmailSenderOptions.CreateProtocolLogger instead.")]
         public static IProtocolLogger GetProtocolLogger(string logFilePath = null, bool append = false, IFileSystem fileSystem = null)
         {

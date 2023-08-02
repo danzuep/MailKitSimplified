@@ -201,7 +201,7 @@ namespace MailKitSimplified.Receiver.Services
         public IMailFolderClient GetFolder(string mailFolderName)
         {
             _receiverOptions.MailFolderName = mailFolderName;
-            return ReadFolder;
+            return MailFolderClient;
         }
 
         public IMailFolderReader ReadFrom(string mailFolderName)
@@ -216,10 +216,7 @@ namespace MailKitSimplified.Receiver.Services
             return MonitorFolder;
         }
 
-        [Obsolete("Use ReadFolder instead.")]
         public IMailFolderClient MailFolderClient => _mailFolderClient.Value;
-
-        public IMailFolderClient ReadFolder => _mailFolderClient.Value;
 
         public IMailFolderReader ReadMail => _mailFolderReader.Value;
 

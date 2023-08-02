@@ -9,12 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MailKitSimplified.Sender" Version="2.5.0" />
-    <PackageReference Include="MailKitSimplified.Receiver" Version="2.5.0" />
-    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.2.0" />
-    <PackageReference Include="CommunityToolkit.Common" Version="8.2.0" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.5" />
+    <PackageReference Include="MailKitSimplified.Sender" Version="2.5.1-tags-v2-5-1-alph0001" />
+    <PackageReference Include="MailKitSimplified.Receiver" Version="2.5.1" />
+    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.2.1" />
+    <PackageReference Include="CommunityToolkit.Common" Version="8.2.1" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.9" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
