@@ -26,6 +26,7 @@ namespace MailKitSimplified.Sender.Services
         public MimeMessage MimeMessage => _mimeMessage;
         private MimeMessage _mimeMessage = new MimeMessage();
         private MailboxAddress _defaultFrom;
+        private Func<IEmailWriter, Exception, Task<IEmailWriter>> _customExceptionMethod;
 
         private readonly ILogger _logger;
         private readonly ISmtpSender _emailClient;
@@ -38,6 +39,12 @@ namespace MailKitSimplified.Sender.Services
             _emailClient = emailClient ?? throw new ArgumentNullException(nameof(emailClient));
             _fileSystem = fileSystem ?? new FileSystem();
             SetEmailWriterDefaultFrom(options?.Value?.DefaultFrom);
+            _customExceptionMethod = (email, ex) =>
+            {
+                _logger.LogTrace(ex, $"Exception message ready to be sent by {_emailClient}.");
+                email.Subject(ex.Message);
+                return Task.FromResult(email);
+            };
         }
 
         internal void SetEmailWriterDefaultFrom(MailboxAddress defaultFrom)
@@ -168,6 +175,19 @@ namespace MailKitSimplified.Sender.Services
                     builder.TextBody = bodyText;
                 _mimeMessage.Body = builder.ToMessageBody();
             }
+            return this;
+        }
+
+        public IEmailWriter Configure(Func<IEmailWriter, Exception, Task<IEmailWriter>> customExceptionMethod)
+        {
+            _customExceptionMethod = customExceptionMethod;
+            return this;
+        }
+
+        public IEmailWriter Exception(Exception exception)
+        {
+            if (_customExceptionMethod != null)
+                _customExceptionMethod(this, exception);
             return this;
         }
 
