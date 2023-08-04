@@ -38,8 +38,7 @@ public class Worker : BackgroundService
         var filteredMessages = await _imapReceiver.ReadMail.Query(SearchQuery.Seen)
             .GetMessageSummariesAsync(cancellationTokenSource.Token);
         _logger.LogInformation($"{_imapReceiver} folder query returned {filteredMessages.Count} messages.");
-        var sentFolder = ((MailFolderClient)_imapReceiver.MailFolderClient)
-            .GetSentFolder(cancellationTokenSource.Token);
+        var sentFolder = ((MailFolderClient)_imapReceiver.MailFolderClient).SentFolder.Value;
         var messagesDeleted = await _imapReceiver.MailFolderClient
             .MoveToAsync(filteredMessages.Select(m => m.UniqueId), sentFolder, cancellationTokenSource.Token);
         _logger.LogInformation($"Deleted {messagesDeleted} messages from {_imapReceiver} {filteredMessages.Count} Seen messages.");

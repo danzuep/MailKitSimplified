@@ -34,12 +34,12 @@ namespace MailKitSimplified.Sender.Tests
             var options = Options.Create(new EmailWriterOptions());
             _testEmail = new EmailWriter(_smtpSenderMock.Object, _loggerFactory.CreateLogger<EmailWriter>(), _fileSystem, options)
                 .SetOptions(options.Value)
-                .DefaultFrom("no-reply@example.com")
                 .From("My Name", "me@localhost")
                 .To("Your Name", "you@localhost")
                 .Subject("Hello World")
                 .BodyText("\r\ntext/plain\r\n")
-                .BodyHtml("<p>text/html</p><br/>");
+                .BodyHtml("<p>text/html</p><br/>")
+                .SaveAsDefault();
         }
 
         [Fact]

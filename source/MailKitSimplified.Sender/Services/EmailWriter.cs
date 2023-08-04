@@ -25,8 +25,9 @@ namespace MailKitSimplified.Sender.Services
     {
         public MimeMessage MimeMessage => _mimeMessage;
         private MimeMessage _mimeMessage = new MimeMessage();
-        private MailboxAddress _defaultFrom;
+        private MimeMessage _defaultMessage = null;
         private Func<IEmailWriter, Exception, Task<IEmailWriter>> _customExceptionMethod;
+        private EmailWriterOptions _options;
 
         private readonly ILogger _logger;
         private readonly ISmtpSender _emailClient;
@@ -38,7 +39,7 @@ namespace MailKitSimplified.Sender.Services
             _logger = logger ?? NullLogger<EmailWriter>.Instance;
             _emailClient = emailClient ?? throw new ArgumentNullException(nameof(emailClient));
             _fileSystem = fileSystem ?? new FileSystem();
-            SetEmailWriterDefaultFrom(options?.Value?.DefaultFrom);
+            _options = options?.Value ?? new EmailWriterOptions();
             _customExceptionMethod = (email, ex) =>
             {
                 _logger.LogTrace(ex, $"Exception message ready to be sent by {_emailClient}.");
@@ -47,32 +48,9 @@ namespace MailKitSimplified.Sender.Services
             };
         }
 
-        internal void SetEmailWriterDefaultFrom(MailboxAddress defaultFrom)
-        {
-            if (!string.IsNullOrWhiteSpace(defaultFrom?.Address))
-            {
-                _defaultFrom = defaultFrom;
-                _mimeMessage.From.Add(_defaultFrom);
-            }
-        }
-
         public IEmailWriter SetOptions(EmailWriterOptions options)
         {
-            SetEmailWriterDefaultFrom(options?.DefaultFrom);
-            return this;
-        }
-
-        public IEmailWriter DefaultFrom(string name, string address)
-        {
-            _defaultFrom = new MailboxAddress(name, address);
-            _mimeMessage.From.Add(_defaultFrom);
-            return this;
-        }
-
-        public IEmailWriter DefaultFrom(string addresses)
-        {
-            _defaultFrom = MailboxAddressHelper.GetContactFromEmailAddress(addresses);
-            _mimeMessage.From.Add(_defaultFrom);
+            _options = options ?? new EmailWriterOptions();
             return this;
         }
 
@@ -328,15 +306,19 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
+        public IEmailWriter SaveAsDefault()
+        {
+            _defaultMessage = _mimeMessage.CopyAsTemplate();
+            return this;
+        }
+
         public void Send(CancellationToken cancellationToken = default) =>
             SendAsync(cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult();
 
         public async Task SendAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
         {
             await _emailClient.SendAsync(_mimeMessage, cancellationToken, transferProgress).ConfigureAwait(false);
-            _mimeMessage = new MimeMessage();
-            if (_defaultFrom != null)
-                _mimeMessage.From.Add(_defaultFrom);
+            _mimeMessage = _defaultMessage != null ? _defaultMessage.CopyAsTemplate() : new MimeMessage();
         }
 
         public bool TrySend(CancellationToken cancellationToken = default) =>
@@ -345,9 +327,7 @@ namespace MailKitSimplified.Sender.Services
         public async Task<bool> TrySendAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
         {
             bool isSent = await _emailClient.TrySendAsync(_mimeMessage, cancellationToken, transferProgress).ConfigureAwait(false);
-            _mimeMessage = new MimeMessage();
-            if (_defaultFrom != null)
-                _mimeMessage.From.Add(_defaultFrom);
+            _mimeMessage = _defaultMessage != null ? _defaultMessage.CopyAsTemplate() : new MimeMessage();
             return isSent;
         }
 

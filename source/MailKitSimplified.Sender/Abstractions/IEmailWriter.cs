@@ -25,21 +25,6 @@ namespace MailKitSimplified.Sender.Abstractions
         IEmailWriter SetOptions(EmailWriterOptions options);
 
         /// <summary>
-        /// Set a default sender's details and add to the email.
-        /// </summary>
-        /// <param name="name">Name of sender.</param>
-        /// <param name="address">Email address of sender.</param>
-        /// <returns><see cref="IEmailWriter"/> interface.</returns>
-        IEmailWriter DefaultFrom(string name, string address);
-
-        /// <summary>
-        /// Set a default sender's details and add to the email.
-        /// </summary>
-        /// <param name="emailAddress">Email address of the default sender.</param>
-        /// <returns><see cref="IEmailWriter"/> interface.</returns>
-        IEmailWriter DefaultFrom(string emailAddress);
-
-        /// <summary>
         /// Add a sender's details to the email.
         /// </summary>
         /// <param name="name">Name of sender.</param>
@@ -211,6 +196,12 @@ namespace MailKitSimplified.Sender.Abstractions
         /// </summary>
         /// <returns>Shallow copy of this email writer.</returns>
         IEmailWriter Copy();
+
+        /// <summary>
+        /// Save a copy of the current message as the default template for new messages.
+        /// </summary>
+        /// <returns><see cref="IEmailWriter"/> interface.</returns>
+        IEmailWriter SaveAsDefault();
 
         /// <summary>
         /// Get the email built as a <see cref="MimeKit.MimeMessage"/>.
