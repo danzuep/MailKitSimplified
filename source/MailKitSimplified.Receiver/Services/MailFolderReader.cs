@@ -3,10 +3,12 @@ using MailKit;
 using MailKit.Search;
 using MailKit.Net.Imap;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
@@ -282,30 +284,69 @@ namespace MailKitSimplified.Receiver.Services
             }
             return mimeMessages;
         }
-
-        [Obsolete("Consider using GetMimeMessagesAsync() instead.")]
-        public IEnumerable<MimeMessage> GetMimeMessages(IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default, ITransferProgress progress = null)
+#if NET5_0_OR_GREATER
+        public async IAsyncEnumerable<MimeMessage> GetMimeMessages(IEnumerable<UniqueId> uniqueIds, [EnumeratorCancellation] CancellationToken cancellationToken = default, ITransferProgress progress = null)
         {
             if (uniqueIds != null)
             {
-                var mailFolder = _imapReceiver.ConnectMailFolderAsync(cancellationToken).GetAwaiter().GetResult();
-                lock (mailFolder.SyncRoot)
+                var mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
+                _ = mailFolder.Open(FolderAccess.ReadOnly, cancellationToken);
+                foreach (var uniqueId in uniqueIds)
                 {
-                    _ = mailFolder.Open(FolderAccess.ReadOnly, cancellationToken);
-                    foreach (var uniqueId in uniqueIds)
-                    {
-                        if (cancellationToken.IsCancellationRequested)
-                            break;
-                        var mimeMessage = mailFolder.GetMessage(uniqueId, cancellationToken, progress);
-                        _logger.LogTrace($"{_imapReceiver} received {mimeMessage.MessageId}.");
-                        if (mimeMessage != null)
-                            yield return mimeMessage;
-                    }
-                    mailFolder.Close(false, CancellationToken.None);
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
+                    var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
+                    _logger.LogTrace($"{_imapReceiver} received {mimeMessage.MessageId}.");
+                    if (mimeMessage != null)
+                        yield return mimeMessage;
                 }
+                mailFolder.Close(false, CancellationToken.None);
             }
         }
 
+        public async Task SaveAllAsync(IEnumerable<UniqueId> uniqueIds, string folderPath, bool createDirectory = false, CancellationToken cancellationToken = default, ITransferProgress progress = null)
+        {
+            if (createDirectory)
+                Directory.CreateDirectory(folderPath);
+            else if (!Directory.Exists(folderPath))
+                throw new DirectoryNotFoundException($"Directory not found: {folderPath}.");
+            var format = FormatOptions.Default.Clone();
+            format.NewLineFormat = NewLineFormat.Dos;
+            await foreach (var mimeMessage in GetMimeMessages(uniqueIds, cancellationToken, progress))
+            {
+                string fileName = Path.Combine(folderPath, $"{mimeMessage.MessageId}.eml");
+                await mimeMessage.WriteToAsync(format, fileName, cancellationToken).ConfigureAwait(false);
+            }
+        }
+#else
+        public async Task SaveAllAsync(IEnumerable<UniqueId> uniqueIds, string folderPath, bool createDirectory = false, CancellationToken cancellationToken = default, ITransferProgress progress = null)
+        {
+            if (uniqueIds != null)
+            {
+                if (createDirectory)
+                    Directory.CreateDirectory(folderPath);
+                else if (!Directory.Exists(folderPath))
+                    throw new DirectoryNotFoundException($"Directory not found: {folderPath}.");
+                var format = FormatOptions.Default.Clone();
+                format.NewLineFormat = NewLineFormat.Dos;
+                var mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
+                _ = mailFolder.Open(FolderAccess.ReadOnly, cancellationToken);
+                foreach (var uniqueId in uniqueIds)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
+                    var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
+                    _logger.LogTrace($"{_imapReceiver} received {mimeMessage.MessageId}.");
+                    if (mimeMessage != null)
+                    {
+                        string fileName = Path.Combine(folderPath, $"{mimeMessage.MessageId}.eml");
+                        await mimeMessage.WriteToAsync(format, fileName, cancellationToken).ConfigureAwait(false);
+                    }
+                }
+                mailFolder.Close(false, CancellationToken.None);
+            }
+        }
+#endif
         /// <summary>Query just the arrival dates of messages on the server.</summary>
         /// <param name="deliveredAfter">Search for messages after this date.</param>
         /// <param name="deliveredBefore">Search for messages before this date.</param>

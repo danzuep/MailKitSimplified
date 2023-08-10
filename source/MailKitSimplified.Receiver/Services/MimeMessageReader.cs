@@ -9,12 +9,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 
 namespace MailKitSimplified.Receiver.Services
 {
-    [ExcludeFromCodeCoverage]
     public class MimeMessageReader
     {
         private MimeMessage _mimeMessage = new MimeMessage();
@@ -37,6 +37,7 @@ namespace MailKitSimplified.Receiver.Services
         public bool IsHtml { get => MimeMessage.HtmlBody != null; }
         public string Body { get => MimeMessage.HtmlBody ?? MimeMessage.TextBody ?? string.Empty; }
         public string BodyText { get => IsHtml ? DecodeHtmlBody(Body) : MimeMessage.TextBody ?? string.Empty; }
+        private static ILogger _logger = NullLogger<MimeMessageReader>.Instance;
 
         private MimeMessageReader() { }
 
@@ -49,6 +50,28 @@ namespace MailKitSimplified.Receiver.Services
                 FolderIndex = folderIndex
             };
             return mimeMessageReader;
+        }
+
+        public MimeMessageReader SetLogger(ILogger logger)
+        {
+            if (logger != null)
+                _logger = logger;
+            return this;
+        }
+
+        public MimeMessageReader SetLogger(ILoggerFactory loggerFactory)
+        {
+            if (loggerFactory != null)
+                _logger = loggerFactory.CreateLogger<MimeMessageReader>();
+            return this;
+        }
+
+        public MimeMessageReader SetLogger(Action<ILoggingBuilder> configure = null)
+        {
+            var loggerFactory = configure != null ? LoggerFactory.Create(configure) :
+                LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole());
+            _logger = loggerFactory.CreateLogger<MimeMessageReader>();
+            return this;
         }
 
         /// <exception cref="MessageNotFoundException">Message was moved before it could be downloaded</exception>
@@ -191,22 +214,38 @@ namespace MailKitSimplified.Receiver.Services
             }
         }
 
-        private async Task<MimeMessage> CloneStreamReferences(bool persistent, CancellationToken cancellationToken = default)
+        public async Task SaveAsync(string fileName = null, bool useUnixNewLine = false, CancellationToken cancellationToken = default)
         {
-            using (var memory = new MemoryBlockStream())
-            {
-                _mimeMessage.WriteTo(memory);
-                memory.Position = 0;
-                var result = await MimeMessage.LoadAsync(memory, persistent, cancellationToken).ConfigureAwait(false);
-                return result;
-            }
+            if (string.IsNullOrWhiteSpace(fileName))
+                fileName = $"{_mimeMessage.MessageId}.eml";
+            var format = FormatOptions.Default.Clone();
+            format.NewLineFormat = useUnixNewLine ? NewLineFormat.Unix : NewLineFormat.Dos;
+            await _mimeMessage.WriteToAsync(format, fileName, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<MimeMessage> Copy(CancellationToken cancellationToken = default) =>
-            await CloneStreamReferences(true, cancellationToken).ConfigureAwait(false);
-
-        public async Task<MimeMessage> Clone(CancellationToken ct = default) =>
-            await CloneStreamReferences(false, ct).ConfigureAwait(false);
+        public async Task<IList<string>> DownloadAllAttachmentsAsync(string downloadFolderPath, bool createDirectory = false, CancellationToken cancellationToken = default)
+        {
+            if (createDirectory)
+                Directory.CreateDirectory(downloadFolderPath);
+            else if (!Directory.Exists(downloadFolderPath))
+                throw new DirectoryNotFoundException($"Directory not found: {downloadFolderPath}.");
+            IList<string> downloads = new List<string>();
+            if (_mimeMessage.Attachments != null && !string.IsNullOrEmpty(downloadFolderPath))
+            {
+                _logger.LogDebug("Downloading attachments to '{FilePath}'.", downloadFolderPath);
+                foreach (MimePart attachment in _mimeMessage.Attachments)
+                {
+                    string filePath = Path.Combine(downloadFolderPath, attachment.FileName);
+                    using (FileStream stream = File.OpenWrite(filePath))
+                    {
+                        await attachment.WriteToAsync(stream, cancellationToken);
+                        _logger.LogDebug("{FileName} downloaded.", attachment.FileName);
+                    }
+                    downloads.Add(filePath);
+                }
+            }
+            return downloads;
+        }
 
         public override string ToString()
         {

@@ -10,6 +10,8 @@ namespace MailKitSimplified.Receiver.Abstractions
 {
     public interface IMailFolderClient : IAsyncDisposable, IDisposable
     {
+        Lazy<IMailFolder> SentFolder { get; }
+
         /// <summary>
         /// Connect to the configured mail folder.
         /// </summary>

@@ -1,12 +1,15 @@
 ﻿using MimeKit;
+using MimeKit.IO;
 using MimeKit.Text;
 using System;
 using System.IO;
 using System.Text;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using MailKitSimplified.Receiver.Services;
 
 namespace MailKitSimplified.Receiver.Extensions
 {
@@ -284,5 +287,24 @@ namespace MailKitSimplified.Receiver.Extensions
             var result = stringBuilder.ToString();
             return result;
         }
+
+        internal static async Task<MimeMessage> CloneStreamReferencesAsync(this MimeMessage mimeMessage, bool persistent, MemoryBlockStream memoryBlockStream = null, CancellationToken cancellationToken = default)
+        {
+            if (memoryBlockStream == null)
+                memoryBlockStream = new MemoryBlockStream();
+            await mimeMessage.WriteToAsync(memoryBlockStream, cancellationToken);
+            memoryBlockStream.Position = 0;
+            var result = await MimeMessage.LoadAsync(memoryBlockStream, persistent, cancellationToken).ConfigureAwait(false);
+            return result;
+        }
+
+        public static async Task<MimeMessage> CopyAsync(this MimeMessage mimeMessage, CancellationToken cancellationToken = default) =>
+            await mimeMessage.CloneStreamReferencesAsync(true, null, cancellationToken).ConfigureAwait(false);
+
+        public static async Task<MimeMessage> CloneAsync(this MimeMessage mimeMessage, CancellationToken cancellationToken = default) =>
+            await mimeMessage.CloneStreamReferencesAsync(false, null, cancellationToken).ConfigureAwait(false);
+
+        public static MimeMessageReader Read(this MimeMessage mimeMessage, string mailFolderName = null, uint folderIndex = 0) =>
+            MimeMessageReader.Create(mimeMessage, mailFolderName, folderIndex);
     }
 }

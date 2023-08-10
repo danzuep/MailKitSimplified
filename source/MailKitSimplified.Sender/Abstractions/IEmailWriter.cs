@@ -25,6 +25,12 @@ namespace MailKitSimplified.Sender.Abstractions
         IEmailWriter SetOptions(EmailWriterOptions options);
 
         /// <summary>
+        /// Set the default template for new messages.
+        /// </summary>
+        /// <returns><see cref="IEmailWriter"/> interface.</returns>
+        IEmailWriter SetTemplate(MimeMessage mimeMessage);
+
+        /// <summary>
         /// Add a sender's details to the email.
         /// </summary>
         /// <param name="name">Name of sender.</param>
@@ -192,16 +198,22 @@ namespace MailKitSimplified.Sender.Abstractions
         IEmailWriter Priority(MessagePriority priority);
 
         /// <summary>
+        /// Save a copy of the current message as the default template for new messages.
+        /// </summary>
+        /// <returns><see cref="IEmailWriter"/> interface.</returns>
+        IEmailWriter SaveTemplate(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Save a copy of the current message locally as the default template for new messages.
+        /// </summary>
+        /// <returns><see cref="IEmailWriter"/> interface.</returns>
+        Task<IEmailWriter> SaveTemplateAsync(string fileName = "template.eml", CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Copy this email writer to re-use it as a template.
         /// </summary>
         /// <returns>Shallow copy of this email writer.</returns>
         IEmailWriter Copy();
-
-        /// <summary>
-        /// Save a copy of the current message as the default template for new messages.
-        /// </summary>
-        /// <returns><see cref="IEmailWriter"/> interface.</returns>
-        IEmailWriter SaveAsDefault();
 
         /// <summary>
         /// Get the email built as a <see cref="MimeKit.MimeMessage"/>.

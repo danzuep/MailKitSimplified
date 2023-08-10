@@ -1,10 +1,9 @@
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Services;
-using Microsoft.Extensions.Options;
-using System.Net;
 using MailKitSimplified.Sender.Models;
 
 namespace MailKitSimplified.Sender.Tests
@@ -13,6 +12,8 @@ namespace MailKitSimplified.Sender.Tests
     {
         private const string _attachment1Path = @"C:\Temp\attachment1.txt";
         private const string _attachment2Path = @"C:\Temp\attachment2.pdf";
+        private const string _templateEmailPath = "template.eml";
+        private static readonly string _basicEmail = "From: <from@example.com>\r\nTo: <to@example.com>\r\nSubject:";
 
         private readonly IFileSystem _fileSystem;
         private readonly ILoggerFactory _loggerFactory;
@@ -32,14 +33,13 @@ namespace MailKitSimplified.Sender.Tests
             _smtpSenderMock.Setup(_ => _.TrySendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
                 .ReturnsAsync(true).Verifiable();
             var options = Options.Create(new EmailWriterOptions());
-            _testEmail = new EmailWriter(_smtpSenderMock.Object, _loggerFactory.CreateLogger<EmailWriter>(), _fileSystem, options)
+            _testEmail = new EmailWriter(_smtpSenderMock.Object, _loggerFactory.CreateLogger<EmailWriter>(), options, _fileSystem)
                 .SetOptions(options.Value)
                 .From("My Name", "me@localhost")
                 .To("Your Name", "you@localhost")
                 .Subject("Hello World")
                 .BodyText("\r\ntext/plain\r\n")
-                .BodyHtml("<p>text/html</p><br/>")
-                .SaveAsDefault();
+                .BodyHtml("<p>text/html</p><br/>");
         }
 
         [Fact]
@@ -105,6 +105,15 @@ namespace MailKitSimplified.Sender.Tests
                 .MimeMessage;
             Assert.Equal(MessagePriority.NonUrgent, mimeMessage.Priority);
             Assert.Contains(fileName1, _testEmail.ToString());
+        }
+
+        [Fact(Skip = "MailKit doesn't allow us to use System.IO.Abstractions.")]
+        public async Task SaveTemplateAsync_VerifySavedAsync()
+        {
+            await _testEmail.SaveTemplateAsync(_templateEmailPath);
+            using var stream = File.OpenRead(_templateEmailPath);
+            Assert.NotNull(stream);
+            Assert.True(stream.Length > _basicEmail.Length);
         }
     }
 }

@@ -14,6 +14,17 @@ namespace MailKitSimplified.Sender.Abstractions
     public interface ISmtpSender : IAsyncDisposable, IDisposable
     {
         /// <summary>
+        /// Write an email fluently with an <see cref="IEmailWriter"/> template.
+        /// Hint: if (File.Exists(fileName)) MimeMessage.Load(fileName);
+        /// </summary>
+        IEmailWriter WithTemplate(MimeMessage mimeMessageTemplate);
+
+        /// <summary>
+        /// Write an email fluently with an <see cref="IEmailWriter"/> template.
+        /// </summary>
+        Task<IEmailWriter> WithTemplateAsync(string fileName = "template.eml", CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Write an email fluently with an <see cref="IEmailWriter"/>.
         /// </summary>
         IEmailWriter WriteEmail { get; }

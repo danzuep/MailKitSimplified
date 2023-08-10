@@ -38,31 +38,49 @@ namespace MailKitSimplified.Receiver.Extensions
                 mimeEntities.Where(a => a.IsAttachment && a is MimePart att && fileTypeSuffix.Any(s =>
                     att.FileName?.EndsWith(s, StringComparison.OrdinalIgnoreCase) ?? false));
 
-        public static async Task<MemoryStream> GetMimeEntityStream(this MimeEntity mimeEntity, CancellationToken ct = default)
+        public static async Task<MemoryStream> GetMimeEntityStream(this MimeEntity mimeEntity, CancellationToken cancellationToken = default)
         {
             var memoryStream = new MemoryStream();
             if (mimeEntity != null)
-                await mimeEntity.WriteToStreamAsync(memoryStream, ct);
+                await mimeEntity.WriteToStreamAsync(memoryStream, cancellationToken);
             memoryStream.Position = 0;
             return memoryStream;
         }
 
-        public static async Task<Stream> WriteToStreamAsync(this MimeEntity entity, Stream stream, CancellationToken ct = default)
+        public static async Task<Stream> WriteToStreamAsync(this MimeEntity entity, Stream stream, CancellationToken cancellationToken = default)
         {
             if (entity != null && stream != null)
             {
                 if (entity is MessagePart messagePart)
                 {
-                    await messagePart.Message.WriteToAsync(stream, ct);
+                    await messagePart.Message.WriteToAsync(stream, cancellationToken);
                 }
                 else if (entity is MimePart mimePart && mimePart.Content != null)
                 {
-                    await mimePart.Content.DecodeToAsync(stream, ct);
+                    await mimePart.Content.DecodeToAsync(stream, cancellationToken);
                 }
                 // rewind the stream so the next process can read it from the beginning
                 stream.Position = 0;
             }
             return stream;
+        }
+
+        public static async Task<MemoryStream> WriteToStreamAsync(this MimeEntity mimeEntity, CancellationToken cancellationToken = default)
+        {
+            var memoryStream = new MemoryStream();
+            if (mimeEntity != null)
+                await mimeEntity.WriteToAsync(memoryStream, cancellationToken);
+            memoryStream.Position = 0;
+            return memoryStream;
+        }
+
+        public static async Task<MemoryStream> WriteToStreamAsync(this MimeMessage mimeMessage, CancellationToken cancellationToken = default)
+        {
+            var memoryStream = new MemoryStream();
+            if (mimeMessage != null)
+                await mimeMessage.WriteToAsync(memoryStream, cancellationToken);
+            memoryStream.Position = 0;
+            return memoryStream;
         }
     }
 }

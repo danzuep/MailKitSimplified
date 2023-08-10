@@ -168,12 +168,6 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
-        public SmtpSender SetDefaultFrom(MailboxAddress mailboxAddress)
-        {
-            _senderOptions.EmailWriter.DefaultFrom = mailboxAddress;
-            return this;
-        }
-
         [Obsolete("Use EmailSenderOptions.CreateProtocolLogger instead.")]
         public static IProtocolLogger GetProtocolLogger(string logFilePath = null, bool append = false, IFileSystem fileSystem = null)
         {
@@ -196,6 +190,32 @@ namespace MailKitSimplified.Sender.Services
                     protocolLogger = new ProtocolLogger(logFilePath, append);
             }
             return protocolLogger;
+        }
+
+        public IEmailWriter WithTemplate(MimeMessage mimeMessageTemplate)
+        {
+            _logger.LogDebug($"Saved email {mimeMessageTemplate.MessageId} loaded as a template by {this}.");
+            return WriteEmail.SetTemplate(mimeMessageTemplate);
+        }
+
+        public IEmailWriter WithTemplate(string fileName = EmailWriter.TemplateName)
+        {
+            if (!File.Exists(fileName))
+                return WriteEmail;
+            _senderOptions.EmailWriter.TemplateFilePath = fileName;
+            var template = MimeMessage.Load(fileName);
+            _logger.LogDebug($"Saved email {fileName} loaded as a template by {this}.");
+            return WriteEmail.SetTemplate(template);
+        }
+
+        public async Task<IEmailWriter> WithTemplateAsync(string fileName = EmailWriter.TemplateName, CancellationToken cancellationToken = default)
+        {
+            if (!File.Exists(fileName))
+                return WriteEmail;
+            _senderOptions.EmailWriter.TemplateFilePath = fileName;
+            var template = await MimeMessage.LoadAsync(fileName, cancellationToken).ConfigureAwait(false);
+            _logger.LogDebug($"Saved email {fileName} loaded as a template by {this}.");
+            return WriteEmail.SetTemplate(template);
         }
 
         public IEmailWriter WriteEmail =>
@@ -338,11 +358,10 @@ namespace MailKitSimplified.Sender.Services
 
         public async Task SendAsync(MimeMessage mimeMessage, CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
         {
-            if (mimeMessage.ReplyTo.Count == 0 && mimeMessage.From.Count == 0 &&
-                _senderOptions.EmailWriter.DefaultReplyTo != null)
-                mimeMessage.ReplyTo.Add(_senderOptions.EmailWriter.DefaultReplyTo);
-            if (mimeMessage.From.Count == 0 && _senderOptions.EmailWriter.GenerateGuidIfFromNotSet)
-                mimeMessage.From.Add(MailboxAddressHelper.GenerateGuidIfFromNotSet(_senderOptions.EmailWriter?.DefaultReplyTo?.Address));
+            if (mimeMessage.ReplyTo.Count == 0 && mimeMessage.From.Count == 0 && _senderOptions.EmailWriter.DefaultReplyToAddress != null)
+                mimeMessage.ReplyTo.Add(new MailboxAddress("", _senderOptions.EmailWriter.DefaultReplyToAddress));
+            if (mimeMessage.From.Count == 0 && _senderOptions.EmailWriter.GenerateDefaultFromAddress)
+                mimeMessage.From.Add(MailboxAddressHelper.GenerateGuidIfFromNotSet(_senderOptions.EmailWriter?.DefaultReplyToAddress));
             _ = ValidateMimeMessage(mimeMessage, _logger);
             _ = await ConnectSmtpClientAsync(cancellationToken).ConfigureAwait(false);
             _logger.LogTrace($"{_senderOptions} sending {GetEnvelope(mimeMessage, includeTextBody: true)}");
