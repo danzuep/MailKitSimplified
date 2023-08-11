@@ -3,7 +3,6 @@ using MimeKit.IO;
 using System;
 using System.Threading.Tasks;
 using System.Threading;
-using MailKitSimplified.Receiver.Services;
 
 namespace MailKitSimplified.Sender.Extensions
 {
