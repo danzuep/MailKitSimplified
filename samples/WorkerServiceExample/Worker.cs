@@ -8,6 +8,7 @@ using MailKitSimplified.Sender.Abstractions;
 using System.Diagnostics;
 using System.Collections.Generic;
 using CommunityToolkit.Common;
+using System.Threading;
 
 namespace ExampleNamespace;
 
@@ -38,6 +39,14 @@ public class Worker : BackgroundService
         //await SendAttachmentAsync(500);
         //await DownloadAllAttachmentsAsync(cancellationToken);
         await TemplateSendAsync();
+    }
+
+    private async Task DownloadEmailAsync(string filePath = "download.eml", CancellationToken cancellationToken = default)
+    {
+        var mimeMessage = await GetNewestMimeMessageAsync(cancellationToken);
+        string downloadFilePath = Path.GetFullPath(filePath);
+        await MimeMessageReader.Create(mimeMessage).SetLogger(_loggerFactory)
+            .SaveAsync(downloadFilePath, false, cancellationToken);
     }
 
     private async Task DownloadAllAttachmentsAsync(CancellationToken cancellationToken = default)
@@ -106,14 +115,26 @@ public class Worker : BackgroundService
         }
     }
 
-    private async Task ForwardOnArrivalAsync(IMessageSummary messageSummary)
+    private async Task ForwardFirstEmailAsync(CancellationToken cancellationToken = default)
+    {
+        var messageSummaries = await _imapReceiver.ReadMail
+            .Skip(0).Take(1).Items(MailFolderReader.CoreMessageItems)
+            .GetMessageSummariesAsync(cancellationToken);
+        foreach (var messageSummary in messageSummaries)
+        {
+            await ForwardMessageSummaryAsync(messageSummary);
+            await _imapReceiver.MoveToSentAsync(messageSummary, cancellationToken);
+        }
+    }
+
+    private async Task ForwardMessageSummaryAsync(IMessageSummary messageSummary, CancellationToken cancellationToken = default)
     {
         var mimeForward = await messageSummary.GetForwardMessageAsync(
-            "<p>FYI.</p>", includeMessageId: true);
+            "<p>FYI.</p>", includeMessageId: true, cancellationToken);
         mimeForward.From.Add("from@example.com");
         mimeForward.To.Add("to@example.com");
         _logger.LogInformation($"{_imapReceiver} reply: \r\n{mimeForward.HtmlBody}");
-        await _smtpSender.SendAsync(mimeForward); //cancellationToken
+        await _smtpSender.SendAsync(mimeForward, cancellationToken);
         //_smtpSender.Enqueue(mimeForward);
     }
 

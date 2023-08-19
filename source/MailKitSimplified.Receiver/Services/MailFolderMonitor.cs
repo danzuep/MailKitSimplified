@@ -35,7 +35,7 @@ namespace MailKitSimplified.Receiver.Services
         private IMailFolder _fetchFolder;
         private bool _canIdle;
 
-        private readonly ILogger _logger;
+        private ILogger _logger;
         private readonly IImapReceiver _imapReceiver;
         private readonly IImapReceiver _fetchReceiver;
         private readonly FolderMonitorOptions _folderMonitorOptions;
@@ -92,6 +92,41 @@ namespace MailKitSimplified.Receiver.Services
             var imapReceiver = ImapReceiver.Create(imapClient, emailReceiverOptions, logImap);
             var mailFolderMonitor = new MailFolderMonitor(imapReceiver, options, logger);
             return mailFolderMonitor;
+        }
+
+        /// <summary>
+        /// Logging setup for those not using dependency injection.
+        /// </summary>
+        public MailFolderMonitor SetLogger(ILogger logger)
+        {
+            if (logger != null)
+                _logger = logger;
+            return this;
+        }
+
+        /// <summary>
+        /// Logging setup for those not using dependency injection.
+        /// </summary>
+        public MailFolderMonitor SetLogger(ILoggerFactory loggerFactory)
+        {
+            if (loggerFactory != null)
+                _logger = loggerFactory.CreateLogger<MailFolderMonitor>();
+            return this;
+        }
+
+        /// <summary>
+        /// Logging setup for those not using dependency injection.
+        /// </summary>
+        public MailFolderMonitor SetLogger(Action<ILoggingBuilder> configure = null)
+        {
+            ILoggerFactory loggerFactory = null;
+            if (configure != null)
+                loggerFactory = LoggerFactory.Create(configure);
+#if DEBUG
+            else
+                loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole());
+#endif
+            return SetLogger(loggerFactory);
         }
 
         public MailFolderMonitor SetIdleMinutes(byte idleMinutes = FolderMonitorOptions.IdleMinutesImap)

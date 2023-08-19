@@ -52,6 +52,9 @@ namespace MailKitSimplified.Receiver.Services
             return mimeMessageReader;
         }
 
+        /// <summary>
+        /// Logging setup for those not using dependency injection.
+        /// </summary>
         public MimeMessageReader SetLogger(ILogger logger)
         {
             if (logger != null)
@@ -59,6 +62,9 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
+        /// <summary>
+        /// Logging setup for those not using dependency injection.
+        /// </summary>
         public MimeMessageReader SetLogger(ILoggerFactory loggerFactory)
         {
             if (loggerFactory != null)
@@ -66,12 +72,19 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
+        /// <summary>
+        /// Logging setup for those not using dependency injection.
+        /// </summary>
         public MimeMessageReader SetLogger(Action<ILoggingBuilder> configure = null)
         {
-            var loggerFactory = configure != null ? LoggerFactory.Create(configure) :
-                LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole());
-            _logger = loggerFactory.CreateLogger<MimeMessageReader>();
-            return this;
+            ILoggerFactory loggerFactory = null;
+            if (configure != null)
+                loggerFactory = LoggerFactory.Create(configure);
+#if DEBUG
+            else
+                loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole());
+#endif
+            return SetLogger(loggerFactory);
         }
 
         /// <exception cref="MessageNotFoundException">Message was moved before it could be downloaded</exception>

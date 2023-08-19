@@ -168,12 +168,17 @@ namespace MailKitSimplified.Receiver.Services
 
         /// <summary>
         /// Logging setup for those not using dependency injection.
-        /// <example>SetLogger(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole());</example>
         /// </summary>
-        public ImapReceiver SetLogger(Action<ILoggingBuilder> configure)
+        public ImapReceiver SetLogger(Action<ILoggingBuilder> configure = null)
         {
-            var loggerFactory = LoggerFactory.Create(configure);
-            return SetLogger(loggerFactory, null);
+            ILoggerFactory loggerFactory = null;
+            if (configure != null)
+                loggerFactory = LoggerFactory.Create(configure);
+#if DEBUG
+            else
+                loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole());
+#endif
+            return loggerFactory != null ? SetLogger(loggerFactory, null) : this;
         }
 
         public ImapReceiver RemoveCapabilities(ImapCapabilities capabilities)
@@ -312,6 +317,12 @@ namespace MailKitSimplified.Receiver.Services
                 _logger.LogDebug($"{subfolders.Count()} other folders: {subfolders.ToEnumeratedString()}.");
             }
             return mailFolderNames;
+        }
+
+        public async Task<UniqueId?> MoveToSentAsync(IMessageSummary messageSummary, CancellationToken cancellationToken = default)
+        {
+            using (var mailFolderClient = _mailFolderClient.Value)
+                return await mailFolderClient.MoveOrCopyAsync(messageSummary.UniqueId, messageSummary.Folder, mailFolderClient.SentFolder.Value, move: true, cancellationToken).ConfigureAwait(false);
         }
 
         public IImapReceiver Clone()

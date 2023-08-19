@@ -23,7 +23,7 @@ namespace MailKitSimplified.Receiver.Services
 
         private IMailFolder _mailFolder = null;
         private IList<string> SentFolderNames;
-        private readonly ILogger _logger;
+        private ILogger _logger;
         private readonly IImapReceiver _imapReceiver;
 
         public MailFolderClient(IImapReceiver imapReceiver, IOptions<FolderClientOptions> options = null, ILogger<MailFolderClient> logger = null)
@@ -48,6 +48,41 @@ namespace MailKitSimplified.Receiver.Services
         }
 
         /// <summary>
+        /// Logging setup for those not using dependency injection.
+        /// </summary>
+        public MailFolderClient SetLogger(ILogger logger)
+        {
+            if (logger != null)
+                _logger = logger;
+            return this;
+        }
+
+        /// <summary>
+        /// Logging setup for those not using dependency injection.
+        /// </summary>
+        public MailFolderClient SetLogger(ILoggerFactory loggerFactory)
+        {
+            if (loggerFactory != null)
+                _logger = loggerFactory.CreateLogger<MailFolderClient>();
+            return this;
+        }
+
+        /// <summary>
+        /// Logging setup for those not using dependency injection.
+        /// </summary>
+        public MailFolderClient SetLogger(Action<ILoggingBuilder> configure = null)
+        {
+            ILoggerFactory loggerFactory = null;
+            if (configure != null)
+                loggerFactory = LoggerFactory.Create(configure);
+#if DEBUG
+            else
+                loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole());
+#endif
+            return SetLogger(loggerFactory);
+        }
+
+        /// <summary>
         /// Overwrite the common sent folder names.
         /// </summary>
         public MailFolderClient SetSentFolderNames(IEnumerable<string> sentFolderNames)
@@ -56,21 +91,35 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
-        public async ValueTask<IMailFolder> ConnectAsync(bool enableWrite = false, CancellationToken cancellationToken = default)
+        private async ValueTask<IMailFolder> ConnectMailFolderAsync(IMailFolder mailFolder, bool enableWrite = false, CancellationToken cancellationToken = default)
         {
-            if (_mailFolder == null)
-                _mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
-            if (!_mailFolder.IsOpen)
+            if (mailFolder == null)
+                mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
+            if (!mailFolder.IsOpen)
             {
                 var folderAccess = enableWrite ? FolderAccess.ReadWrite : FolderAccess.ReadOnly;
-                _ = await _mailFolder.OpenAsync(folderAccess, cancellationToken).ConfigureAwait(false);
+                _ = await mailFolder.OpenAsync(folderAccess, cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace($"{this} mail folder opened with {folderAccess} access.");
             }
-            else if (enableWrite && _mailFolder.Access != FolderAccess.ReadWrite)
+            else if (enableWrite && mailFolder.Access != FolderAccess.ReadWrite)
             {
                 _logger.LogTrace($"{this} mail folder SyncRoot changed for ReadWrite access.");
-                await _mailFolder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
+                await mailFolder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
             }
+            return mailFolder;
+        }
+
+        public async ValueTask<IMailFolder> ConnectAsync(bool enableWrite = false, CancellationToken cancellationToken = default)
+        {
+            _mailFolder = await ConnectMailFolderAsync(null, enableWrite, cancellationToken).ConfigureAwait(false);
+            return _mailFolder;
+        }
+
+        public async ValueTask<IMailFolder> ConnectAsync(IMailFolder mailFolder, bool enableWrite = false, CancellationToken cancellationToken = default)
+        {
+            if (_mailFolder != null && _mailFolder.IsOpen)
+                await _mailFolder.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);
+            _mailFolder = await ConnectMailFolderAsync(mailFolder, enableWrite, cancellationToken).ConfigureAwait(false);
             return _mailFolder;
         }
 
@@ -165,7 +214,7 @@ namespace MailKitSimplified.Receiver.Services
         public async Task<UniqueId?> AppendSentMessageAsync(MimeMessage message, MessageFlags messageFlags = MessageFlags.Seen, CancellationToken cancellationToken = default, ITransferProgress transferProgress = default) =>
             await SentFolder.Value.AppendAsync(message, messageFlags, cancellationToken, transferProgress).ConfigureAwait(false);
 
-        private async Task<UniqueId?> MoveOrCopyAsync(UniqueId messageUid, IMailFolder destination, bool move = true, CancellationToken cancellationToken = default)
+        internal async Task<UniqueId?> MoveOrCopyAsync(UniqueId messageUid, IMailFolder source, IMailFolder destination, bool move = true, CancellationToken cancellationToken = default)
         {
             UniqueId? resultUid = null;
             string verb = move ? "moved" : "copied";
@@ -175,12 +224,16 @@ namespace MailKitSimplified.Receiver.Services
                     throw new ArgumentException("IMessageSummary UniqueId is invalid.");
                 if (destination == null)
                     throw new ArgumentNullException(nameof(destination));
-                bool peekSourceFolder = !_mailFolder?.IsOpen ?? true;
-                _ = await ConnectAsync(true, cancellationToken).ConfigureAwait(false);
-                resultUid = await _mailFolder.MoveToAsync(messageUid, destination, cancellationToken).ConfigureAwait(false);
+                bool peekSourceFolder = !source?.IsOpen ?? true;
+                bool peekDestinationFolder = !destination.IsOpen;
+                _ = await ConnectMailFolderAsync(source, enableWrite: false, cancellationToken).ConfigureAwait(false);
+                _ = await ConnectMailFolderAsync(destination, enableWrite: true, cancellationToken).ConfigureAwait(false);
+                resultUid = await source.MoveToAsync(messageUid, destination, cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace("{0} {1} {2} to {3} in {4}.", _imapReceiver, messageUid, verb, resultUid, destination.FullName);
                 if (peekSourceFolder)
-                    await _mailFolder.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);
+                    await source.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);
+                if (peekDestinationFolder)
+                    await destination.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -197,7 +250,7 @@ namespace MailKitSimplified.Receiver.Services
                 try
                 {
                     var destination = await _imapReceiver.ImapClient.GetFolderAsync(destinationFolder, cancellationToken).ConfigureAwait(false);
-                    resultUid = await MoveOrCopyAsync(messageUid, destination, move, cancellationToken).ConfigureAwait(false);
+                    resultUid = await MoveOrCopyAsync(messageUid, _mailFolder, destination, move, cancellationToken).ConfigureAwait(false);
                     await destination.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);
                 }
                 catch (FolderNotFoundException ex)
@@ -259,7 +312,7 @@ namespace MailKitSimplified.Receiver.Services
         }
 
         public async Task<UniqueId?> CopyToAsync(UniqueId messageUid, IMailFolder destination, CancellationToken cancellationToken = default) =>
-            await MoveOrCopyAsync(messageUid, destination, move: false, cancellationToken).ConfigureAwait(false);
+            await MoveOrCopyAsync(messageUid, _mailFolder, destination, move: false, cancellationToken).ConfigureAwait(false);
 
         public async Task<UniqueId?> CopyToAsync(UniqueId messageUid, string destinationFolder, CancellationToken cancellationToken = default) =>
             await MoveOrCopyAsync(messageUid, destinationFolder, move: false, cancellationToken).ConfigureAwait(false);
@@ -271,7 +324,7 @@ namespace MailKitSimplified.Receiver.Services
             await MoveOrCopyAsync(messageUids, destinationFolder, move: false, cancellationToken).ConfigureAwait(false);
 
         public async Task<UniqueId?> MoveToAsync(UniqueId messageUid, IMailFolder destination, CancellationToken cancellationToken = default) =>
-            await MoveOrCopyAsync(messageUid, destination, move: true, cancellationToken).ConfigureAwait(false);
+            await MoveOrCopyAsync(messageUid, _mailFolder, destination, move: true, cancellationToken).ConfigureAwait(false);
 
         public async Task<UniqueId?> MoveToAsync(UniqueId messageUid, string destinationFolder, CancellationToken cancellationToken = default) =>
             await MoveOrCopyAsync(messageUid, destinationFolder, move: true, cancellationToken).ConfigureAwait(false);

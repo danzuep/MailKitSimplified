@@ -54,6 +54,14 @@ namespace MailKitSimplified.Receiver.Abstractions
         ValueTask<IMailFolder> ConnectMailFolderAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Asynchronously move the specified message to the Sent folder.
+        /// </summary>
+        /// <param name="messageSummary"><see cref="IMailFolder"/> and <see cref="UniqueId"/>.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns><see cref="UniqueId"/> of the moved message.</returns>
+        Task<UniqueId?> MoveToSentAsync(IMessageSummary messageSummary, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Disconnect from the internal <see cref="IImapClient"/>.
         /// Note: GetAwaiter().GetResult() requires this to be a Task.
         /// </summary>
