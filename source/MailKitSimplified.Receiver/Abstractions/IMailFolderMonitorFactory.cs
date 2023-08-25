@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace MailKitSimplified.Receiver.Abstractions
 {
-    public interface IMailFolderMonitorFactory : IDisposable
+    public interface IMailFolderMonitorFactory
     {
         IList<IMailFolderMonitor> GetAllMailFolderMonitors();
         Task MonitorAllMailboxesAsync(Action<IMessageSummary> action, CancellationToken cancellationToken = default);

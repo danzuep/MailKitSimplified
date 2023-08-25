@@ -77,10 +77,6 @@ namespace MailKitSimplified.Receiver.Services
             return emailReceiverOptions;
         }
 
-        public void Dispose()
-        {
-            _memoryCache.Dispose();
-            _loggerFactory.Dispose();
-        }
+        // Let the Garbage Collector dispose of the injected LoggerFactory and MemoryCache.
     }
 }

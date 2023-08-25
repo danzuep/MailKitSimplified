@@ -44,9 +44,6 @@ namespace MailKitSimplified.Receiver.Services
             return mailFolderMonitors;
         }
 
-        public void Dispose()
-        {
-            _loggerFactory.Dispose();
-        }
+        // Let the Garbage Collector dispose of the injected LoggerFactory.
     }
 }

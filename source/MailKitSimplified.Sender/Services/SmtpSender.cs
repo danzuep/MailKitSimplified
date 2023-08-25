@@ -27,6 +27,7 @@ namespace MailKitSimplified.Sender.Services
         private CancellationTokenSource _cts = null;
         private readonly ConcurrentQueue<MimeMessage> _sendQueue = new ConcurrentQueue<MimeMessage>();
         private Func<ISmtpClient, Task> _customAuthenticationMethod;
+        private bool _isClientInjected;
         private ISmtpClient _smtpClient;
         private IProtocolLogger _smtpLogger;
         private ILogger<SmtpSender> _logger;
@@ -85,6 +86,7 @@ namespace MailKitSimplified.Sender.Services
             {
                 _smtpClient = smtpClient;
                 _smtpLogger = null;
+                _isClientInjected = true;
             }
             else if (_smtpLogger != null)
                 _smtpClient = new SmtpClient(_smtpLogger);
@@ -459,16 +461,28 @@ namespace MailKitSimplified.Sender.Services
             }
         }
 
+        /// <summary>
+        /// Disconnect and - if it is not injected - dispose of the SmtpClient.
+        /// "Services resolved from the container should never be disposed by the developer."
+        /// <see href="https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-guidelines#disposal-of-services"/>
+        /// </summary>
         public async ValueTask DisposeAsync()
         {
             await DisconnectAsync().ConfigureAwait(false);
-            _smtpClient.Dispose();
+            if (!_isClientInjected)
+                _smtpClient.Dispose();
         }
 
+        /// <summary>
+        /// Disconnect and - if it is not injected - dispose of the SmtpClient.
+        /// "Services resolved from the container should never be disposed by the developer."
+        /// <see href="https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-guidelines#disposal-of-services"/>
+        /// </summary>
         public void Dispose()
         {
             DisconnectAsync().GetAwaiter().GetResult();
-            _smtpClient.Dispose();
+            if (!_isClientInjected)
+                _smtpClient.Dispose();
         }
     }
 }

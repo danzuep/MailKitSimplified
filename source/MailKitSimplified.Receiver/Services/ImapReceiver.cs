@@ -22,6 +22,7 @@ namespace MailKitSimplified.Receiver.Services
         private Lazy<MailFolderReader> _mailFolderReader;
         private Lazy<MailFolderMonitor> _mailFolderMonitor;
         private Func<IImapClient, Task> _customAuthenticationMethod;
+        private bool _isClientInjected;
         private IImapClient _imapClient;
         private IProtocolLogger _imapLogger;
         private ILogger<ImapReceiver> _logger;
@@ -99,6 +100,7 @@ namespace MailKitSimplified.Receiver.Services
             {
                 _imapClient = imapClient;
                 _imapLogger = null;
+                _isClientInjected = true;
             }
             else if (_imapLogger != null)
                 _imapClient = new ImapClient(_imapLogger);
@@ -342,18 +344,28 @@ namespace MailKitSimplified.Receiver.Services
                 await _imapClient.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Disposes of the ImapClient but not the LoggerFacory, because:
+        /// "Services resolved from the container should never be disposed by the developer."
+        /// <see href="https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-guidelines#disposal-of-services"/>
+        /// </summary>
         public async ValueTask DisposeAsync()
         {
             await DisconnectAsync(CancellationToken.None).ConfigureAwait(false);
-            _imapClient.Dispose();
-            _loggerFactory.Dispose();
+            if (!_isClientInjected)
+                _imapClient.Dispose();
         }
 
+        /// <summary>
+        /// Disposes of the ImapClient but not the LoggerFacory, because:
+        /// "Services resolved from the container should never be disposed by the developer."
+        /// <see href="https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-guidelines#disposal-of-services"/>
+        /// </summary>
         public void Dispose()
         {
             DisconnectAsync(CancellationToken.None).GetAwaiter().GetResult();
-            _imapClient.Dispose();
-            _loggerFactory.Dispose();
+            if (!_isClientInjected)
+                _imapClient.Dispose();
         }
     }
 }

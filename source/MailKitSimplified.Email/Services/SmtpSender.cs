@@ -22,6 +22,7 @@ namespace MailKitSimplified.Email.Services
     public sealed class SmtpSender
     {
         private readonly EmailOptions _senderOptions;
+        private bool _isClientInjected;
         private readonly ISmtpClient _smtpClient;
         private readonly ILogger<SmtpSender> _logger;
 
@@ -31,6 +32,7 @@ namespace MailKitSimplified.Email.Services
             _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.Host))
                 throw new ArgumentException($"{nameof(EmailOptions.Host)} is not set.");
+            _isClientInjected = smtpClient != null;
             _smtpClient = smtpClient ?? _senderOptions.SmtpClient.Value;
             _logger = logger ?? NullLogger<SmtpSender>.Instance;
         }
@@ -176,10 +178,16 @@ namespace MailKitSimplified.Email.Services
             _smtpClient.Dispose();
         }
 
+        /// <summary>
+        /// Disconnect and - if it is not injected - dispose of the SmtpClient.
+        /// "Services resolved from the container should never be disposed by the developer."
+        /// <see href="https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-guidelines#disposal-of-services"/>
+        /// </summary>
         public void Dispose()
         {
             DisconnectAsync().GetAwaiter().GetResult();
-            _smtpClient.Dispose();
+            if (!_isClientInjected)
+                _smtpClient.Dispose();
         }
     }
 }

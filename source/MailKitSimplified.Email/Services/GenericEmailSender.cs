@@ -17,6 +17,7 @@ namespace MailKitSimplified.Email.Services
     internal class GenericEmailSender : IGenericEmailSender
     {
         private readonly ILogger<GenericEmailSender> _logger;
+        private bool _isClientInjected;
         private readonly ISmtpClient _smtpClient;
         private readonly GenericSmtpOptions _senderOptions;
 
@@ -26,6 +27,7 @@ namespace MailKitSimplified.Email.Services
             _senderOptions = senderOptions.Value;
             if (string.IsNullOrWhiteSpace(_senderOptions.Host))
                 throw new ArgumentException($"{nameof(GenericSmtpOptions.Host)} is not set.");
+            _isClientInjected = smtpClient != null;
             _smtpClient = smtpClient ?? new SmtpClient();
         }
 
@@ -136,12 +138,18 @@ namespace MailKitSimplified.Email.Services
             }
         }
 
+        /// <summary>
+        /// Disconnect and - if it is not injected - dispose of the SmtpClient.
+        /// "Services resolved from the container should never be disposed by the developer."
+        /// <see href="https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-guidelines#disposal-of-services"/>
+        /// </summary>
         public void Dispose()
         {
             _logger.LogTrace("Disposing generic SMTP email client...");
             if (_smtpClient.IsConnected)
                 _smtpClient.Disconnect(true);
-            _smtpClient.Dispose();
+            if (!_isClientInjected)
+                _smtpClient.Dispose();
         }
     }
 }
