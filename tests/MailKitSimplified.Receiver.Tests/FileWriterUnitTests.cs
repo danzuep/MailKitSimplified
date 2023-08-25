@@ -13,7 +13,7 @@ namespace MailKitSimplified.Receiver.Tests
         private static readonly string _nl = Environment.NewLine;
         private static readonly string _logFilePath = MailKitProtocolLoggerUnitTests.LogFilePath;
         private static readonly string _testReply = $"* OK smtp4dev{_nl}A00000000 CAPABILITY{_nl}";
-        private readonly IFileSystem _fileSystem = new MockFileSystem();
+        private readonly IFileSystem _fileSystem;
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<LogFileWriterQueue> _logger;
         private readonly LogFileWriterQueue _logFileWriter;
@@ -21,6 +21,7 @@ namespace MailKitSimplified.Receiver.Tests
         public FileWriterUnitTests()
         {
             // Arrange
+            _fileSystem = new MockFileSystem();
             _loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Trace).AddDebug());
             _logger = _loggerFactory.CreateLogger<LogFileWriterQueue>();
             _logFileWriter = CreateThreadsafeLogFileWriter(new FileWriterOptions { FilePath = _logFilePath });

@@ -14,7 +14,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// </summary>
         /// <param name="skipCount">Offset to start getting messages from.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>
-        IMailReader Skip(int skipCount);
+        IMailReader Skip(uint skipCount);
 
         /// <summary>
         /// Number of messages to return.
@@ -22,7 +22,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="takeCount">Number of messages to return.</param>
         /// <param name="continuous">Whether to keep adding the offset or not.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>
-        IMailReader Take(int takeCount, bool continuous = false);
+        IMailReader Take(uint takeCount, bool continuous = false);
 
         /// <summary>
         /// Set a query for searching messages in a <see cref="IMailFolder"/>.
