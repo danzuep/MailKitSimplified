@@ -244,13 +244,13 @@ namespace MailKitSimplified.Receiver.Services
             filter |= MessageSummaryItems.UniqueId;
             var mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
             _ = await mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
-            var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : uniqueIds.OrderBy(u => u).ToList();
+            var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : uniqueIds.OrderBy(u => u.Id).ToList();
             var messageSummaries = await mailFolder.FetchAsync(ascendingIds, filter, cancellationToken).ConfigureAwait(false);
-            //IList<IMessageSummary> filteredSummaries = messageSummaries.Where(m => uniqueIds.Contains(m.UniqueId)).Reverse().ToList();
-            _logger.LogTrace($"{_imapReceiver} received {messageSummaries.Count} email(s).");
+            IList<IMessageSummary> filteredSummaries = messageSummaries.Where(m => uniqueIds.Contains(m.UniqueId)).Reverse().ToList();
+            _logger.LogTrace($"{_imapReceiver} received {filteredSummaries.Count} email(s).");
             await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
 
-            return messageSummaries ?? Array.Empty<IMessageSummary>();
+            return filteredSummaries ?? Array.Empty<IMessageSummary>();
         }
 
         public async Task<MimeMessage> GetMimeMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default, ITransferProgress progress = null)

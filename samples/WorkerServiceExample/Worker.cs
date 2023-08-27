@@ -31,14 +31,14 @@ public class Worker : BackgroundService
     {
         using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         //await GetMessageSummaryRepliesAsync(cancellationToken);
-        //await ReceiveAsync(cancellationToken);
+        await ReceiveAsync(cancellationToken);
         //await QueryAsync(cancellationToken);
         //await MonitorAsync(cancellationToken);
         //await DeleteSeenAsync(cancellationTokenSource);
         //await NotReentrantAsync(cancellationToken);
         //await SendAttachmentAsync(500);
         //await DownloadAllAttachmentsAsync(cancellationToken);
-        await TemplateSendAsync();
+        //await TemplateSendAsync();
     }
 
     private async Task DownloadEmailAsync(string filePath = "download.eml", CancellationToken cancellationToken = default)

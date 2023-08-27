@@ -127,7 +127,7 @@ namespace MailKitSimplified.Receiver.Services
         {
             bool peekFolder = !_mailFolder?.IsOpen ?? true;
             _ = await ConnectAsync(true, cancellationToken).ConfigureAwait(false);
-            var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : uniqueIds.OrderBy(u => u).ToList();
+            var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : uniqueIds.OrderBy(u => u.Id).ToList();
             await _mailFolder.AddFlagsAsync(ascendingIds, messageFlags, silent, cancellationToken).ConfigureAwait(false);
             bool delete = messageFlags.HasFlag(MessageFlags.Deleted);
             if (peekFolder)
@@ -277,7 +277,7 @@ namespace MailKitSimplified.Receiver.Services
                     _ = await destination.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
                 bool peekSourceFolder = !_mailFolder?.IsOpen ?? true;
                 _ = await ConnectAsync(true, cancellationToken).ConfigureAwait(false);
-                var ascendingIds = messageUids is IList<UniqueId> ids ? ids : messageUids.OrderBy(u => u).ToList();
+                var ascendingIds = messageUids is IList<UniqueId> ids ? ids : messageUids.OrderBy(u => u.Id).ToList();
                 result = await _mailFolder.MoveToAsync(ascendingIds, destination, cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace("{0} {1} {2} to {3}.", _imapReceiver, ascendingIds, verb, destination.FullName);
                 if (peekSourceFolder)

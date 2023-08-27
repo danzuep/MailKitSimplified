@@ -44,6 +44,9 @@ namespace MailKitSimplified.Receiver
             var protocolLoggerSection = imapSection.GetSection(ProtocolLoggerOptions.SectionName);
             services.Configure<ProtocolLoggerOptions>(protocolLoggerSection);
             var fileWriteSection = protocolLoggerSection.GetSection(FileWriterOptions.SectionName);
+            var protocolLog = imapSection["ProtocolLog"];
+            if (string.IsNullOrEmpty(fileWriteSection["FilePath"]) && !string.IsNullOrEmpty(protocolLog))
+                fileWriteSection["FilePath"] = protocolLog;
             services.Configure<FileWriterOptions>(fileWriteSection);
             services.AddMailKitSimplifiedEmailReceiver();
             return services;
