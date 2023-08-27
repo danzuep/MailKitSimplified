@@ -78,8 +78,8 @@ namespace MailKitSimplified.Receiver.Tests
             _mailFolderMock.Setup(_ => _.FetchAsync(It.IsAny<IList<UniqueId>>(), It.IsAny<IFetchRequest>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stubMessageSummaries);
             // Build uuid range to fetch
-            var range = new UniqueIdRange(UniqueId.MinValue, UniqueId.MaxValue);
-            // ToList() throws an overflow or out-of-memory exception:
+            var range = new UniqueIdRange(UniqueId.MinValue, new UniqueId(2));
+            // ToList() throws an overflow (for UniqueId.MaxValue) or out-of-memory exception:
             //new UniqueIdRange(UniqueId.MinValue, new UniqueId(int.MaxValue - 1)).ToList();
             // Serach inbox for messages uid
             var messageSummaries = await _mailFolderReader.GetMessageSummariesAsync(range);

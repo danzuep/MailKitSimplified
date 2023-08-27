@@ -127,7 +127,7 @@ namespace MailKitSimplified.Receiver.Services
         {
             bool peekFolder = !_mailFolder?.IsOpen ?? true;
             _ = await ConnectAsync(true, cancellationToken).ConfigureAwait(false);
-            var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : uniqueIds.OrderBy(u => u.Id).ToList();
+            var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : new UniqueIdSet(uniqueIds, SortOrder.Ascending);
             await _mailFolder.AddFlagsAsync(ascendingIds, messageFlags, silent, cancellationToken).ConfigureAwait(false);
             bool delete = messageFlags.HasFlag(MessageFlags.Deleted);
             if (peekFolder)
@@ -262,14 +262,14 @@ namespace MailKitSimplified.Receiver.Services
             return resultUid;
         }
 
-        private async Task<UniqueIdMap> MoveOrCopyAsync(IEnumerable<UniqueId> messageUids, IMailFolder destination, bool move = true, CancellationToken cancellationToken = default)
+        private async Task<UniqueIdMap> MoveOrCopyAsync(IEnumerable<UniqueId> uniqueIds, IMailFolder destination, bool move = true, CancellationToken cancellationToken = default)
         {
             UniqueIdMap result = null;
             string verb = move ? "moved" : "copied";
             try
             {
-                if (messageUids == null)
-                    throw new ArgumentNullException(nameof(messageUids));
+                if (uniqueIds == null)
+                    throw new ArgumentNullException(nameof(uniqueIds));
                 if (destination == null)
                     throw new ArgumentNullException(nameof(destination));
                 bool peekDestinationFolder = !destination.IsOpen;
@@ -277,7 +277,7 @@ namespace MailKitSimplified.Receiver.Services
                     _ = await destination.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
                 bool peekSourceFolder = !_mailFolder?.IsOpen ?? true;
                 _ = await ConnectAsync(true, cancellationToken).ConfigureAwait(false);
-                var ascendingIds = messageUids is IList<UniqueId> ids ? ids : messageUids.OrderBy(u => u.Id).ToList();
+                var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : new UniqueIdSet(uniqueIds, SortOrder.Ascending);
                 result = await _mailFolder.MoveToAsync(ascendingIds, destination, cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace("{0} {1} {2} to {3}.", _imapReceiver, ascendingIds, verb, destination.FullName);
                 if (peekSourceFolder)
@@ -287,7 +287,7 @@ namespace MailKitSimplified.Receiver.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "{ImapReceiverFolder} {MessageUid} not {Verb} to {DestinationFolder}.", _imapReceiver, messageUids, verb, destination);
+                _logger.LogError(ex, "{ImapReceiverFolder} {MessageUid} not {Verb} to {DestinationFolder}.", _imapReceiver, uniqueIds, verb, destination);
             }
             return result ?? UniqueIdMap.Empty;
         }

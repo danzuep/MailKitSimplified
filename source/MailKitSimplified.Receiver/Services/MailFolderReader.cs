@@ -61,8 +61,8 @@ namespace MailKitSimplified.Receiver.Services
             return query;
         }
 
-        private long _skip = 0;
-        private long _take = _all;
+        private int _skip = 0;
+        private int _take = _all;
         private bool _continueTake = false;
         private static readonly int _all = -1;
         private static readonly int _queryAmount = 250;
@@ -96,17 +96,17 @@ namespace MailKitSimplified.Receiver.Services
 
         public IMailReader Skip(uint skipCount)
         {
-            if (skipCount > uint.MaxValue)
+            if (skipCount > int.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(skipCount));
-            _skip = skipCount;
+            _skip = (int)skipCount;
             return this;
         }
 
         public IMailReader Take(uint takeCount, bool continuous = false)
         {
-            if (takeCount > uint.MaxValue)
+            if (takeCount > int.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(takeCount));
-            _take = takeCount;
+            _take = (int)takeCount;
             _continueTake = continuous;
             return this;
         }
@@ -152,22 +152,21 @@ namespace MailKitSimplified.Receiver.Services
 
             IList<IMessageSummary> filteredSummaries;
             filter |= MessageSummaryItems.UniqueId;
-            int startIndex = (int)_skip;
             if (_searchQuery != _queryAll)
             {
                 if (_take > _queryAmount)
                     _logger.LogWarning($"Take({_take}) limited by SearchQuery to 250 results.");
                 var uniqueIds = await mailFolder.SearchAsync(_searchQuery, cancellationToken).ConfigureAwait(false);
-                var descendingUids = uniqueIds.OrderByDescending(u => u).Skip(startIndex);
-                var filteredUids = _take == _all ? descendingUids : descendingUids.Take((int)_take);
-                var ascendingUids = filteredUids.Reverse().ToList();
+                var descendingUids = new UniqueIdSet(uniqueIds, SortOrder.Descending).Skip(_skip);
+                var filteredUids = _take == _all ? descendingUids : descendingUids.Take(_take);
+                var ascendingUids = new UniqueIdSet(filteredUids, SortOrder.Ascending);
                 var messageSummaries = await mailFolder.FetchAsync(ascendingUids, filter, cancellationToken).ConfigureAwait(false);
                 filteredSummaries = messageSummaries.Where(m => uniqueIds.Contains(m.UniqueId)).Reverse().ToList();
             }
             else
             {
-                int endIndex = _take < 0 ? _all : (int)(_skip + _take - 1);
-                filteredSummaries = await mailFolder.FetchAsync(startIndex, endIndex, filter, cancellationToken).ConfigureAwait(false);
+                int endIndex = _take < 0 ? _all : _skip + _take - 1;
+                filteredSummaries = await mailFolder.FetchAsync(_skip, endIndex, filter, cancellationToken).ConfigureAwait(false);
             }
             _logger.LogTrace($"{_imapReceiver} received {filteredSummaries.Count} email(s).");
             if (_continueTake && _take > 0)
@@ -201,8 +200,8 @@ namespace MailKitSimplified.Receiver.Services
                 if (_take > _queryAmount)
                     _logger.LogWarning($"Take({_take}) limited by SearchQuery to 250 results.");
                 var uniqueIds = await mailFolder.SearchAsync(_searchQuery, cancellationToken).ConfigureAwait(false);
-                var descendingUids = uniqueIds.OrderByDescending(u => u).Skip((int)_skip);
-                var filteredUids = _take == _all ? descendingUids : descendingUids.Take((int)_take);
+                var descendingUids = new UniqueIdSet(uniqueIds, SortOrder.Descending).Skip(_skip);
+                var filteredUids = _take == _all ? descendingUids : descendingUids.Take(_take);
                 foreach (var uid in filteredUids)
                 {
                     if (cancellationToken.IsCancellationRequested)
@@ -213,8 +212,8 @@ namespace MailKitSimplified.Receiver.Services
             }
             else
             {
-                int endIndex = _skip + _take > mailFolder.Count ? mailFolder.Count : (int)(_skip + _take);
-                for (int index = (int)_skip; index < endIndex; index++)
+                int endIndex = _skip + _take > mailFolder.Count ? mailFolder.Count : _skip + _take;
+                for (int index = _skip; index < endIndex; index++)
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;
@@ -244,7 +243,7 @@ namespace MailKitSimplified.Receiver.Services
             filter |= MessageSummaryItems.UniqueId;
             var mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
             _ = await mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
-            var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : uniqueIds.OrderBy(u => u.Id).ToList();
+            var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : new UniqueIdSet(uniqueIds, SortOrder.Ascending);
             var messageSummaries = await mailFolder.FetchAsync(ascendingIds, filter, cancellationToken).ConfigureAwait(false);
             IList<IMessageSummary> filteredSummaries = messageSummaries.Where(m => uniqueIds.Contains(m.UniqueId)).Reverse().ToList();
             _logger.LogTrace($"{_imapReceiver} received {filteredSummaries.Count} email(s).");
