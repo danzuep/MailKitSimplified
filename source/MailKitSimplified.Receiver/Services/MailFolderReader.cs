@@ -266,6 +266,59 @@ namespace MailKitSimplified.Receiver.Services
             return filteredSummaries ?? Array.Empty<IMessageSummary>();
         }
 
+        internal async Task<MimeMessage> GetMimeMessageAsync(IMessageSummary messageSummary, CancellationToken cancellationToken = default)
+        {
+            var mimeMessage = new MimeMessage { Subject = messageSummary.Envelope.Subject };
+            var mimeEntities = new List<MimeEntity>();
+            if (messageSummary?.TextBody is BodyPart textBody)
+                mimeEntities.Add(await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, textBody, cancellationToken));
+            if (messageSummary?.HtmlBody is BodyPart htmlBody)
+                mimeEntities.Add(await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, htmlBody, cancellationToken));
+            mimeMessage.From.AddRange(messageSummary.Envelope.From);
+            if (messageSummary.Envelope.Sender.Mailboxes.FirstOrDefault() is MailboxAddress sender)
+                mimeMessage.Sender = sender;
+            mimeMessage.ReplyTo.AddRange(messageSummary.Envelope.ReplyTo);
+            mimeMessage.To.AddRange(messageSummary.Envelope.To);
+            mimeMessage.Cc.AddRange(messageSummary.Envelope.Cc);
+            mimeMessage.Bcc.AddRange(messageSummary.Envelope.Bcc);
+            mimeMessage.MessageId = messageSummary.Envelope.MessageId;
+            if (messageSummary.Envelope.Date.HasValue)
+                mimeMessage.Date = messageSummary.Envelope.Date.Value;
+            mimeMessage.References.AddRange(messageSummary.References);
+
+            if (mimeEntities.Count == 1)
+            {
+                mimeMessage.Body = mimeEntities[0];
+            }
+            else
+            {
+                var multipart = new Multipart();
+                foreach (var mimeEntity in mimeEntities)
+                    if (mimeEntity != null)
+                        multipart.Add(mimeEntity);
+                mimeMessage.Body = multipart;
+            }
+            _logger.LogTrace($"{_imapReceiver} received {mimeMessage.MessageId} ({messageSummary.Folder.FullName} {messageSummary.Index}).");
+            return mimeMessage;
+        }
+
+        public async Task<IList<MimeMessage>> GetMimeMessageEnvelopeBodyAsync(IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default)
+        {
+            IList<MimeMessage> mimeMessages = new List<MimeMessage>();
+            (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
+            var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : new UniqueIdSet(uniqueIds, SortOrder.Ascending);
+            var filter = MessageSummaryItems.UniqueId | MessageSummaryItems.Envelope | MessageSummaryItems.References | MessageSummaryItems.BodyStructure;
+            var messageSummaries = await mailFolder.FetchAsync(ascendingIds, filter, cancellationToken).ConfigureAwait(false);
+            foreach (var messageSummary in messageSummaries)
+            {
+                var mimeMessage = await GetMimeMessageAsync(messageSummary, cancellationToken).ConfigureAwait(false);
+                mimeMessages.Add(mimeMessage);
+            }
+            if (closeWhenFinished)
+                await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+            return mimeMessages;
+        }
+
         public async Task<MimeMessage> GetMimeMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default, ITransferProgress progress = null)
         {
             MimeMessage mimeMessage;

@@ -6,9 +6,7 @@ using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Sender.Abstractions;
 using System.Diagnostics;
-using System.Collections.Generic;
 using CommunityToolkit.Common;
-using System.Threading;
 
 namespace ExampleNamespace;
 
@@ -194,6 +192,26 @@ public class Worker : BackgroundService
             .GetReplyMessage("Reply here.", addRecipients: false, includeMessageId: true, cancellationToken: cancellationToken)
             .From("from@localhost").To("to@localhost");
         _logger.LogInformation($"{_imapReceiver} reply: \r\n{mimeReply.HtmlBody}");
+    }
+
+    private async Task ReceiveContinuouslyAsync(CancellationToken cancellationToken = default)
+    {
+        int count;
+        do
+        {
+            var messageSummaries = await _imapReceiver.ReadMail.Take(250, continuous: true)
+                .GetMessageSummariesAsync(MessageSummaryItems.UniqueId, cancellationToken);
+            count = messageSummaries.Count;
+            // Process messages here
+        }
+        while (count > 0);
+    }
+
+    private async Task<MimeMessage?> ReceiveMimeMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default)
+    {
+        var uids = new UniqueId[] { uniqueId };
+        var mimeMessages = await _imapReceiver.ReadMail.GetMimeMessageEnvelopeBodyAsync(uids, cancellationToken);
+        return mimeMessages.FirstOrDefault();
     }
 
     private async Task ReceiveAsync(CancellationToken cancellationToken = default)
