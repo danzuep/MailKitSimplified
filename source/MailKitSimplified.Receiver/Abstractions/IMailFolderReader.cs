@@ -23,6 +23,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// </summary>
         /// <param name="uniqueId">Message to download by <see cref="UniqueId">ID</see>.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
+        /// <param name="progress">The progress reporting mechanism.</param>
         /// <returns>Downloaded <see cref="MimeMessage"/>.</returns>
         Task<MimeMessage> GetMimeMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default, ITransferProgress progress = null);
 
@@ -31,6 +32,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// </summary>
         /// <param name="uniqueIds">Messages to download by <see cref="UniqueId">ID</see>.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
+        /// <param name="progress">The progress reporting mechanism.</param>
         /// <returns>List of <see cref="MimeMessage"/> items.</returns>
         Task<IList<MimeMessage>> GetMimeMessagesAsync(IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default, ITransferProgress progress = null);
     }
