@@ -14,7 +14,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// </summary>
         /// <param name="skipCount">Offset to start getting messages from.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>
-        IMailReader Skip(uint skipCount);
+        IMailReader Skip(int skipCount);
 
         /// <summary>
         /// Number of messages to return.
@@ -22,7 +22,16 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="takeCount">Number of messages to return.</param>
         /// <param name="continuous">Whether to keep adding the offset or not.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>
-        IMailReader Take(uint takeCount, bool continuous = false);
+        IMailReader Take(int takeCount, bool continuous = false);
+
+        /// <summary>
+        /// UniqueId range of messages to get.
+        /// </summary>
+        /// <param name="start">First UniqueId to get.</param>
+        /// <param name="end">Last UniqueId to get.</param>
+        /// <param name="continuous">Whether to continue in batches or not.</param>
+        /// <returns>Fluent <see cref="IMailReader"/>.</returns>
+        IMailReader Range(UniqueId start, UniqueId end, bool continuous = false);
 
         /// <summary>
         /// Set a query for searching messages in a <see cref="IMailFolder"/>.
@@ -60,5 +69,12 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="transferProgress">Current email download progress</param>
         /// <returns>List of all <see cref="MimeMessage"/> items.</returns>
         Task<IList<MimeMessage>> GetMimeMessagesAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null);
+
+        /// <summary>
+        /// Get the <see cref="Envelope"/> and Body of <see cref="MimeMessage"/>s.
+        /// </summary>
+        /// <param name="cancellationToken">Request cancellation token.</param>
+        /// <returns>List of <see cref="MimeMessage"/> items.</returns>
+        Task<IList<MimeMessage>> GetMimeMessagesEnvelopeBodyAsync(CancellationToken cancellationToken = default);
     }
 }

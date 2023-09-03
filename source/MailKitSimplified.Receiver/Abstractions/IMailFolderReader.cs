@@ -37,11 +37,19 @@ namespace MailKitSimplified.Receiver.Abstractions
         Task<IList<MimeMessage>> GetMimeMessagesAsync(IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default, ITransferProgress progress = null);
 
         /// <summary>
+        /// Get a <see cref="MimeMessage"/> from an <see cref="IMessageSummary"/>.
+        /// </summary>
+        /// <param name="messageSummary">IMessageSummary to convert to a MimeMessage.</param>
+        /// <param name="cancellationToken">Request cancellation token.</param>
+        /// <returns>List of <see cref="MimeMessage"/> items.</returns>
+        Task<MimeMessage> GetMimeMessageEnvelopeBodyAsync(IMessageSummary messageSummary, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Get <see cref="MimeMessage"/>s by their unique IDs.
         /// </summary>
         /// <param name="uniqueIds">Messages to download by <see cref="UniqueId">ID</see>.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <returns>List of <see cref="MimeMessage"/> items.</returns>
-        Task<IList<MimeMessage>> GetMimeMessageEnvelopeBodyAsync(IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default);
+        Task<IList<MimeMessage>> GetMimeMessagesEnvelopeBodyAsync(IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default);
     }
 }

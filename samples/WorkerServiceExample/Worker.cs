@@ -210,7 +210,7 @@ public class Worker : BackgroundService
     private async Task<MimeMessage?> ReceiveMimeMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default)
     {
         var uids = new UniqueId[] { uniqueId };
-        var mimeMessages = await _imapReceiver.ReadMail.GetMimeMessageEnvelopeBodyAsync(uids, cancellationToken);
+        var mimeMessages = await _imapReceiver.ReadMail.GetMimeMessagesEnvelopeBodyAsync(uids, cancellationToken);
         return mimeMessages.FirstOrDefault();
     }
 
