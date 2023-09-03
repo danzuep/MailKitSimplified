@@ -207,6 +207,36 @@ public class Worker : BackgroundService
         while (count > 0);
     }
 
+    private async Task ReceiveMessageSummariesContinuouslyAsync(UniqueId start, UniqueId end, Func<IMessageSummary, CancellationToken, Task> ProcessMessages, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default)
+    {
+        var reader = _imapReceiver.ReadMail.Range(start, end, continuous: true);
+        IList<IMessageSummary> messageSummaries;
+        do
+        {
+            messageSummaries = await reader.GetMessageSummariesAsync(filter, cancellationToken);
+            foreach (var messageSummary in messageSummaries)
+            {
+                await ProcessMessages(messageSummary, cancellationToken);
+            }
+        }
+        while (messageSummaries.Count > 0);
+    }
+
+    private async Task ReceiveMimeMessagesContinuouslyAsync(UniqueId start, UniqueId end, Func<MimeMessage, CancellationToken, Task> ProcessMessages, CancellationToken cancellationToken = default)
+    {
+        var reader = _imapReceiver.ReadMail.Range(start, end, continuous: true);
+        IList<MimeMessage> mimeMessages;
+        do
+        {
+            mimeMessages = await reader.GetMimeMessagesAsync(cancellationToken);
+            foreach (var mimeMessage in mimeMessages)
+            {
+                await ProcessMessages(mimeMessage, cancellationToken);
+            }
+        }
+        while (mimeMessages.Count > 0);
+    }
+
     private async Task<MimeMessage?> ReceiveMimeMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default)
     {
         var uids = new UniqueId[] { uniqueId };

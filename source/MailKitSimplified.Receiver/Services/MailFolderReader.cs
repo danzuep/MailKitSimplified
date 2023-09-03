@@ -151,6 +151,33 @@ namespace MailKitSimplified.Receiver.Services
             return (mailFolder, closeWhenFinished);
         }
 
+        private async Task CloseMailFolderAsync(IMailFolder mailFolder, bool close = true, int count = 1)
+        {
+            if (_continueTake && (count < 1 ||
+                _uniqueIds == null && (_take == 0 || _skip + (uint)_take > int.MaxValue) ||
+                _uniqueIds != null && _uniqueIds.End.Id == uint.MaxValue))
+                _continueTake = false;
+            if (_continueTake)
+            {
+                if (_uniqueIds != null)
+                {
+                    var size = _uniqueIds.End.Id - _uniqueIds.Start.Id;
+                    uint endUid = _uniqueIds.End.Id + size;
+                    if (size > 0 && endUid > _uniqueIds.End.Id)
+                        _uniqueIds = new UniqueIdRange(new UniqueId(_uniqueIds.End.Id + 1), new UniqueId(endUid));
+                }
+                else if (_take > 0)
+                {
+                    if (_skip < mailFolder.Count)
+                        _skip += _take;
+                    else
+                        _skip = mailFolder.Count;
+                }
+            }
+            else if (close)
+                await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+        }
+
         private async Task<IList<IMessageSummary>> GetMessageSummariesAsync(IMailFolder mailFolder, MessageSummaryItems filter, CancellationToken cancellationToken = default)
         {
             if (mailFolder == null || _take == 0)
@@ -198,8 +225,7 @@ namespace MailKitSimplified.Receiver.Services
                 return Array.Empty<IMessageSummary>();
             (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
             var messageSummaries = await GetMessageSummariesAsync(mailFolder, filter, cancellationToken).ConfigureAwait(false);
-            if (closeWhenFinished)
-                await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+            await CloseMailFolderAsync(mailFolder, closeWhenFinished, messageSummaries.Count).ConfigureAwait(false);
             return messageSummaries;
         }
 
@@ -243,15 +269,7 @@ namespace MailKitSimplified.Receiver.Services
                 }
             }
             _logger.LogTrace($"{_imapReceiver} received {mimeMessages.Count} email(s).");
-            if (_continueTake && _take > 0)
-            {
-                if (_skip < mailFolder.Count)
-                    _skip += _take;
-                else
-                    _skip = mailFolder.Count;
-            }
-            if (closeWhenFinished && (!_continueTake || mimeMessages.Count < 1))
-                await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+            await CloseMailFolderAsync(mailFolder, closeWhenFinished, mimeMessages.Count).ConfigureAwait(false);
 
             return mimeMessages;
         }
@@ -267,9 +285,7 @@ namespace MailKitSimplified.Receiver.Services
             var messageSummaries = await mailFolder.FetchAsync(ascendingIds, filter, cancellationToken).ConfigureAwait(false);
             IList<IMessageSummary> filteredSummaries = messageSummaries.Where(m => uniqueIds.Contains(m.UniqueId)).Reverse().ToList();
             _logger.LogTrace($"{_imapReceiver} received {filteredSummaries.Count} email(s).");
-            if (closeWhenFinished && (!_continueTake || filteredSummaries.Count < 1))
-                await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
-
+            await CloseMailFolderAsync(mailFolder, closeWhenFinished, filteredSummaries.Count).ConfigureAwait(false);
             return filteredSummaries ?? Array.Empty<IMessageSummary>();
         }
 
@@ -299,8 +315,7 @@ namespace MailKitSimplified.Receiver.Services
                         mimeMessages.Add(mimeMessage);
                 }
                 _logger.LogTrace($"{_imapReceiver} received {mimeMessages.Count} email(s).");
-                if (closeWhenFinished)
-                    await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+                await CloseMailFolderAsync(mailFolder, closeWhenFinished, mimeMessages.Count).ConfigureAwait(false);
             }
             return mimeMessages;
         }
@@ -374,8 +389,7 @@ namespace MailKitSimplified.Receiver.Services
                 var mimeMessage = await GetMimeMessageEnvelopeBodyAsync(messageSummary, cancellationToken).ConfigureAwait(false);
                 mimeMessages.Add(mimeMessage);
             }
-            if (closeWhenFinished)
-                await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
+            await CloseMailFolderAsync(mailFolder, closeWhenFinished, mimeMessages.Count).ConfigureAwait(false);
             return mimeMessages;
         }
 
