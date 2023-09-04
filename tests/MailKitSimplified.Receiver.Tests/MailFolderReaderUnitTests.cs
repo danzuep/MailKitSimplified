@@ -121,7 +121,7 @@ namespace MailKitSimplified.Receiver.Tests
         }
 
         [Fact]
-        public async Task GetMessageAsync_WithNullMessageSummary_ReturnsMimeMessages()
+        public async Task GetMimeMessagesAsync_SkipTakeItemsQuery_ReturnsMimeMessages()
         {
             // Arrange
             _mailFolderMock.Setup(_ => _.SearchAsync(It.IsAny<SearchQuery>(), It.IsAny<CancellationToken>()))
@@ -129,8 +129,38 @@ namespace MailKitSimplified.Receiver.Tests
             _mailFolderMock.Setup(_ => _.GetMessageAsync(It.IsAny<int>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
                 .ReturnsAsync(new MimeMessage()).Verifiable();
             // Act
-            var mimeMessages = await _mailFolderReader.Skip(0).Take(1).Items(MailFolderReader.CoreMessageItems).Query(SearchQuery.NotSeen)
+            var mimeMessages = await _mailFolderReader.Skip(0).Take(1, continuous: false)
+                .Items(MailFolderReader.CoreMessageItems).Query(SearchQuery.NotSeen)
                 .GetMimeMessagesAsync(It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>());
+            // Assert
+            Assert.NotNull(mimeMessages);
+        }
+
+        [Fact]
+        public async Task GetMimeMessagesRangeAsync_ContinuousRange_ReturnsMimeMessages()
+        {
+            // Arrange
+            _mailFolderMock.Setup(_ => _.GetMessageAsync(It.IsAny<UniqueId>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
+                .ReturnsAsync(new MimeMessage()).Verifiable();
+            var mailReader = _mailFolderReader.Range(UniqueId.MinValue, UniqueId.MinValue, continuous: true);
+            // Act
+            var mimeMessages = await mailReader.GetMimeMessagesAsync(It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>());
+            // Assert
+            Assert.Single(mimeMessages);
+        }
+
+        [Fact]
+        public async Task GetMimeMessagesEnvelopeBodyAsync_Range_ReturnsMimeMessages()
+        {
+            // Arrange
+            var stubMessageSummaries = new List<IMessageSummary>();
+            _mailFolderMock.Setup(_ => _.FetchAsync(It.IsAny<IList<UniqueId>>(), It.IsAny<IFetchRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stubMessageSummaries);
+            _mailFolderMock.Setup(_ => _.GetMessageAsync(It.IsAny<UniqueId>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
+                .ReturnsAsync(new MimeMessage()).Verifiable();
+            // Act
+            var mimeMessages = await _mailFolderReader.Range(UniqueId.MinValue, UniqueId.MinValue, continuous: false)
+                .GetMimeMessagesEnvelopeBodyAsync(It.IsAny<CancellationToken>());
             // Assert
             Assert.NotNull(mimeMessages);
         }

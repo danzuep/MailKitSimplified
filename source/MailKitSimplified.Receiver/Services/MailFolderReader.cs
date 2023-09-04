@@ -97,12 +97,16 @@ namespace MailKitSimplified.Receiver.Services
 
         public IMailReader Skip(int skipCount)
         {
+            if (skipCount < 0)
+                throw new ArgumentOutOfRangeException(nameof(skipCount));
             _skip = skipCount;
             return this;
         }
 
         public IMailReader Take(int takeCount, bool continuous = false)
         {
+            if (takeCount < -1)
+                throw new ArgumentOutOfRangeException(nameof(takeCount));
             if (_take > ushort.MaxValue)
                 _logger.LogWarning($"Take({_take}) should be split into smaller batches.");
             _take = takeCount;
@@ -154,19 +158,19 @@ namespace MailKitSimplified.Receiver.Services
         private async Task CloseMailFolderAsync(IMailFolder mailFolder, bool close = true, int count = 1)
         {
             if (_continueTake && (count < 1 ||
-                _uniqueIds == null && (_take == 0 || _skip + (uint)_take > int.MaxValue) ||
+                _uniqueIds == null && (_take <= 0 || _skip + (uint)_take > int.MaxValue) ||
                 _uniqueIds != null && _uniqueIds.End.Id == uint.MaxValue))
                 _continueTake = false;
             if (_continueTake)
             {
                 if (_uniqueIds != null)
                 {
-                    var size = _uniqueIds.End.Id - _uniqueIds.Start.Id;
+                    var size = _uniqueIds.End.Id - _uniqueIds.Start.Id + 1;
                     uint endUid = _uniqueIds.End.Id + size;
                     if (size > 0 && endUid > _uniqueIds.End.Id)
                         _uniqueIds = new UniqueIdRange(new UniqueId(_uniqueIds.End.Id + 1), new UniqueId(endUid));
                 }
-                else if (_take > 0)
+                else
                 {
                     if (_skip < mailFolder.Count)
                         _skip += _take;
@@ -348,23 +352,15 @@ namespace MailKitSimplified.Receiver.Services
             bool peekFolder = !messageSummary.Folder.IsOpen;
             if (peekFolder || messageSummary.Folder.Access == FolderAccess.None)
                 _ = await messageSummary.Folder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
-            var mimeEntities = new List<MimeEntity>();
-            if (messageSummary.TextBody is BodyPart textBody)
-                mimeEntities.Add(await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, textBody, cancellationToken));
+
+            MimeEntity textEntity = null;
             if (messageSummary.HtmlBody is BodyPart htmlBody)
-                mimeEntities.Add(await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, htmlBody, cancellationToken));
-            if (mimeEntities.Count == 1)
-            {
-                mimeMessage.Body = mimeEntities[0];
-            }
-            else
-            {
-                var multipart = new Multipart();
-                foreach (var mimeEntity in mimeEntities)
-                    if (mimeEntity != null)
-                        multipart.Add(mimeEntity);
-                mimeMessage.Body = multipart;
-            }
+                textEntity = await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, htmlBody, cancellationToken);
+            else if (messageSummary.TextBody is BodyPart textBody)
+                textEntity = await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, textBody, cancellationToken);
+
+            if (textEntity is TextPart bodyText)
+                mimeMessage.Body = bodyText;
 
             if (peekFolder)
                 await messageSummary.Folder.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);
