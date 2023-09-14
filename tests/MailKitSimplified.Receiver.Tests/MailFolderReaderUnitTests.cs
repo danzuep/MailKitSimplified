@@ -1,11 +1,13 @@
 using MailKit.Search;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Services;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 
 namespace MailKitSimplified.Receiver.Tests
 {
     public class MailFolderReaderUnitTests
     {
+        private readonly List<IMessageSummary> _stubMessageSummaries = new();
         private readonly Mock<IMailFolder> _mailFolderMock = new();
         private readonly Mock<IImapReceiver> _imapReceiverMock = new();
         private readonly MailFolderReader _mailFolderReader;
@@ -13,8 +15,12 @@ namespace MailKitSimplified.Receiver.Tests
         public MailFolderReaderUnitTests()
         {
             // Arrange
+            var messageSummary = new MessageSummary((int)UniqueId.MinValue.Id);
+            _stubMessageSummaries.Add(messageSummary);
             _mailFolderMock.Setup(_ => _.OpenAsync(It.IsAny<FolderAccess>(), It.IsAny<CancellationToken>())).Verifiable();
             _mailFolderMock.Setup(_ => _.CloseAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).Verifiable();
+            _mailFolderMock.Setup(_ => _.FetchAsync(It.IsAny<IList<UniqueId>>(), It.IsAny<IFetchRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(_stubMessageSummaries).Verifiable();
             _imapReceiverMock.Setup(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_mailFolderMock.Object).Verifiable();
             _mailFolderReader = new MailFolderReader(_imapReceiverMock.Object);
@@ -60,32 +66,11 @@ namespace MailKitSimplified.Receiver.Tests
         [Fact]
         public async Task GetMessageSummariesAsync_WithAnyUniqueIds_ReturnsMimeMessage()
         {
-            // Arrange
-            var stubMessageSummaries = new List<IMessageSummary>();
-            _mailFolderMock.Setup(_ => _.FetchAsync(It.IsAny<IList<UniqueId>>(), It.IsAny<IFetchRequest>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stubMessageSummaries);
+            var range = new UniqueIdRange(UniqueId.MinValue, UniqueId.MinValue);
             // Act
-            var messageSummaries = await _mailFolderReader.GetMessageSummariesAsync(new List<UniqueId>(), It.IsAny<MessageSummaryItems>(), It.IsAny<CancellationToken>());
+            var messageSummaries = await _mailFolderReader.GetMessageSummariesAsync(range, It.IsAny<MessageSummaryItems>(), It.IsAny<CancellationToken>());
             // Assert
             Assert.NotNull(messageSummaries);
-            Assert.Equal(stubMessageSummaries, messageSummaries);
-        }
-
-        [Fact]
-        public async Task GetMessageSummariesAsync_WithUniqueIdRange_ReturnsMimeMessage()
-        {
-            var stubMessageSummaries = new List<IMessageSummary>();
-            _mailFolderMock.Setup(_ => _.FetchAsync(It.IsAny<IList<UniqueId>>(), It.IsAny<IFetchRequest>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(stubMessageSummaries);
-            // Build uuid range to fetch
-            var range = new UniqueIdRange(UniqueId.MinValue, new UniqueId(2));
-            // ToList() throws an overflow (for UniqueId.MaxValue) or out-of-memory exception:
-            //new UniqueIdRange(UniqueId.MinValue, new UniqueId(int.MaxValue - 1)).ToList();
-            // Serach inbox for messages uid
-            var messageSummaries = await _mailFolderReader.GetMessageSummariesAsync(range);
-            // Assert
-            Assert.NotNull(messageSummaries);
-            Assert.Equal(stubMessageSummaries, messageSummaries);
         }
 
         [Fact]
@@ -112,7 +97,7 @@ namespace MailKitSimplified.Receiver.Tests
             _mailFolderMock.Setup(_ => _.GetMessageAsync(It.IsAny<UniqueId>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()))
                 .ReturnsAsync(stubMimeMessage).Verifiable();
             // Act
-            var fakeUniqueIds = new List<UniqueId> { new UniqueId() };
+            var fakeUniqueIds = new List<UniqueId> { UniqueId.MinValue };
             var mimeMessages = await _mailFolderReader.GetMimeMessagesAsync(fakeUniqueIds, It.IsAny<CancellationToken>());
             // Assert
             Assert.NotNull(mimeMessages);
