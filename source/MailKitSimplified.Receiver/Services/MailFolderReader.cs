@@ -133,6 +133,13 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
+        private static async Task<IEnumerable<UniqueId>> GetValidUniqueIdsAsync(IMailFolder mailFolder, IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default)
+        {
+            var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : new UniqueIdSet(uniqueIds, SortOrder.Ascending);
+            var messageSummaries = await mailFolder.FetchAsync(ascendingIds, MessageSummaryItems.UniqueId, cancellationToken).ConfigureAwait(false);
+            return messageSummaries.Select(m => m.UniqueId);
+        }
+
         private async Task<(IMailFolder, bool)> OpenMailFolderAsync(CancellationToken cancellationToken = default)
         {
             if (_take == 0)
@@ -310,13 +317,21 @@ namespace MailKitSimplified.Receiver.Services
             if (uniqueIds != null)
             {
                 (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
-                foreach (var uniqueId in uniqueIds)
+                var filteredUids = await GetValidUniqueIdsAsync(mailFolder, uniqueIds, cancellationToken).ConfigureAwait(false);
+                foreach (var uniqueId in filteredUids)
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;
-                    var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
-                    if (mimeMessage != null)
-                        mimeMessages.Add(mimeMessage);
+                    try
+                    {
+                        var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
+                        if (mimeMessage != null)
+                            mimeMessages.Add(mimeMessage);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, $"{_imapReceiver} failed to get message #{uniqueId}.");
+                    }
                 }
                 _logger.LogTrace($"{_imapReceiver} received {mimeMessages.Count} email(s).");
                 await CloseMailFolderAsync(mailFolder, closeWhenFinished, mimeMessages.Count).ConfigureAwait(false);
@@ -415,12 +430,21 @@ namespace MailKitSimplified.Receiver.Services
             if (uniqueIds != null)
             {
                 (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
-                foreach (var uniqueId in uniqueIds)
+                var filteredUids = await GetValidUniqueIdsAsync(mailFolder, uniqueIds, cancellationToken).ConfigureAwait(false);
+                foreach (var uniqueId in filteredUids)
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;
-                    var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
-                    _logger.LogTrace($"{_imapReceiver} received {mimeMessage.MessageId}.");
+                    MimeMessage mimeMessage = null;
+                    try
+                    {
+                        mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
+                        _logger.LogTrace($"{_imapReceiver} received {mimeMessage.MessageId}.");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, $"{_imapReceiver} failed to get message #{uniqueId}.");
+                    }
                     if (mimeMessage != null)
                         yield return mimeMessage;
                 }
@@ -472,7 +496,8 @@ namespace MailKitSimplified.Receiver.Services
                 var format = FormatOptions.Default.Clone();
                 format.NewLineFormat = NewLineFormat.Dos;
                 (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
-                foreach (var uniqueId in uniqueIds)
+                var filteredUids = await GetValidUniqueIdsAsync(mailFolder, uniqueIds, cancellationToken).ConfigureAwait(false);
+                foreach (var uniqueId in filteredUids)
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;

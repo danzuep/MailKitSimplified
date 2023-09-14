@@ -29,7 +29,7 @@ public class Worker : BackgroundService
     {
         using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         //await GetMessageSummaryRepliesAsync(cancellationToken);
-        await ReceiveAsync(cancellationToken);
+        //await ReceiveAsync(cancellationToken);
         //await QueryAsync(cancellationToken);
         //await MonitorAsync(cancellationToken);
         //await DeleteSeenAsync(cancellationTokenSource);
@@ -37,6 +37,10 @@ public class Worker : BackgroundService
         //await SendAttachmentAsync(500);
         //await DownloadAllAttachmentsAsync(cancellationToken);
         //await TemplateSendAsync();
+        await ReceiveMimeMessagesContinuouslyAsync(
+            UniqueId.MinValue, new UniqueId(UniqueId.MinValue.Id + 10),
+            (m, ct) => { _logger.LogInformation(m.MessageId); return Task.CompletedTask; },
+            cancellationToken);
     }
 
     private async Task DownloadEmailAsync(string filePath = "download.eml", CancellationToken cancellationToken = default)
