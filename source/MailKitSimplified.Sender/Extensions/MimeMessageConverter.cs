@@ -1,5 +1,6 @@
 ﻿using MimeKit;
 using MimeKit.IO;
+using MimeKit.Utils;
 using System;
 using System.Threading.Tasks;
 using System.Threading;
@@ -25,7 +26,7 @@ namespace MailKitSimplified.Sender.Extensions
             if (original.ReplyTo.Count > 0)
                 copy.ReplyTo.AddRange(original.ReplyTo);
             if (!string.IsNullOrEmpty(original.MessageId))
-                copy.MessageId = original.MessageId;
+                copy.MessageId = MimeUtils.GenerateMessageId();
             copy.Subject = original.Subject;
             if (original.Body != null)
                 copy.Body = original.Body;
@@ -55,6 +56,8 @@ namespace MailKitSimplified.Sender.Extensions
             await mimeMessage.WriteToAsync(memoryBlockStream, cancellationToken);
             memoryBlockStream.Position = 0;
             var result = await MimeMessage.LoadAsync(memoryBlockStream, persistent, cancellationToken).ConfigureAwait(false);
+            if (persistent)
+                result.MessageId = MimeUtils.GenerateMessageId();
             return result;
         }
 

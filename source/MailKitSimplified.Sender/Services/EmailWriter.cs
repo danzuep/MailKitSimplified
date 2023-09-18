@@ -56,6 +56,7 @@ namespace MailKitSimplified.Sender.Services
 
         public IEmailWriter SetTemplate(MimeMessage mimeMessage)
         {
+            mimeMessage.MessageId = MimeUtils.GenerateMessageId();
             Template = mimeMessage;
             MimeMessage = mimeMessage;
             return this;
@@ -316,6 +317,7 @@ namespace MailKitSimplified.Sender.Services
         public IEmailWriter SaveTemplate(CancellationToken cancellationToken = default)
         {
             Template = MimeMessage.Copy(cancellationToken);
+            Template.MessageId = MimeUtils.GenerateMessageId();
             return this;
         }
 
@@ -331,15 +333,20 @@ namespace MailKitSimplified.Sender.Services
         public void Send(CancellationToken cancellationToken = default) =>
             SendAsync(cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult();
 
-        public async Task SendAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
+        private async Task LoadTemplateAsync(CancellationToken cancellationToken = default)
         {
-            await _emailClient.SendAsync(MimeMessage, cancellationToken, transferProgress).ConfigureAwait(false);
-            if (Template == null && !string.IsNullOrEmpty(_options.TemplateFilePath) && File.Exists(_options.TemplateFilePath))
+            if (Template == null && File.Exists(_options.TemplateFilePath))
             {
                 Template = await MimeMessage.LoadAsync(_options.TemplateFilePath, cancellationToken).ConfigureAwait(false);
                 _logger.LogDebug($"Saved email {_options.TemplateFilePath} loaded as a template by {_emailClient}.");
             }
             MimeMessage = Template != null ? await Template.CopyAsync(cancellationToken) : new MimeMessage();
+        }
+
+        public async Task SendAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
+        {
+            await _emailClient.SendAsync(MimeMessage, cancellationToken, transferProgress).ConfigureAwait(false);
+            await LoadTemplateAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public bool TrySend(CancellationToken cancellationToken = default) =>
@@ -348,7 +355,15 @@ namespace MailKitSimplified.Sender.Services
         public async Task<bool> TrySendAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
         {
             bool isSent = await _emailClient.TrySendAsync(MimeMessage, cancellationToken, transferProgress).ConfigureAwait(false);
-            MimeMessage = Template != null ? await Template.CopyAsync(cancellationToken) : new MimeMessage();
+            try
+            {
+                await LoadTemplateAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load Template, using a new MimeMessage instead.");
+                MimeMessage = new MimeMessage();
+            }
             return isSent;
         }
 
