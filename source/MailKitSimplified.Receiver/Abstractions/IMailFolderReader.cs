@@ -16,6 +16,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="filter"><see cref="MessageSummaryItems"/> to download.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <returns>Collection of <see cref="IMessageSummary"/> items.</returns>
+        [Obsolete("Use Range(UidStart, UidEnd).GetMessageSummariesAsync() instead.")]
         Task<IList<IMessageSummary>> GetMessageSummariesAsync(IEnumerable<UniqueId> uniqueIds, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -25,6 +26,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <param name="progress">The progress reporting mechanism.</param>
         /// <returns>Downloaded <see cref="MimeMessage"/>.</returns>
+        [Obsolete("Use Range(uniqueId).GetMimeMessagesAsync() instead.")]
         Task<MimeMessage> GetMimeMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default, ITransferProgress progress = null);
 
         /// <summary>
@@ -34,6 +36,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <param name="progress">The progress reporting mechanism.</param>
         /// <returns>List of <see cref="MimeMessage"/> items.</returns>
+        [Obsolete("Use Range(UidStart, UidEnd).GetMimeMessagesAsync() instead.")]
         Task<IList<MimeMessage>> GetMimeMessagesAsync(IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default, ITransferProgress progress = null);
 
         /// <summary>
@@ -50,6 +53,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="uniqueIds">Messages to download by <see cref="UniqueId">ID</see>.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <returns>List of <see cref="MimeMessage"/> items.</returns>
+        [Obsolete("Use Range(UidStart, UidEnd).GetMimeMessagesEnvelopeBodyAsync() instead.")]
         Task<IList<MimeMessage>> GetMimeMessagesEnvelopeBodyAsync(IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default);
     }
 }

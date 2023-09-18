@@ -28,19 +28,16 @@ public class Worker : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
         using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        //await TemplateSendAsync(1, cancellationToken);
+        //await SendAttachmentAsync(500);
         //await GetMessageSummaryRepliesAsync(cancellationToken);
         //await ReceiveAsync(cancellationToken);
         //await QueryAsync(cancellationToken);
         //await MonitorAsync(cancellationToken);
         //await DeleteSeenAsync(cancellationTokenSource);
         //await NotReentrantAsync(cancellationToken);
-        //await SendAttachmentAsync(500);
         //await DownloadAllAttachmentsAsync(cancellationToken);
-        //await TemplateSendAsync();
-        await ReceiveMimeMessagesContinuouslyAsync(
-            UniqueId.MinValue, new UniqueId(UniqueId.MinValue.Id + 10),
-            (m, ct) => { _logger.LogInformation(m.MessageId); return Task.CompletedTask; },
-            cancellationToken);
+        await ReceiveMimeMessagesContinuouslyAsync((m, ct) => { _logger.LogInformation(m.MessageId); return Task.CompletedTask; }, 10, cancellationToken);
     }
 
     private async Task DownloadEmailAsync(string filePath = "download.eml", CancellationToken cancellationToken = default)
@@ -211,9 +208,9 @@ public class Worker : BackgroundService
         while (count > 0);
     }
 
-    private async Task ReceiveMessageSummariesContinuouslyAsync(UniqueId start, UniqueId end, Func<IMessageSummary, CancellationToken, Task> ProcessMessages, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default)
+    private async Task ReceiveMessageSummariesContinuouslyAsync(Func<IMessageSummary, CancellationToken, Task> ProcessMessages, ushort batchSize, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default)
     {
-        var reader = _imapReceiver.ReadMail.Range(start, end, continuous: true);
+        var reader = _imapReceiver.ReadMail.Range(UniqueId.MinValue, batchSize);
         IList<IMessageSummary> messageSummaries;
         do
         {
@@ -226,9 +223,9 @@ public class Worker : BackgroundService
         while (messageSummaries.Count > 0);
     }
 
-    private async Task ReceiveMimeMessagesContinuouslyAsync(UniqueId start, UniqueId end, Func<MimeMessage, CancellationToken, Task> ProcessMessages, CancellationToken cancellationToken = default)
+    private async Task ReceiveMimeMessagesContinuouslyAsync(Func<MimeMessage, CancellationToken, Task> ProcessMessages, ushort batchSize, CancellationToken cancellationToken = default)
     {
-        var reader = _imapReceiver.ReadMail.Range(start, end, continuous: true);
+        var reader = _imapReceiver.ReadMail.Range(UniqueId.MinValue, batchSize);
         IList<MimeMessage> mimeMessages;
         do
         {
@@ -243,8 +240,8 @@ public class Worker : BackgroundService
 
     private async Task<MimeMessage?> ReceiveMimeMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default)
     {
-        var uids = new UniqueId[] { uniqueId };
-        var mimeMessages = await _imapReceiver.ReadMail.GetMimeMessagesEnvelopeBodyAsync(uids, cancellationToken);
+        var mimeMessages = await _imapReceiver.ReadMail.Range(uniqueId, uniqueId)
+            .GetMimeMessagesEnvelopeBodyAsync(cancellationToken);
         return mimeMessages.FirstOrDefault();
     }
 
@@ -268,7 +265,7 @@ public class Worker : BackgroundService
         _logger.LogInformation($"{_imapReceiver} received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
     }
 
-    private IEmailWriter GetTemplate(string from = "me@localhost")
+    private IEmailWriter CreateTemplate(string from = "me@example.com")
     {
         if (!from.IsEmail())
             _logger.LogWarning($"{from} is not a valid email.");
@@ -281,21 +278,25 @@ public class Worker : BackgroundService
             .SaveTemplate();
         return template;
     }
-
-    private async Task TemplateSendAsync(CancellationToken cancellationToken = default)
+    
+    private async Task TemplateSendAsync(byte numberToSend = 1, CancellationToken cancellationToken = default)
     {
         //var template = await GetTemplate().SaveTemplateAsync();
         //var template = await _smtpSender.WithTemplateAsync();
-        var template = GetTemplate();
-        bool isSent = await template.TrySendAsync(cancellationToken);
-        _logger.LogInformation($"Email {(isSent ? "sent" : "failed to send")}.");
-        isSent = await template.TrySendAsync(cancellationToken);
-        _logger.LogInformation($"Email {(isSent ? "sent" : "failed to send")}.");
+        var template = CreateTemplate();
+        int count = 0;
+        do
+        {
+            bool isSent = await template.TrySendAsync(cancellationToken);
+            _logger.LogInformation($"Email {(isSent ? "sent" : "failed to send")}.");
+            count++;
+        }
+        while (count < numberToSend);
     }
 
     private async Task SendAttachmentAsync(int millisecondsDelay, string filePath = "..\\..\\README.md", CancellationToken cancellationToken = default)
     {
-        bool isSent = await GetTemplate()
+        bool isSent = await CreateTemplate()
             .TryAttach(filePath)
             .TrySendAsync(cancellationToken);
         _logger.LogInformation($"Email {(isSent ? "sent" : "failed to send")}.");
@@ -305,9 +306,7 @@ public class Worker : BackgroundService
     private async Task DelayedSendAsync(int millisecondsDelay, CancellationToken cancellationToken = default)
     {
         await Task.Delay(millisecondsDelay, cancellationToken);
-        var id = $"{Guid.NewGuid():N}"[..8];
-        bool isSent = await GetTemplate()
-            .TrySendAsync(cancellationToken);
+        bool isSent = await CreateTemplate().TrySendAsync(cancellationToken);
         _logger.LogInformation($"Email {(isSent ? "sent" : "failed to send")}.");
     }
 

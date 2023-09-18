@@ -4,6 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <WarningsAsErrors>true</WarningsAsErrors>
     <UserSecretsId>dotnet-WorkerServiceExample-2C375F9E-E9D0-49D0-BA29-55489DEF9D5F</UserSecretsId>
   </PropertyGroup>
 

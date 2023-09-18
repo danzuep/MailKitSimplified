@@ -29,9 +29,18 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// </summary>
         /// <param name="start">First UniqueId to get.</param>
         /// <param name="end">Last UniqueId to get.</param>
-        /// <param name="continuous">Whether to continue in batches or not.</param>
+        /// <param name="continuous">Default is to not continue in batches.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>
         IMailReader Range(UniqueId start, UniqueId end, bool continuous = false);
+
+        /// <summary>
+        /// UniqueId range of messages to get.
+        /// </summary>
+        /// <param name="start">First UniqueId to get.</param>
+        /// <param name="batchSize">Zero-indexed batch size.</param>
+        /// <param name="continuous">Default is to continue in batches.</param>
+        /// <returns>Fluent <see cref="IMailReader"/>.</returns>
+        IMailReader Range(UniqueId start, ushort batchSize = 0, bool continuous = true);
 
         /// <summary>
         /// Set a query for searching messages in a <see cref="IMailFolder"/>.
