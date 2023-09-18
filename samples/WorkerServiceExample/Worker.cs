@@ -7,6 +7,7 @@ using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Sender.Abstractions;
 using System.Diagnostics;
 using CommunityToolkit.Common;
+using Org.BouncyCastle.Asn1.Cms;
 
 namespace ExampleNamespace;
 
@@ -230,6 +231,21 @@ public class Worker : BackgroundService
         do
         {
             mimeMessages = await reader.GetMimeMessagesAsync(cancellationToken);
+            foreach (var mimeMessage in mimeMessages)
+            {
+                await ProcessMessages(mimeMessage, cancellationToken);
+            }
+        }
+        while (mimeMessages.Count > 0);
+    }
+
+    private async Task ReceiveMimeMessagesEnvelopeBodyContinuouslyAsync(Func<MimeMessage, CancellationToken, Task> ProcessMessages, ushort batchSize, CancellationToken cancellationToken = default)
+    {
+        var reader = _imapReceiver.ReadMail.Range(UniqueId.MinValue, batchSize);
+        IList<MimeMessage> mimeMessages;
+        do
+        {
+            mimeMessages = await reader.GetMimeMessagesEnvelopeBodyAsync(cancellationToken);
             foreach (var mimeMessage in mimeMessages)
             {
                 await ProcessMessages(mimeMessage, cancellationToken);

@@ -320,7 +320,8 @@ namespace MailKitSimplified.Receiver.Services
                 filter |= MessageSummaryItems.UniqueId;
                 var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : new UniqueIdSet(uniqueIds, SortOrder.Ascending);
                 var messageSummaries = await mailFolder.FetchAsync(ascendingIds, filter, cancellationToken).ConfigureAwait(false);
-                filteredSummaries = messageSummaries.Where(m => uniqueIds.Contains(m.UniqueId)).Reverse().ToList();
+                filteredSummaries = messageSummaries.Count > ushort.MaxValue ? messageSummaries.Reverse().ToList() :
+                    messageSummaries.Where(m => ascendingIds.Contains(m.UniqueId)).Reverse().ToList();
                 _logger.LogTrace($"{_imapReceiver} received {filteredSummaries.Count} email(s).");
             }
             return filteredSummaries ?? Array.Empty<IMessageSummary>();
