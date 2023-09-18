@@ -11,8 +11,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MailKitSimplified.Sender" Version="2.5.2" />
-    <PackageReference Include="MailKitSimplified.Receiver" Version="2.5.2" />
+    <PackageReference Include="MailKitSimplified.Sender" Version="2.5.5" />
+    <PackageReference Include="MailKitSimplified.Receiver" Version="2.5.5" />
     <PackageReference Include="Polly" Version="7.2.3" />
     <PackageReference Include="Polly.Extensions.Http" Version="3.0.0" />
     <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
