@@ -44,6 +44,8 @@ namespace MailKitSimplified.Receiver.Abstractions
 
         /// <summary>
         /// Set a query for searching messages in a <see cref="IMailFolder"/>.
+        /// MailKit limits queries to 250 results by default, so this method overwrites Take to 250.
+        /// MailKit returns results in ascending order by default, use Reverse() to get descending results.
         /// </summary>
         /// <param name="searchQuery">What to search for, e.g. SearchQuery.NotSeen.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>
@@ -58,6 +60,7 @@ namespace MailKitSimplified.Receiver.Abstractions
 
         /// <summary>
         /// Get a list of the message summaries with just the requested MessageSummaryItems.
+        /// MailKit returns results in ascending order by default, use Reverse() to get descending results.
         /// </summary>
         /// <param name="filter"><see cref="MessageSummaryItems"/> to download.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
@@ -66,6 +69,7 @@ namespace MailKitSimplified.Receiver.Abstractions
 
         /// <summary>
         /// Get a list of the message summaries with basic MessageSummaryItems.
+        /// MailKit returns results in ascending order by default, use Reverse() to get descending results.
         /// </summary>
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <returns>List of <see cref="IMessageSummary"/> items.</returns>
@@ -73,6 +77,7 @@ namespace MailKitSimplified.Receiver.Abstractions
 
         /// <summary>
         /// Get a list of <see cref="MimeMessage"/>s.
+        /// MailKit returns results in ascending order by default, use Reverse() to get descending results.
         /// </summary>
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <param name="transferProgress">Current email download progress</param>
@@ -81,6 +86,7 @@ namespace MailKitSimplified.Receiver.Abstractions
 
         /// <summary>
         /// Get the <see cref="Envelope"/> and Body of <see cref="MimeMessage"/>s.
+        /// MailKit returns results in ascending order by default, use Reverse() to get descending results.
         /// </summary>
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <returns>List of <see cref="MimeMessage"/> items.</returns>
