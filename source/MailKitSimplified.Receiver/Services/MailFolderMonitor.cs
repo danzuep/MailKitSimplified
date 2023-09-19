@@ -62,7 +62,7 @@ namespace MailKitSimplified.Receiver.Services
         {
             if (folderMonitorOptions == null)
                 throw new ArgumentNullException(nameof(folderMonitorOptions));
-            var imapReceiver = ImapReceiver.Create(folderMonitorOptions.EmailReceiverOptions, logImap, protocolLogger, imapClient);
+            var imapReceiver = ImapReceiver.Create(folderMonitorOptions.EmailReceiver, logImap, protocolLogger, imapClient);
             var options = Options.Create(folderMonitorOptions);
             var receiver = new MailFolderMonitor(imapReceiver, options, logger);
             return receiver;
@@ -74,7 +74,7 @@ namespace MailKitSimplified.Receiver.Services
                 throw new ArgumentNullException(nameof(emailReceiverOptions));
             var folderMonitorOptions = new FolderMonitorOptions
             {
-                EmailReceiverOptions = emailReceiverOptions
+                EmailReceiver = emailReceiverOptions
             };
             var receiver = Create(folderMonitorOptions, logger, logImap, protocolLogger, imapClient);
             return receiver;
@@ -86,7 +86,7 @@ namespace MailKitSimplified.Receiver.Services
                 throw new ArgumentNullException(nameof(emailReceiverOptions));
             var folderMonitorOptions = new FolderMonitorOptions
             {
-                EmailReceiverOptions = emailReceiverOptions
+                EmailReceiver = emailReceiverOptions
             };
             var options = Options.Create(folderMonitorOptions);
             var imapReceiver = ImapReceiver.Create(imapClient, emailReceiverOptions, logImap);

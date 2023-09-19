@@ -12,21 +12,21 @@ namespace MailKitSimplified.Receiver.Services
 {
     public class ImapReceiverFactory : IImapReceiverFactory
     {
-        private readonly IOptionsSnapshot<MailboxOptions> _mailboxOptionsSnapshot;
+        private readonly IOptionsMonitor<MailboxOptions> _mailboxOptions;
         private readonly IMemoryCache _memoryCache;
         private readonly ILoggerFactory _loggerFactory;
 
-        public ImapReceiverFactory(IOptionsSnapshot<MailboxOptions> mailboxOptionsSnapshot, IMemoryCache memoryCache, ILoggerFactory loggerFactory = null)
+        public ImapReceiverFactory(IOptionsMonitor<MailboxOptions> mailboxOptions, IMemoryCache memoryCache, ILoggerFactory loggerFactory = null)
         {
-            _mailboxOptionsSnapshot = mailboxOptionsSnapshot;
-            _memoryCache = memoryCache;
+            _mailboxOptions = mailboxOptions ?? throw new ArgumentNullException(nameof(mailboxOptions));
+            _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
             _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
         }
 
         public IList<IImapReceiver> GetAllImapReceivers()
         {
             var imapReceivers = new List<IImapReceiver>();
-            var emailReceiverOptions = _mailboxOptionsSnapshot?.Value.EmailReceivers;
+            var emailReceiverOptions = _mailboxOptions?.CurrentValue.EmailReceivers;
             if (emailReceiverOptions != null)
             {
                 foreach (var emailReceiver in emailReceiverOptions)
@@ -51,10 +51,10 @@ namespace MailKitSimplified.Receiver.Services
             var cachedValue = _memoryCache.GetOrCreate(imapHost,
                 cacheEntry =>
                 {
-                    if (_mailboxOptionsSnapshot != null)
+                    if (_mailboxOptions != null)
                     {
-                        cacheEntry.SlidingExpiration = _mailboxOptionsSnapshot.Value.SlidingCacheTime;
-                        cacheEntry.AbsoluteExpirationRelativeToNow = _mailboxOptionsSnapshot.Value.MaximumCacheTime;
+                        cacheEntry.SlidingExpiration = _mailboxOptions.CurrentValue.SlidingCacheTime;
+                        cacheEntry.AbsoluteExpirationRelativeToNow = _mailboxOptions.CurrentValue.MaximumCacheTime;
                     }
                     var imapReceiver = ImapReceiver.Create(emailReceiverOptions, _loggerFactory.CreateLogger<ImapReceiver>());
                     return imapReceiver;
@@ -68,7 +68,7 @@ namespace MailKitSimplified.Receiver.Services
             {
                 throw new ArgumentNullException(nameof(imapHost));
             }
-            var emailReceivers = _mailboxOptionsSnapshot?.Value.EmailReceivers;
+            var emailReceivers = _mailboxOptions?.CurrentValue.EmailReceivers;
             var emailReceiverOptions = emailReceivers?.SingleOrDefault(c => c.ImapHost == imapHost);
             if (emailReceiverOptions == null)
             {

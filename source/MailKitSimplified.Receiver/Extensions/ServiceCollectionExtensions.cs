@@ -67,8 +67,8 @@ namespace MailKitSimplified.Receiver
             // Add custom services to the container
             services.AddSingleton<ILogFileWriter, LogFileWriterQueue>();
             services.AddSingleton<IProtocolLogger, MailKitProtocolLogger>();
-            services.AddTransient<IImapReceiverFactory, ImapReceiverFactory>();
-            services.AddTransient<IMailFolderMonitorFactory, MailFolderMonitorFactory>();
+            services.AddSingleton<IImapReceiverFactory, ImapReceiverFactory>();
+            services.AddSingleton<IMailFolderMonitorFactory, MailFolderMonitorFactory>();
             services.AddTransient<IImapReceiver, ImapReceiver>();
             services.AddTransient<IMailFolderClient, MailFolderClient>();
             services.AddTransient<IMailFolderReader, MailFolderReader>();

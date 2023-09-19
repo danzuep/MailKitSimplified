@@ -14,25 +14,27 @@ namespace MailKitSimplified.Receiver.Services
 {
     public class MailFolderMonitorFactory : IMailFolderMonitorFactory
     {
-        private readonly IOptionsSnapshot<MailboxOptions> _mailboxOptionsSnapshot;
+        private readonly IOptionsMonitor<MailboxOptions> _mailboxOptions;
         private readonly ILoggerFactory _loggerFactory;
 
-        public MailFolderMonitorFactory(IOptionsSnapshot<MailboxOptions> mailboxOptionsSnapshot, ILoggerFactory loggerFactory = null)
+        public MailFolderMonitorFactory(IOptionsMonitor<MailboxOptions> mailboxOptions, ILoggerFactory loggerFactory = null)
         {
-            _mailboxOptionsSnapshot = mailboxOptionsSnapshot;
+            _mailboxOptions = mailboxOptions ?? throw new ArgumentNullException(nameof(mailboxOptions));
             _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
         }
 
         public async Task MonitorAllMailboxesAsync(Action<IMessageSummary> action, CancellationToken cancellationToken = default)
         {
             var mailFolderMonitors = GetAllMailFolderMonitors();
-            await Task.WhenAll(mailFolderMonitors.Select(m => m.OnMessageArrival(action).IdleAsync(cancellationToken)));
+            await Task.WhenAll(mailFolderMonitors
+                .Select(m => m.OnMessageArrival(action)
+                    .IdleAsync(cancellationToken)));
         }
 
         public IList<IMailFolderMonitor> GetAllMailFolderMonitors()
         {
             var mailFolderMonitors = new List<IMailFolderMonitor>();
-            var folderMonitorOptions = _mailboxOptionsSnapshot?.Value.FolderMonitors;
+            var folderMonitorOptions = _mailboxOptions.CurrentValue.FolderMonitors;
             if (folderMonitorOptions != null)
             {
                 foreach (var folderMonitor in folderMonitorOptions)

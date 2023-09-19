@@ -1,3 +1,5 @@
+using CommunityToolkit.Common;
+using System.Diagnostics;
 using MimeKit;
 using MailKit;
 using MailKit.Search;
@@ -5,9 +7,6 @@ using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Sender.Abstractions;
-using System.Diagnostics;
-using CommunityToolkit.Common;
-using Org.BouncyCastle.Asn1.Cms;
 
 namespace ExampleNamespace;
 
@@ -16,13 +15,17 @@ public class Worker : BackgroundService
     private readonly ILogger<Worker> _logger;
     private readonly ISmtpSender _smtpSender;
     private readonly IImapReceiver _imapReceiver;
+    private readonly IImapReceiverFactory _imapReceiverFactory;
+    private readonly IMailFolderMonitorFactory _mailFolderMonitorFactory;
     private readonly ILoggerFactory _loggerFactory;
 
-    public Worker(ISmtpSender smtpSender, IImapReceiver imapReceiver, ILoggerFactory loggerFactory)
+    public Worker(ISmtpSender smtpSender, IImapReceiver imapReceiver, IImapReceiverFactory imapReceiverFactory, IMailFolderMonitorFactory mailFolderMonitorFactory, ILoggerFactory loggerFactory)
     {
         _logger = loggerFactory.CreateLogger<Worker>();
         _smtpSender = smtpSender;
         _imapReceiver = imapReceiver;
+        _imapReceiverFactory = imapReceiverFactory;
+        _mailFolderMonitorFactory = mailFolderMonitorFactory;
         _loggerFactory = loggerFactory;
     }
 
@@ -38,7 +41,28 @@ public class Worker : BackgroundService
         //await DeleteSeenAsync(cancellationTokenSource);
         //await NotReentrantAsync(cancellationToken);
         //await DownloadAllAttachmentsAsync(cancellationToken);
-        await ReceiveMimeMessagesContinuouslyAsync((m, ct) => { _logger.LogInformation(m.MessageId); return Task.CompletedTask; }, 10, cancellationToken);
+        //await ReceiveMimeMessagesContinuouslyAsync(10, cancellationToken);
+        await ImapReceiverFactoryAsync(cancellationToken);
+        //await MailFolderMonitorFactoryAsync(cancellationToken);
+    }
+
+    private async Task ImapReceiverFactoryAsync(CancellationToken cancellationToken = default)
+    {
+        var receivers = _imapReceiverFactory.GetAllImapReceivers();
+        foreach (var receiver in receivers)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var messageSummaries = await receiver.ReadMail.GetMessageSummariesAsync(cancellationToken);
+            foreach (var messageSummary in messageSummaries)
+                _logger.LogInformation($"{receiver} message #{messageSummary.UniqueId}");
+        }
+    }
+
+    private async Task MailFolderMonitorFactoryAsync(CancellationToken cancellationToken = default)
+    {
+        void LogUniqueIdArrived(IMessageSummary messageSummary) =>
+            _logger.LogInformation($"Message #{messageSummary.UniqueId} arrived.");
+        await _mailFolderMonitorFactory.MonitorAllMailboxesAsync(LogUniqueIdArrived, cancellationToken);
     }
 
     private async Task DownloadEmailAsync(string filePath = "download.eml", CancellationToken cancellationToken = default)
@@ -196,6 +220,24 @@ public class Worker : BackgroundService
         _logger.LogInformation($"{_imapReceiver} reply: \r\n{mimeReply.HtmlBody}");
     }
 
+    private void ProcessMessages(IList<IMessageSummary> messageSummaries, CancellationToken cancellationToken = default)
+    {
+        foreach (var messageSummary in messageSummaries)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _logger.LogInformation($"Processed message #{messageSummary.UniqueId}");
+        }
+    }
+
+    private void ProcessMessages(IList<MimeMessage> mimeMessages, CancellationToken cancellationToken = default)
+    {
+        foreach (var mimeMessage in mimeMessages)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _logger.LogInformation($"Processed {mimeMessage.MessageId}");
+        }
+    }
+
     private async Task ReceiveContinuouslyAsync(CancellationToken cancellationToken = default)
     {
         int count;
@@ -204,52 +246,43 @@ public class Worker : BackgroundService
             var messageSummaries = await _imapReceiver.ReadMail.Take(250, continuous: true)
                 .GetMessageSummariesAsync(MessageSummaryItems.UniqueId, cancellationToken);
             count = messageSummaries.Count;
-            // Process messages here
+            ProcessMessages(messageSummaries, cancellationToken);
         }
         while (count > 0);
     }
 
-    private async Task ReceiveMessageSummariesContinuouslyAsync(Func<IMessageSummary, CancellationToken, Task> ProcessMessages, ushort batchSize, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default)
+    private async Task ReceiveMessageSummariesContinuouslyAsync(ushort batchSize, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default)
     {
         var reader = _imapReceiver.ReadMail.Range(UniqueId.MinValue, batchSize);
         IList<IMessageSummary> messageSummaries;
         do
         {
             messageSummaries = await reader.GetMessageSummariesAsync(filter, cancellationToken);
-            foreach (var messageSummary in messageSummaries)
-            {
-                await ProcessMessages(messageSummary, cancellationToken);
-            }
+            ProcessMessages(messageSummaries, cancellationToken);
         }
         while (messageSummaries.Count > 0);
     }
 
-    private async Task ReceiveMimeMessagesContinuouslyAsync(Func<MimeMessage, CancellationToken, Task> ProcessMessages, ushort batchSize, CancellationToken cancellationToken = default)
+    private async Task ReceiveMimeMessagesContinuouslyAsync(ushort batchSize, CancellationToken cancellationToken = default)
     {
         var reader = _imapReceiver.ReadMail.Range(UniqueId.MinValue, batchSize);
         IList<MimeMessage> mimeMessages;
         do
         {
             mimeMessages = await reader.GetMimeMessagesAsync(cancellationToken);
-            foreach (var mimeMessage in mimeMessages)
-            {
-                await ProcessMessages(mimeMessage, cancellationToken);
-            }
+            ProcessMessages(mimeMessages, cancellationToken);
         }
         while (mimeMessages.Count > 0);
     }
 
-    private async Task ReceiveMimeMessagesEnvelopeBodyContinuouslyAsync(Func<MimeMessage, CancellationToken, Task> ProcessMessages, ushort batchSize, CancellationToken cancellationToken = default)
+    private async Task ReceiveMimeMessagesEnvelopeBodyContinuouslyAsync(ushort batchSize, CancellationToken cancellationToken = default)
     {
         var reader = _imapReceiver.ReadMail.Range(UniqueId.MinValue, batchSize);
         IList<MimeMessage> mimeMessages;
         do
         {
             mimeMessages = await reader.GetMimeMessagesEnvelopeBodyAsync(cancellationToken);
-            foreach (var mimeMessage in mimeMessages)
-            {
-                await ProcessMessages(mimeMessage, cancellationToken);
-            }
+            ProcessMessages(mimeMessages, cancellationToken);
         }
         while (mimeMessages.Count > 0);
     }

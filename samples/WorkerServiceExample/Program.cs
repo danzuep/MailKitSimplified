@@ -1,4 +1,3 @@
-//using MailKitSimplified.Email;
 using MailKitSimplified.Sender;
 using MailKitSimplified.Receiver;
 
