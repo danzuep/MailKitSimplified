@@ -10,5 +10,6 @@ namespace MailKitSimplified.Receiver.Abstractions
     {
         IList<IMailFolderMonitor> GetAllMailFolderMonitors();
         Task MonitorAllMailboxesAsync(Action<IMessageSummary> action, CancellationToken cancellationToken = default);
+        Task MonitorAllMailboxesAsync(Func<IMessageSummary, Task> function, CancellationToken cancellationToken = default);
     }
 }

@@ -31,6 +31,14 @@ namespace MailKitSimplified.Receiver.Services
                     .IdleAsync(cancellationToken)));
         }
 
+        public async Task MonitorAllMailboxesAsync(Func<IMessageSummary, Task> function, CancellationToken cancellationToken = default)
+        {
+            var mailFolderMonitors = GetAllMailFolderMonitors();
+            await Task.WhenAll(mailFolderMonitors
+                .Select(m => m.OnMessageArrival(function)
+                    .IdleAsync(cancellationToken)));
+        }
+
         public IList<IMailFolderMonitor> GetAllMailFolderMonitors()
         {
             var mailFolderMonitors = new List<IMailFolderMonitor>();
