@@ -136,7 +136,8 @@ namespace MailKitSimplified.Receiver.Services
         public IMailReader Query(SearchQuery searchQuery)
         {
             _searchQuery = searchQuery;
-            _take = _queryAmount;
+            if (searchQuery != SearchQuery.All)
+                _take = _queryAmount;
             return this;
         }
 
@@ -238,8 +239,8 @@ namespace MailKitSimplified.Receiver.Services
                 var ascendingUids = noFilter ? searchResults.UniqueIds :
                     new UniqueIdSet(filteredUids, SortOrder.Ascending);
                 var messageSummaries = await mailFolder.FetchAsync(ascendingUids, filter, cancellationToken).ConfigureAwait(false);
-                filteredSummaries = messageSummaries.Count > _queryAmount ? messageSummaries :
-                    messageSummaries.Where(m => ascendingUids.Contains(m.UniqueId)).ToList();
+                filteredSummaries = messageSummaries.Count > _queryAmount || messageSummaries.Count == ascendingUids.Count ?
+                    messageSummaries : messageSummaries.Where(m => ascendingUids.Contains(m.UniqueId)).ToList();
             }
             else
             {
