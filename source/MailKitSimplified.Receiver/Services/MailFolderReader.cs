@@ -261,6 +261,7 @@ namespace MailKitSimplified.Receiver.Services
             return filteredSummaries;
         }
 
+        [Obsolete("Use Items().GetMessageSummariesAsync() instead.")]
         public async Task<IList<IMessageSummary>> GetMessageSummariesAsync(MessageSummaryItems filter, CancellationToken cancellationToken = default)
         {
             if (_take == 0)
@@ -274,8 +275,18 @@ namespace MailKitSimplified.Receiver.Services
             return messageSummaries;
         }
 
-        public async Task<IList<IMessageSummary>> GetMessageSummariesAsync(CancellationToken cancellationToken = default) =>
-            await GetMessageSummariesAsync(_messageSummaryItems, cancellationToken).ConfigureAwait(false);
+        public async Task<IList<IMessageSummary>> GetMessageSummariesAsync(CancellationToken cancellationToken = default)
+        {
+            if (_take == 0)
+            {
+                _logger.LogInformation("Take(0) means no results will be returned.");
+                return Array.Empty<IMessageSummary>();
+            }
+            (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
+            var messageSummaries = await GetMessageSummariesAsync(mailFolder, _messageSummaryItems, cancellationToken).ConfigureAwait(false);
+            await CloseMailFolderAsync(mailFolder, closeWhenFinished, messageSummaries.Count).ConfigureAwait(false);
+            return messageSummaries;
+        }
 
         public async Task<IList<MimeMessage>> GetMimeMessagesAsync(CancellationToken cancellationToken = default, ITransferProgress transferProgress = null)
         {
@@ -297,7 +308,8 @@ namespace MailKitSimplified.Receiver.Services
                 var uniqueIds = await mailFolder.SearchAsync(_searchQuery, cancellationToken).ConfigureAwait(false);
                 var descendingUids = new UniqueIdSet(uniqueIds, SortOrder.Descending).Skip(_skip);
                 var filteredUids = _take == _all ? descendingUids : descendingUids.Take(_take);
-                foreach (var uniqueId in filteredUids)
+                var ascendingUids = new UniqueIdSet(filteredUids, SortOrder.Ascending);
+                foreach (var uniqueId in ascendingUids)
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;
