@@ -143,7 +143,7 @@ namespace MailKitSimplified.Receiver.Services
 
         public IMailReader Items(MessageSummaryItems messageSummaryItems)
         {
-            _messageSummaryItems = messageSummaryItems;
+            _messageSummaryItems = messageSummaryItems | MessageSummaryItems.UniqueId;
             return this;
         }
 
@@ -217,7 +217,6 @@ namespace MailKitSimplified.Receiver.Services
                 return Array.Empty<IMessageSummary>();
             }
             IList<IMessageSummary> filteredSummaries;
-            filter |= MessageSummaryItems.UniqueId;
             if (_uniqueIds != null)
             {
                 filteredSummaries = await mailFolder.FetchAsync(_uniqueIds, filter, cancellationToken).ConfigureAwait(false);
@@ -269,6 +268,7 @@ namespace MailKitSimplified.Receiver.Services
                 _logger.LogInformation("Take(0) means no results will be returned.");
                 return Array.Empty<IMessageSummary>();
             }
+            filter |= MessageSummaryItems.UniqueId;
             (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
             var messageSummaries = await GetMessageSummariesAsync(mailFolder, filter, cancellationToken).ConfigureAwait(false);
             await CloseMailFolderAsync(mailFolder, closeWhenFinished, messageSummaries.Count).ConfigureAwait(false);

@@ -53,7 +53,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         IMailReader Query(SearchQuery searchQuery);
 
         /// <summary>
-        /// Set a which message summary parts to fetch.
+        /// Set which message summary parts to fetch. UniqueId is always included.
         /// </summary>
         /// <param name="messageSummaryItems">Message summary item filter.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>
