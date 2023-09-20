@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using MailKitSimplified.Receiver.Extensions;
+using System.Linq;
 
 namespace MailKitSimplified.Receiver.Models
 {
@@ -8,7 +8,12 @@ namespace MailKitSimplified.Receiver.Models
     {
         public const string SectionName = "Mailbox";
 
-        public IList<EmailReceiverOptions> EmailReceivers { get; set; } = null;
+        private IList<EmailReceiverOptions> _emailReceivers = null;
+        public IList<EmailReceiverOptions> EmailReceivers
+        {
+            get => _emailReceivers ?? FolderMonitors?.Select(f => f.EmailReceiver).ToList();
+            set => _emailReceivers = value;
+        }
 
         public IList<FolderMonitorOptions> FolderMonitors { get; set; } = null;
 
@@ -18,6 +23,7 @@ namespace MailKitSimplified.Receiver.Models
 
         public MailboxOptions Copy() => MemberwiseClone() as MailboxOptions;
 
-        public override string ToString() => EmailReceivers.ToEnumeratedString(Environment.NewLine);
+        public override string ToString() =>
+             $"{_emailReceivers?.Count} EmailReceivers, {FolderMonitors?.Count} FolderMonitors, SlidingCacheTime={SlidingCacheTime}, MaximumCacheTime={MaximumCacheTime}.";
     }
 }
