@@ -5,10 +5,18 @@
 
 version: 2
 updates:
-  # Maintain dependencies for nuget
+  # Maintain dependencies for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    # Disable future pull requests for GitHub Actions dependencies
+    open-pull-requests-limit: 1
+
+  # Maintain dependencies for NuGet
   - package-ecosystem: "nuget"
     directory: "/source"
     schedule:
-      interval: "weekly"
-      # Disable future pull requests for nuget dependencies
+      interval: "monthly"
+    # Disable future pull requests for NuGet dependencies
     open-pull-requests-limit: 1
