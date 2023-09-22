@@ -35,7 +35,7 @@ jobs:
     steps:
       # https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
       - name: Fetch all tags and branches for GitVersion
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
