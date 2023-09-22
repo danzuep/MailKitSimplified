@@ -1,6 +1,7 @@
 ﻿using MimeKit;
 using MimeKit.IO;
 using MimeKit.Text;
+using MimeKit.Utils;
 using System;
 using System.IO;
 using System.Text;
@@ -295,6 +296,8 @@ namespace MailKitSimplified.Receiver.Extensions
             await mimeMessage.WriteToAsync(memoryBlockStream, cancellationToken);
             memoryBlockStream.Position = 0;
             var result = await MimeMessage.LoadAsync(memoryBlockStream, persistent, cancellationToken).ConfigureAwait(false);
+            if (persistent)
+                result.MessageId = MimeUtils.GenerateMessageId();
             return result;
         }
 

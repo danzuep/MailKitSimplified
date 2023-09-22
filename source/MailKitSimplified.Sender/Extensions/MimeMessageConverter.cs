@@ -33,20 +33,22 @@ namespace MailKitSimplified.Sender.Extensions
             return copy;
         }
 
-        private static MimeMessage CloneStreamReferences(this MimeMessage mimeMessage, bool persistent, MemoryBlockStream memoryBlockStream = null, CancellationToken cancellationToken = default)
+        internal static MimeMessage CloneStreamReferences(this MimeMessage mimeMessage, bool persistent, MemoryBlockStream memoryBlockStream = null, CancellationToken cancellationToken = default)
         {
             if (memoryBlockStream == null)
                 memoryBlockStream = new MemoryBlockStream();
             mimeMessage.WriteTo(memoryBlockStream, cancellationToken);
             memoryBlockStream.Position = 0;
             var result = MimeMessage.Load(memoryBlockStream, persistent, cancellationToken);
+            if (persistent)
+                result.MessageId = MimeUtils.GenerateMessageId();
             return result;
         }
 
-        internal static MimeMessage Copy(this MimeMessage mimeMessage, CancellationToken cancellationToken = default) =>
+        public static MimeMessage Copy(this MimeMessage mimeMessage, CancellationToken cancellationToken = default) =>
             mimeMessage.CloneStreamReferences(true, null, cancellationToken);
 
-        internal static MimeMessage Clone(this MimeMessage mimeMessage, CancellationToken cancellationToken = default) =>
+        public static MimeMessage Clone(this MimeMessage mimeMessage, CancellationToken cancellationToken = default) =>
             mimeMessage.CloneStreamReferences(false, null, cancellationToken);
 
         internal static async Task<MimeMessage> CloneStreamReferencesAsync(this MimeMessage mimeMessage, bool persistent, MemoryBlockStream memoryBlockStream = null, CancellationToken cancellationToken = default)
