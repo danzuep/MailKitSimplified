@@ -11,14 +11,24 @@ namespace MailKitSimplified.Receiver.Abstractions
     public interface IMailReader
     {
         /// <summary>
-        /// Offset to start getting messages from.
+        /// Number of messages to return, newest to oldest.
+        /// Overridden by all other methods (Range, Query, Skip, Take).
+        /// </summary>
+        /// <param name="count">Number of messages to return.</param>
+        /// <returns>Fluent <see cref="IMailReader"/>.</returns>
+        IMailReader Top(ushort count);
+
+        /// <summary>
+        /// Mail folder offset to start getting messages from, oldest to newest.
+        /// Overridden by Range method.
         /// </summary>
         /// <param name="skipCount">Offset to start getting messages from.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>
         IMailReader Skip(int skipCount);
 
         /// <summary>
-        /// Number of messages to return.
+        /// Number of messages to return, oldest to newest.
+        /// Overridden by Range method.
         /// </summary>
         /// <param name="takeCount">Number of messages to return.</param>
         /// <param name="continuous">Whether to keep adding the offset or not.</param>
@@ -47,6 +57,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// Set a query for searching messages in a <see cref="IMailFolder"/>.
         /// MailKit limits queries to 250 results by default, so this method overwrites Take to 250.
         /// MailKit returns results in ascending order by default, use Reverse() to get descending results.
+        /// Overridden by Range method.
         /// </summary>
         /// <param name="searchQuery">What to search for, e.g. SearchQuery.NotSeen.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>

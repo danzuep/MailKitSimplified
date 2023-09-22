@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Models;
+using static System.Net.WebRequestMethods;
 
 namespace MailKitSimplified.Receiver.Services
 {
@@ -63,6 +64,7 @@ namespace MailKitSimplified.Receiver.Services
 
         private int _skip = 0;
         private int _take = _all;
+        private ushort? _top = null;
         private UniqueIdRange _uniqueIds = null;
         private bool _continueTake = false;
         private static readonly int _all = -1;
@@ -111,6 +113,12 @@ namespace MailKitSimplified.Receiver.Services
                 _logger.LogWarning($"Take({takeCount}) should be split into smaller batches.");
             _take = takeCount;
             _continueTake = continuous;
+            return this;
+        }
+
+        public IMailReader Top(ushort count)
+        {
+            _top = count;
             return this;
         }
 
@@ -241,10 +249,17 @@ namespace MailKitSimplified.Receiver.Services
                 filteredSummaries = messageSummaries.Count > _queryAmount || messageSummaries.Count == ascendingUids.Count ?
                     messageSummaries : messageSummaries.Where(m => ascendingUids.Contains(m.UniqueId)).ToList();
             }
-            else
+            else if (!_top.HasValue)
             {
                 int endIndex = _take < 0 ? _all : _skip + _take - 1;
                 filteredSummaries = await mailFolder.FetchAsync(_skip, endIndex, filter, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                var endIndex = mailFolder.Count > 1 ? mailFolder.Count - 1 : 0;
+                int startIndex = endIndex - _top.Value;
+                var messageSummaries = await mailFolder.FetchAsync(startIndex, endIndex, filter, cancellationToken).ConfigureAwait(false);
+                filteredSummaries = messageSummaries.Reverse().ToList();
             }
             _logger.LogTrace($"{_imapReceiver} received {filteredSummaries.Count} email(s).");
             if (_continueTake && _take > 0)
@@ -301,7 +316,7 @@ namespace MailKitSimplified.Receiver.Services
             {
                 mimeMessages = await GetMimeMessagesAsync(mailFolder, _uniqueIds, cancellationToken, transferProgress).ConfigureAwait(false);
             }
-            else if (_take == _all || _searchQuery != _queryAll)
+            else if ((_take == _all && !_top.HasValue) || _searchQuery != _queryAll)
             {
                 if (_take > _queryAmount)
                     _logger.LogWarning($"Take({_take}) limited by SearchQuery to 250 results.");
@@ -318,10 +333,22 @@ namespace MailKitSimplified.Receiver.Services
                     mimeMessages.Add(mimeMessage);
                 }
             }
-            else
+            else if (!_top.HasValue)
             {
                 int endIndex = _skip + _take > mailFolder.Count ? mailFolder.Count : _skip + _take;
                 for (int index = _skip; index < endIndex; index++)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
+                    var mimeMessage = await mailFolder.GetMessageAsync(index, cancellationToken, transferProgress).ConfigureAwait(false);
+                    mimeMessages.Add(mimeMessage);
+                }
+            }
+            else
+            {
+                var endIndex = mailFolder.Count > 1 ? mailFolder.Count - 1 : 0;
+                int startIndex = endIndex - _top.Value;
+                for (int index = endIndex; index > startIndex; index--)
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;

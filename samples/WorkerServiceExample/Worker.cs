@@ -34,7 +34,6 @@ public class Worker : BackgroundService
         using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         //await TemplateSendAsync(1, cancellationToken);
         //await SendAttachmentAsync(500);
-        //await GetMessageSummaryRepliesAsync(cancellationToken);
         //await ReceiveAsync(cancellationToken);
         //await QueryAsync(cancellationToken);
         //await MonitorAsync(cancellationToken);
@@ -42,8 +41,10 @@ public class Worker : BackgroundService
         //await NotReentrantAsync(cancellationToken);
         //await DownloadAllAttachmentsAsync(cancellationToken);
         //await ReceiveMimeMessagesContinuouslyAsync(10, cancellationToken);
-        await ImapReceiverFactoryAsync(cancellationToken);
+        //await ImapReceiverFactoryAsync(cancellationToken);
         //await MailFolderMonitorFactoryAsync(cancellationToken);
+        //await GetMessageSummaryRepliesAsync(cancellationToken);
+        await GetMimeMessageRepliesAsync(cancellationToken);
     }
 
     private async Task ImapReceiverFactoryAsync(CancellationToken cancellationToken = default)
@@ -192,7 +193,7 @@ public class Worker : BackgroundService
             .Skip(0).Take(1).Items(MessageSummaryItems.Envelope)
             .GetMessageSummariesAsync(cancellationToken);
         stopwatch.Stop();
-        _logger.LogInformation($"{_imapReceiver} received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
+        _logger.LogDebug($"{_imapReceiver} received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
         foreach (var messageSummary in messageSummaries)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -209,15 +210,19 @@ public class Worker : BackgroundService
     private async Task GetMimeMessageRepliesAsync(CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
-        var mimeMessages = await _imapReceiver.ReadMail
-            .Take(1).Query(SearchQuery.NotSeen)
+        var mimeMessages = await _imapReceiver.ReadMail.Top(1)
             .GetMimeMessagesAsync(cancellationToken);
         stopwatch.Stop();
-        _logger.LogInformation($"{_imapReceiver} received {mimeMessages.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s.");
-        var mimeReply = mimeMessages.Single()
-            .GetReplyMessage("Reply here.", addRecipients: false, includeMessageId: true, cancellationToken: cancellationToken)
-            .From("from@localhost").To("to@localhost");
-        _logger.LogInformation($"{_imapReceiver} reply: \r\n{mimeReply.HtmlBody}");
+        _logger.LogDebug($"{_imapReceiver} received {mimeMessages.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s.");
+        foreach (var mimeMessage in mimeMessages)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var mimeReply = mimeMessage.GetReplyMessage("Reply here.", addRecipients: false, replyToAll: false, includeMessageId: true, cancellationToken: cancellationToken)
+                .From("from@localhost")
+                .To("to@localhost");
+            _logger.LogInformation($"{_imapReceiver} reply: \r\n{mimeReply.HtmlBody}");
+            //await _smtpSender.SendAsync(mimeReply);
+        }
     }
 
     private void ProcessMessages(IList<IMessageSummary> messageSummaries, CancellationToken cancellationToken = default)
@@ -244,7 +249,7 @@ public class Worker : BackgroundService
         do
         {
             var messageSummaries = await _imapReceiver.ReadMail.Take(250, continuous: true)
-                .GetMessageSummariesAsync(MessageSummaryItems.UniqueId, cancellationToken);
+                .GetMessageSummariesAsync(cancellationToken);
             count = messageSummaries.Count;
             ProcessMessages(messageSummaries, cancellationToken);
         }
@@ -257,7 +262,7 @@ public class Worker : BackgroundService
         IList<IMessageSummary> messageSummaries;
         do
         {
-            messageSummaries = await reader.GetMessageSummariesAsync(filter, cancellationToken);
+            messageSummaries = await reader.Items(filter).GetMessageSummariesAsync(cancellationToken);
             ProcessMessages(messageSummaries, cancellationToken);
         }
         while (messageSummaries.Count > 0);
@@ -299,8 +304,9 @@ public class Worker : BackgroundService
         var stopwatch = Stopwatch.StartNew();
         //ImapReceiver.Create(new EmailReceiverOptions(), null, null);
         //new ImapReceiver(Options.Create(new EmailReceiverOptions()), logger, new LogFileWriter(), client, loggerFactory);
-        var messageSummaries = await _imapReceiver.ReadMail.Skip(0).Take(250, continuous: true)
-            .GetMessageSummariesAsync(MessageSummaryItems.UniqueId, cancellationToken);
+        var messageSummaries = await _imapReceiver.ReadMail
+            .Skip(0).Take(250, continuous: true)
+            .GetMessageSummariesAsync(cancellationToken);
         stopwatch.Stop();
         _logger.LogInformation($"{_imapReceiver} received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n3}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
     }
@@ -308,8 +314,10 @@ public class Worker : BackgroundService
     private async Task QueryAsync(CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
-        var messageSummaries = await _imapReceiver.ReadMail.Query(MailFolderReader.QueryMessageId(""))
-            .GetMessageSummariesAsync(MailFolderReader.CoreMessageItems, cancellationToken);
+        var messageSummaries = await _imapReceiver.ReadMail
+            .Query(MailFolderReader.QueryMessageId(""))
+            .Items(MailFolderReader.CoreMessageItems)
+            .GetMessageSummariesAsync(cancellationToken);
         stopwatch.Stop();
         _logger.LogInformation($"{_imapReceiver} received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
     }
@@ -324,6 +332,7 @@ public class Worker : BackgroundService
             .To($"{id}@localhost")
             .Subject(id)
             .BodyText("text/plain.")
+            .BodyHtml("text/html.")
             .SaveTemplate();
         return template;
     }
