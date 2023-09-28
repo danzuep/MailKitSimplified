@@ -42,15 +42,16 @@ jobs:
       # https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/setup/usage-examples.md#example-1
       - name: Set up GitVersion
         if: ${{ inputs.environment == 'release' }}
-        uses: gittools/actions/gitversion/setup@v0.9.15
+        uses: gittools/actions/gitversion/setup@v0.10.2
         with:
           versionSpec: '5.x'
 
       # https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute/usage-examples.md#example-5
+      # For a list of all GitVersion Version Variables, see https://gitversion.net/docs/reference/variables
       - name: Use GitVersion to determine version
         if: ${{ inputs.environment == 'release' }}
         id: gitversion # step id used as reference for output values
-        uses: gittools/actions/gitversion/execute@v0.9.15
+        uses: gittools/actions/gitversion/execute@v0.10.2
 
       # pwsh> dotnet-gitversion | ConvertFrom-Json
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary

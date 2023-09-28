@@ -1,5 +1,5 @@
 name: Release
-run-name: Publish 'v1.2.3' tags as releases
+run-name: Publish release branch or SemVer tags
 
 on:
   workflow_dispatch:
@@ -8,9 +8,6 @@ on:
       - 'v[0-9]+.[0-9]+.*'
     branches:
       - release/**
-  # pull_request:
-  #   types:
-  #     - closed
 
 # Cancel any other running workflows with the same ID
 concurrency:
@@ -19,7 +16,6 @@ concurrency:
 
 jobs:
   pipeline:
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.merged == true }}
     name: 🧱 CI/CD
     uses: ./.github/workflows/_pipeline.yml
     with:
