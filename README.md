@@ -17,7 +17,7 @@ Receiving emails with MailKitSimplified.Receiver is as easy as:
 
 ```csharp
 using var imapReceiver = ImapReceiver.Create("localhost");
-var mimeMessages = await imapReceiver.ReadMail.GetMimeMessagesAsync();
+var mimeMessages = await imapReceiver.ReadMail.Top(1).GetMimeMessagesAsync();
 ```
 
 You can even monitor an email folder for new messages asynchronously, never before has it been this easy!
@@ -29,7 +29,7 @@ await imapReceiver.MonitorFolder.OnMessageArrival(m => Console.WriteLine(m.Uniqu
 Once you've got either a mime message or a message summary, replying is now equally as intuitive.
 
 ```csharp
-var mimeReply = mimeMessages.GetReplyMessage("<p>Reply here.</p>");
+var mimeReply = mimeMessage.GetReplyMessage("<p>Reply here.</p>").From("noreply@example.com");
 ```
 
 You're welcome. 🥲
@@ -69,12 +69,16 @@ var mimeMessages = await imapReceiver.ReadMail
     .GetMimeMessagesAsync(cancellationToken);
 ```
 
+Note: Use imapReceiver.ReadMail.Top(#) to get the newest (descending) results.
+
 To only download the email parts you want to use:
 
 ```csharp
 var messageSummaries = await imapReceiver.ReadMail
     .GetMessageSummariesAsync(cancellationToken);
 ```
+
+Note: MailKit returns results in ascending order by default, use messageSummaries.Reverse() to get descending results.
 
 To query unread emails from the IMAP server and specify which message parts to download:
 

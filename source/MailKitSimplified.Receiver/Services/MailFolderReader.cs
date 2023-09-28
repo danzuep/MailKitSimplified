@@ -318,8 +318,10 @@ namespace MailKitSimplified.Receiver.Services
             }
             else if ((_take == _all && !_top.HasValue) || _searchQuery != _queryAll)
             {
-                if (_take > _queryAmount)
-                    _logger.LogWarning($"Take({_take}) limited by SearchQuery to 250 results.");
+                if (_take != _all && (uint)_skip + _take > _queryAmount)
+                    _logger.LogWarning($"Skip({_skip}).Take({_take}) limited by SearchQuery to 250 results.");
+                else if (_take == _all)
+                    _logger.LogDebug("GetMimeMessagesAsync() limited by SearchQuery to 250 results.");
                 var uniqueIds = await mailFolder.SearchAsync(_searchQuery, cancellationToken).ConfigureAwait(false);
                 var descendingUids = new UniqueIdSet(uniqueIds, SortOrder.Descending).Skip(_skip);
                 var filteredUids = _take == _all ? descendingUids : descendingUids.Take(_take);
