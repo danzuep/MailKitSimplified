@@ -65,7 +65,7 @@ namespace EmailWpfApp.Extensions
         public static async Task<IList<TResult>> RunAllAsync<TSource, TResult>(
             this IEnumerable<TSource> source, Func<TSource, Task<TResult>> method, ILogger _logger, CancellationToken ct = default)
         {
-            IList<TResult> results = null;
+            IList<TResult>? results = null;
             try
             {
                 var parallelTasks = new List<Task>();

@@ -3,12 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using MailKitSimplified.Sender.Abstractions;
-using EmailWpfApp.Models;
-using MailKitSimplified.Receiver.Abstractions;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.ObjectModel;
 using System;
-using System.Windows.Controls;
 
 namespace EmailWpfApp.ViewModels
 {
@@ -52,8 +47,8 @@ namespace EmailWpfApp.ViewModels
                 if (smtpSender != null)
                 {
                     await smtpSender.WriteEmail
-                        .DefaultFrom(FromTextBox)
                         .From(FromTextBox)
+                        //.SaveTemplate()
                         .To(ToTextBox)
                         .Subject(SubjectTextBox)
                         .BodyHtml(MessageTextBox)

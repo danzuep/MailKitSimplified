@@ -76,13 +76,15 @@ namespace EmailWpfApp.Helpers
         }
 
         #region Property Changed Event Handling
-        protected void OnPropertyChanged<T>(T oldValue, T newValue, [CallerMemberName] string propertyName = "")
+        protected void OnPropertyChanged<T>(T? oldValue, T? newValue, [CallerMemberName] string propertyName = "")
         {
             if (oldValue == null)
                 throw new ArgumentNullException(nameof(oldValue));
             if (newValue == null)
                 throw new ArgumentNullException(nameof(newValue));
-            this.PropertyChanged?.Invoke(this, new PropertyChangedExtendedEventArgs(propertyName, oldValue.ToString(), newValue.ToString()));
+            var oldV = oldValue.ToString() ?? string.Empty;
+            var newV = newValue.ToString() ?? string.Empty;
+            this.PropertyChanged?.Invoke(this, new PropertyChangedExtendedEventArgs(propertyName, oldV, newV));
         }
 
         /// <summary> 
