@@ -2,7 +2,6 @@
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
-using System.Windows.Input;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Sender.Abstractions;
 using System.Threading.Tasks;
@@ -15,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace EmailWpfApp.ViewModels
 {
-    public partial class LoginViewModel : BaseViewModel
+    public sealed partial class LoginViewModel : BaseViewModel, IDisposable
     {
         private readonly ISmtpSender _smtpSender;
         private readonly IImapReceiver _imapReceiver;
@@ -114,5 +113,11 @@ namespace EmailWpfApp.ViewModels
 		public bool CanLogin =>
             SmtpHost.StartsWith("localhost") || ImapHost.StartsWith("localhost") ||
             (!string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(Password));
+
+        public void Dispose()
+        {
+            _smtpSender?.Dispose();
+            _imapReceiver?.Dispose();
+        }
     }
 }
