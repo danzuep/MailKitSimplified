@@ -14,15 +14,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Models;
-using static System.Net.WebRequestMethods;
 
 namespace MailKitSimplified.Receiver.Services
 {
     public sealed class MailFolderReader : IMailFolderReader
     {
-        /// <summary>
-        /// Core message summary items: UniqueId, Envelope, Headers, Size, and BodyStructure.
-        /// </summary>
+        /// <summary>Core message summary items: UniqueId, Envelope, Headers, Size, and BodyStructure.</summary>
+        [Obsolete("Use the IMailReader.ItemsForMimeMessages() extension instead.")]
         public static readonly MessageSummaryItems CoreMessageItems =
             MessageSummaryItems.UniqueId |
             MessageSummaryItems.Envelope |
@@ -34,6 +32,7 @@ namespace MailKitSimplified.Receiver.Services
         /// <param name="deliveredAfter">Search for messages after this date.</param>
         /// <param name="deliveredBefore">Search for messages before this date.</param>
         /// <returns><see cref="SearchQuery"/> with a maximum of 250 results.</returns>
+        [Obsolete("Use the IMailReader.QueryBetweenDates() extension instead.")]
         public static SearchQuery QueryBetweenDates(DateTime deliveredAfter, DateTime? deliveredBefore = null)
         {
             DateTime before = deliveredBefore != null ? deliveredBefore.Value : DateTime.Now;
@@ -44,6 +43,7 @@ namespace MailKitSimplified.Receiver.Services
         /// <summary>Query the server for messages with matching keywords in the subject or body text.</summary>
         /// <param name="keywords">Keywords to search for.</param>
         /// <returns><see cref="SearchQuery"/> with a maximum of 250 results.</returns>
+        [Obsolete("Use the IMailReader.QueryKeywords() extension instead.")]
         public static SearchQuery QueryKeywords(IEnumerable<string> keywords)
         {
             var subjectMatch = keywords.MatchAny(SearchQuery.SubjectContains);
@@ -54,7 +54,9 @@ namespace MailKitSimplified.Receiver.Services
 
         /// <summary>Query the server for message(s) with a matching message ID.</summary>
         /// <param name="messageId">Message-ID to search for.</param>
+        /// <param name="addAngleBrackets">Angle brackets added by default.</param>
         /// <returns><see cref="SearchQuery"/> with a maximum of 250 results.</returns>
+        [Obsolete("Use the IMailReader.QueryMessageId() extension instead.")]
         public static SearchQuery QueryMessageId(string messageId, bool addAngleBrackets = true)
         {
             var searchText = addAngleBrackets ? $"<{messageId}>" : messageId;
@@ -772,10 +774,10 @@ namespace MailKitSimplified.Receiver.Services
         /// <param name="deliveredAfter">Search for messages after this date.</param>
         /// <param name="deliveredBefore">Search for messages before this date.</param>
         /// <returns>List of <see cref="IMessageSummary"/> items.</returns>
+        [Obsolete("Use MailFolderReader.Query().GetMessageSummariesAsync() or the IMailReader.QueryBetweenDates() extension instead.")]
         public async Task<IList<IMessageSummary>> SearchBetweenDatesAsync(DateTime deliveredAfter, DateTime? deliveredBefore = null, CancellationToken cancellationToken = default)
         {
-            DateTime before = deliveredBefore != null ? deliveredBefore.Value : DateTime.Now;
-            _searchQuery = SearchQuery.DeliveredAfter(deliveredAfter).And(SearchQuery.DeliveredBefore(before));
+            this.QueryBetweenDates(deliveredAfter, deliveredBefore);
             var messageSummaries = await GetMessageSummariesAsync(cancellationToken).ConfigureAwait(false);
             return messageSummaries;
         }
@@ -783,11 +785,22 @@ namespace MailKitSimplified.Receiver.Services
         /// <summary>Query the server for message IDs with matching keywords in the subject or body text.</summary>
         /// <param name="keywords">Keywords to search for.</param>
         /// <returns>List of <see cref="IMessageSummary"/> items.</returns>
+        [Obsolete("Use MailFolderReader.Query().GetMessageSummariesAsync() or the IMailReader.QueryKeywords() extension instead.")]
         public async Task<IList<IMessageSummary>> SearchKeywordsAsync(IEnumerable<string> keywords, CancellationToken cancellationToken = default)
         {
-            var subjectMatch = keywords.MatchAny(SearchQuery.SubjectContains);
-            var bodyMatch = keywords.MatchAny(SearchQuery.BodyContains);
-            _searchQuery = subjectMatch.Or(bodyMatch);
+            this.QueryKeywords(keywords);
+            var messageSummaries = await GetMessageSummariesAsync(cancellationToken).ConfigureAwait(false);
+            return messageSummaries;
+        }
+
+        /// <summary>Query the server for message(s) with a matching message ID.</summary>
+        /// <param name="messageId">Message-ID to search for.</param>
+        /// <param name="addAngleBrackets">Angle brackets added by default.</param>
+        /// <returns>List of <see cref="IMessageSummary"/> items.</returns>
+        [Obsolete("Use MailFolderReader.Query().GetMessageSummariesAsync() or the IMailReader.QueryMessageId() extension instead.")]
+        public async Task<IList<IMessageSummary>> SearchMessageIdAsync(string messageId, bool addAngleBrackets = true, CancellationToken cancellationToken = default)
+        {
+            this.QueryMessageId(messageId, addAngleBrackets);
             var messageSummaries = await GetMessageSummariesAsync(cancellationToken).ConfigureAwait(false);
             return messageSummaries;
         }
