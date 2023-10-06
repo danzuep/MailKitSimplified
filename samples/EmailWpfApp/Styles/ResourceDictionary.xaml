@@ -1,6 +1,13 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <!--  Colors  -->
+    <Color x:Key="ColorPrimary1">LightGray</Color>
+    <Color x:Key="ColorPrimary2">DarkGray</Color>
+
+    <!--  Brushes  -->
     <Brush x:Key="BackgroundBrush">White</Brush>
+    <SolidColorBrush x:Key="BrushPrimary1" Color="{StaticResource ColorPrimary1}" />
+    <SolidColorBrush x:Key="BrushPrimary2" Color="{StaticResource ColorPrimary2}" />
 
     <Style x:Key="StatusBarStyle" TargetType="{x:Type StatusBar}" />
 

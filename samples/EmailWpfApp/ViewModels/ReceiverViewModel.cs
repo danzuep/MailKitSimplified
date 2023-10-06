@@ -35,7 +35,7 @@ namespace EmailWpfApp.ViewModels
         public ReceiverViewModel() : base()
         {
             _mailFolderReader = Ioc.Default.GetRequiredService<IMailFolderReader>();
-            GetFoldersTask = new Lazy<Task>(() => GetFoldersAsync());
+            GetFoldersTask = new Lazy<Task>(GetFoldersAsync);
             //_dbContext = Ioc.Default.GetRequiredService<EmailDbContext>();
             StatusText = string.Empty;
         }

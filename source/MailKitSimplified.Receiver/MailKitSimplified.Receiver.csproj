@@ -16,6 +16,7 @@
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
     <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
     <PackageReleaseNotes>
+      2.7.0 Non-fluent usages marked obsolete
       2.5.0 Reuse existing IImapClient
       2.4.0 MailReader Query
       2.0.0 MailFolderMonitor IdleClient

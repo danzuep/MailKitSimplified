@@ -1,9 +1,9 @@
 ﻿<UserControl
-    x:Class="EmailWpfApp.UserControls.DropdownBoxUserControl"
+    x:Class="EmailWpfApp.Controls.InputBoxUserControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:EmailWpfApp.UserControls"
+    xmlns:local="clr-namespace:EmailWpfApp.Controls"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     d:DesignWidth="600"
     mc:Ignorable="d">
@@ -18,22 +18,18 @@
             Grid.Column="0"
             Content="{Binding LabelContent}"
             Style="{Binding LabelStyle}"
-            Target="{Binding ElementName=DropdownBoxUserControlButton}" />
-        <ComboBox
+            Target="{Binding ElementName=InputBoxUserControlButton}" />
+        <TextBlock
             Grid.Column="1"
-            ItemsSource="{Binding ItemsSource}"
-            SelectedItem="{Binding SelectedItem}"
-            Style="{Binding ComboBoxStyle}"
-            TabIndex="0"
-            Text="{Binding ComboBoxText}"
-            ToolTip="{Binding ComboBoxToolTip}" />
+            Style="{Binding TextBlockStyle}"
+            Text="{Binding TextBlockText}"
+            ToolTip="{Binding TextBlockToolTip}" />
         <Button
-            x:Name="DropdownBoxUserControlButton"
+            x:Name="InputBoxUserControlButton"
             Grid.Column="2"
             Command="{Binding ButtonCommand}"
             Content="{Binding ButtonContent}"
             DockPanel.Dock="Right"
-            Style="{Binding ButtonStyle}"
-            TabIndex="1" />
+            Style="{Binding ButtonStyle}" />
     </Grid>
 </UserControl>

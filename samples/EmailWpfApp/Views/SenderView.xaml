@@ -12,14 +12,6 @@
         <vm:SenderViewModel />
     </UserControl.DataContext>
 
-    <UserControl.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="ResourceDictionary.xaml" />
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
-    </UserControl.Resources>
-
     <Grid Background="{StaticResource BackgroundBrush}" FocusManager.FocusedElement="{Binding ElementName=View_FromTextBox}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:uc="clr-namespace:EmailWpfApp.UserControls"
+    xmlns:uc="clr-namespace:EmailWpfApp.Controls"
     xmlns:vm="clr-namespace:EmailWpfApp.ViewModels"
     d:DesignHeight="150"
     d:DesignWidth="500"
@@ -12,14 +12,6 @@
     <UserControl.DataContext>
         <vm:FolderMonitorViewModel />
     </UserControl.DataContext>
-
-    <UserControl.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="ResourceDictionary.xaml" />
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
-    </UserControl.Resources>
 
     <Grid Background="{StaticResource BackgroundBrush}">
         <Grid.ColumnDefinitions>
@@ -76,8 +68,8 @@
                     Command="{Binding ReceiveCommand}"
                     Content="_Receive"
                     DockPanel.Dock="Right"
-                    Style="{StaticResource ButtonStyle}"
                     IsEnabled="{Binding IsNotReceiving}"
+                    Style="{StaticResource ButtonStyle}"
                     TabIndex="3" />
                 <ComboBox
                     x:Name="View_FolderComboBox"

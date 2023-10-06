@@ -5,6 +5,13 @@
     <TargetFramework>net7.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <Authors>Daniel Collingwood</Authors>
+    <PackageId>EmailWpfApp</PackageId>
+    <Title>MailKitSimplified Email</Title>
+    <Description>Fluent email client using MailKitSimplified.</Description>
+    <PackageTags>MailKit email WPF MVVM C# .NET</PackageTags>
+    <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
     <UserSecretsId>b96c5ad5-42ab-49d4-84e6-4152fe684ab2</UserSecretsId>
   </PropertyGroup>
 
@@ -29,7 +36,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\*" LinkBase="_Repository" />
+    <None Include="../../*" LinkBase="_Repository" />
   </ItemGroup>
-	
+
+  <ItemGroup>
+    <Content Include="Resources/login-background.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

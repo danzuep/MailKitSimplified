@@ -1,15 +1,14 @@
 ﻿using System;
-using System.Collections;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace EmailWpfApp.UserControls
+namespace EmailWpfApp.Controls
 {
     /// <summary>
-    /// Interaction logic for DropdownBoxUserControl.xaml
+    /// Interaction logic for InputBoxUserControl.xaml
     /// </summary>
-    public partial class DropdownBoxUserControl : UserControl
+    public partial class InputBoxUserControl : UserControl
     {
         protected override void OnInitialized(EventArgs e)
         {
@@ -54,7 +53,7 @@ namespace EmailWpfApp.UserControls
         }
 
         public static readonly DependencyProperty LabelContentProperty = DependencyProperty.Register(
-            "LabelContent", typeof(string), typeof(DropdownBoxUserControl), new PropertyMetadata(string.Empty));
+            "LabelContent", typeof(string), typeof(InputBoxUserControl), new PropertyMetadata(string.Empty));
 
         public Style LabelStyle
         {
@@ -63,54 +62,36 @@ namespace EmailWpfApp.UserControls
         }
 
         public static readonly DependencyProperty LabelStyleProperty = DependencyProperty.Register(
-            "LabelStyle", typeof(Style), typeof(DropdownBoxUserControl), new PropertyMetadata(null));
+            "LabelStyle", typeof(Style), typeof(InputBoxUserControl), new PropertyMetadata(null));
         #endregion
 
-        #region ComboBox
-        public IEnumerable ItemsSource
+        #region TextBlock
+        public string TextBlockText
         {
-            get => (IEnumerable)GetValue(ItemsSourceProperty);
-            set => SetValue(ItemsSourceProperty, value);
+            get => (string)GetValue(TextBlockTextProperty);
+            set => SetValue(TextBlockTextProperty, value);
         }
 
-        public static readonly DependencyProperty ItemsSourceProperty = DependencyProperty.Register(
-            "ItemsSource", typeof(IEnumerable), typeof(DropdownBoxUserControl), new PropertyMetadata(null));
+        public static readonly DependencyProperty TextBlockTextProperty = DependencyProperty.Register(
+            "TextBlockText", typeof(string), typeof(InputBoxUserControl), new PropertyMetadata(string.Empty));
 
-        public object SelectedItem
+        public string TextBlockToolTip
         {
-            get => (object)GetValue(SelectedItemProperty);
-            set => SetValue(SelectedItemProperty, value);
+            get => (string)GetValue(TextBlockToolTipProperty);
+            set => SetValue(TextBlockToolTipProperty, value);
         }
 
-        public static readonly DependencyProperty SelectedItemProperty = DependencyProperty.Register(
-            "SelectedItem", typeof(object), typeof(DropdownBoxUserControl), new PropertyMetadata(null));
+        public static readonly DependencyProperty TextBlockToolTipProperty = DependencyProperty.Register(
+            "TextBlockToolTip", typeof(string), typeof(InputBoxUserControl), new PropertyMetadata(string.Empty));
 
-        public string ComboBoxText
+        public Style TextBlockStyle
         {
-            get => (string)GetValue(ComboBoxTextProperty);
-            set => SetValue(ComboBoxTextProperty, value);
+            get => (Style)GetValue(TextBlockStyleProperty);
+            set => SetValue(TextBlockStyleProperty, value);
         }
 
-        public static readonly DependencyProperty ComboBoxTextProperty = DependencyProperty.Register(
-            "ComboBoxText", typeof(string), typeof(DropdownBoxUserControl), new PropertyMetadata(string.Empty));
-
-        public string ComboBoxToolTip
-        {
-            get => (string)GetValue(ComboBoxToolTipProperty);
-            set => SetValue(ComboBoxToolTipProperty, value);
-        }
-
-        public static readonly DependencyProperty ComboBoxToolTipProperty = DependencyProperty.Register(
-            "ComboBoxToolTip", typeof(string), typeof(DropdownBoxUserControl), new PropertyMetadata(string.Empty));
-
-        public Style ComboBoxStyle
-        {
-            get => (Style)GetValue(ComboBoxStyleProperty);
-            set => SetValue(ComboBoxStyleProperty, value);
-        }
-
-        public static readonly DependencyProperty ComboBoxStyleProperty = DependencyProperty.Register(
-            "ComboBoxStyle", typeof(Style), typeof(DropdownBoxUserControl), new PropertyMetadata(null));
+        public static readonly DependencyProperty TextBlockStyleProperty = DependencyProperty.Register(
+            "TextBlockStyle", typeof(Style), typeof(InputBoxUserControl), new PropertyMetadata(null));
         #endregion
 
         #region Button
@@ -121,7 +102,7 @@ namespace EmailWpfApp.UserControls
         }
 
         public static readonly DependencyProperty ButtonContentProperty = DependencyProperty.Register(
-            "ButtonContent", typeof(string), typeof(DropdownBoxUserControl), new PropertyMetadata(string.Empty));
+            "ButtonContent", typeof(string), typeof(InputBoxUserControl), new PropertyMetadata(string.Empty));
 
         public ICommand ButtonCommand
         {
@@ -130,7 +111,7 @@ namespace EmailWpfApp.UserControls
         }
 
         public static readonly DependencyProperty ButtonCommandProperty = DependencyProperty.Register(
-            "ButtonCommand", typeof(ICommand), typeof(DropdownBoxUserControl), new PropertyMetadata(null));
+            "ButtonCommand", typeof(ICommand), typeof(InputBoxUserControl), new PropertyMetadata(null));
 
         public Style ButtonStyle
         {
@@ -139,7 +120,7 @@ namespace EmailWpfApp.UserControls
         }
 
         public static readonly DependencyProperty ButtonStyleProperty = DependencyProperty.Register(
-            "ButtonStyle", typeof(Style), typeof(DropdownBoxUserControl), new PropertyMetadata(null));
+            "ButtonStyle", typeof(Style), typeof(InputBoxUserControl), new PropertyMetadata(null));
         #endregion
     }
 }

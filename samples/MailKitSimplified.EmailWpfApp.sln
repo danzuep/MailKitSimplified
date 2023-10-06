@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Email", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailKitSimplified.Generic", "..\source\MailKitSimplified.Generic\MailKitSimplified.Generic.csproj", "{B6C5DBAB-6175-4997-BD12-D93585F5060E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmailWpfApp.Domain", "EmailWpfApp.Domain\EmailWpfApp.Domain.csproj", "{2AB3281E-0D17-428B-B1B2-3CA6DD6F08EF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{B6C5DBAB-6175-4997-BD12-D93585F5060E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B6C5DBAB-6175-4997-BD12-D93585F5060E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B6C5DBAB-6175-4997-BD12-D93585F5060E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2AB3281E-0D17-428B-B1B2-3CA6DD6F08EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AB3281E-0D17-428B-B1B2-3CA6DD6F08EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AB3281E-0D17-428B-B1B2-3CA6DD6F08EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AB3281E-0D17-428B-B1B2-3CA6DD6F08EF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
