@@ -341,7 +341,7 @@ namespace MailKitSimplified.Receiver.Services
         /// <param name="searchQuery">Mail folder search query.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The first 250 <see cref="UniqueId"/>s.</returns>
-        [Obsolete("Consider using IMailReader.Query() instead.")]
+        [Obsolete("Use IMailReader.Query().GetMessageSummariesAsync() instead.")]
         public async Task<IList<UniqueId>> SearchAsync(SearchQuery searchQuery, CancellationToken cancellationToken = default)
         {
             _ = await ConnectAsync(false, cancellationToken).ConfigureAwait(false);
@@ -349,7 +349,7 @@ namespace MailKitSimplified.Receiver.Services
             return uniqueIds;
         }
 
-        [Obsolete("Consider using MailFolderReader.Query() instead.")]
+        [Obsolete("Use MailFolderReader.Top(1).GetMessageSummariesAsync() with FirstOrDefault() instead.")]
         public async Task<IMessageSummary> GetNewestMessageSummaryAsync(MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default)
         {
             _ = await ConnectAsync(true, cancellationToken).ConfigureAwait(false);

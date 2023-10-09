@@ -464,6 +464,8 @@ namespace MailKitSimplified.Receiver.Services
                 if (messageSummary.Envelope.Date.HasValue)
                     mimeMessage.Date = messageSummary.Envelope.Date.Value;
             }
+
+            // Add message References
             if (messageSummary.References != null)
                 mimeMessage.References.AddRange(messageSummary.References);
 
@@ -527,6 +529,7 @@ namespace MailKitSimplified.Receiver.Services
             return mimeMessages;
         }
 
+        //[Obsolete("Use ItemsForMimeMessages().GetMimeMessagesAsync() instead.")]
         public async Task<IList<MimeMessage>> GetMimeMessagesEnvelopeBodyAsync(CancellationToken cancellationToken = default)
         {
             IList<MimeMessage> mimeMessages = new List<MimeMessage>();

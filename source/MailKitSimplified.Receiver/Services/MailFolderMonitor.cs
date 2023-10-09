@@ -149,7 +149,7 @@ namespace MailKitSimplified.Receiver.Services
 
         public IMailFolderMonitor SetMessageSummaryItems(MessageSummaryItems itemSelection = MessageSummaryItems.Envelope | MessageSummaryItems.BodyStructure | MessageSummaryItems.Flags)
         {
-            _folderMonitorOptions.MessageSummaryItems = itemSelection;
+            _folderMonitorOptions.MessageSummaryItems = itemSelection; // | MessageSummaryItems.UniqueId;
             return this;
         }
 

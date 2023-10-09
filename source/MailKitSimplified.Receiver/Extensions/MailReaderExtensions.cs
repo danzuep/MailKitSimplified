@@ -8,14 +8,17 @@ namespace MailKitSimplified.Receiver.Extensions
 {
     public static class MailReaderExtensions
     {
-        /// <summary>Core message summary items: UniqueId, Envelope, Headers, Size, and BodyStructure.</summary>
+        /// <summary>
+        /// MimeMessage items: UniqueId, Envelope, References, and BodyStructure.
+        /// Other useful MessageSummaryItems include Headers, Flags, and Size.
+        /// </summary>
         /// <returns><see cref="IMailReader"/> query with a maximum of 250 results.</returns>
-        public static IMailReader ItemsForMimeMessages(this IMailReader mailReader, MessageSummaryItems extras = MessageSummaryItems.UniqueId)
+        public static IMailReader ItemsForMimeMessages(this IMailReader mailReader, MessageSummaryItems extras = MessageSummaryItems.None)
         {
             var coreMessageItems = extras |
+                MessageSummaryItems.UniqueId |
                 MessageSummaryItems.Envelope |
-                MessageSummaryItems.Headers |
-                MessageSummaryItems.Size |
+                MessageSummaryItems.References |
                 MessageSummaryItems.BodyStructure;
             return mailReader.Items(coreMessageItems);
         }

@@ -142,8 +142,9 @@ public class Worker : BackgroundService
 
     private async Task ForwardFirstEmailAsync(CancellationToken cancellationToken = default)
     {
-        var messageSummaries = await _imapReceiver.ReadMail
-            .Skip(0).Take(1).Items(MailFolderReader.CoreMessageItems)
+        var extras = MessageSummaryItems.Headers | MessageSummaryItems.Flags | MessageSummaryItems.Size;
+        var messageSummaries = await _imapReceiver.ReadMail.Top(1)
+            .ItemsForMimeMessages(extras)
             .GetMessageSummariesAsync(cancellationToken);
         foreach (var messageSummary in messageSummaries)
         {
@@ -190,7 +191,7 @@ public class Worker : BackgroundService
     {
         var stopwatch = Stopwatch.StartNew();
         var messageSummaries = await _imapReceiver.ReadMail
-            .Skip(0).Take(1).Items(MessageSummaryItems.Envelope)
+            .Skip(0).Take(1).ItemsForMimeMessages()
             .GetMessageSummariesAsync(cancellationToken);
         stopwatch.Stop();
         _logger.LogDebug($"{_imapReceiver} received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
@@ -211,7 +212,7 @@ public class Worker : BackgroundService
     {
         var stopwatch = Stopwatch.StartNew();
         var mimeMessages = await _imapReceiver.ReadMail.Top(1)
-            .GetMimeMessagesAsync(cancellationToken);
+            .GetMimeMessagesEnvelopeBodyAsync(cancellationToken);
         stopwatch.Stop();
         _logger.LogDebug($"{_imapReceiver} received {mimeMessages.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s.");
         foreach (var mimeMessage in mimeMessages)
@@ -248,7 +249,9 @@ public class Worker : BackgroundService
         int count;
         do
         {
-            var messageSummaries = await _imapReceiver.ReadMail.Take(250, continuous: true)
+            var messageSummaries = await _imapReceiver.ReadMail
+                .Take(250, continuous: true)
+                .ItemsForMimeMessages()
                 .GetMessageSummariesAsync(cancellationToken);
             count = messageSummaries.Count;
             ProcessMessages(messageSummaries, cancellationToken);
@@ -262,7 +265,8 @@ public class Worker : BackgroundService
         IList<IMessageSummary> messageSummaries;
         do
         {
-            messageSummaries = await reader.Items(filter).GetMessageSummariesAsync(cancellationToken);
+            messageSummaries = await reader.ItemsForMimeMessages()
+                .GetMessageSummariesAsync(cancellationToken);
             ProcessMessages(messageSummaries, cancellationToken);
         }
         while (messageSummaries.Count > 0);
@@ -315,8 +319,8 @@ public class Worker : BackgroundService
     {
         var stopwatch = Stopwatch.StartNew();
         var messageSummaries = await _imapReceiver.ReadMail
-            .Query(MailFolderReader.QueryMessageId(""))
-            .Items(MailFolderReader.CoreMessageItems)
+            .QueryMessageId("")
+            .Items(MessageSummaryItems.Envelope)
             .GetMessageSummariesAsync(cancellationToken);
         stopwatch.Stop();
         _logger.LogInformation($"{_imapReceiver} received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");

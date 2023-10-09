@@ -63,29 +63,28 @@ See the [MailKitSimplified.Sender wiki](https://github.com/danzuep/MailKitSimpli
 using var imapReceiver = ImapReceiver.Create("imap.example.com:993")
     .SetCredential("user@example.com", "App1icati0nP455w0rd")
     .SetProtocolLog("Logs/ImapClient.txt")
-    .SetFolder("INBOX/Subfolder");
-var mimeMessages = await imapReceiver.ReadMail
-    .Skip(0).Take(10, continuous: true)
+    .SetFolder("INBOX");
+var mimeMessages = await imapReceiver.ReadMail.Top(10)
     .GetMimeMessagesAsync(cancellationToken);
 ```
 
-Note: Use imapReceiver.ReadMail.Top(#) to get the newest (descending) results.
-
-To only download the email parts you want to use:
+To only download the [message parts](http://www.mimekit.net/docs/html/T_MailKit_MessageSummaryItems.htm) you want to use:
 
 ```csharp
-var messageSummaries = await imapReceiver.ReadMail
-    .GetMessageSummariesAsync(cancellationToken);
+var reader = imapReceiver.ReadMail
+    .Skip(0).Take(250, continuous: true)
+    .Items(MessageSummaryItems.Envelope);
+var messageSummaries = await reader.GetMessageSummariesAsync(cancellationToken);
 ```
 
-Note: MailKit returns results in ascending order by default, use messageSummaries.Reverse() to get descending results.
+Note: MailKit returns results in ascending order by default, use messageSummaries.Reverse() to get descending results or imapReceiver.ReadMail.Top(#) to get the newest results.
 
-To query unread emails from the IMAP server and specify which message parts to download:
+To [query](http://www.mimekit.net/docs/html/T_MailKit_Search_SearchQuery.htm) unread emails from the IMAP server:
 
 ```csharp
-var messageSummaries = await imapReceiver.ReadFrom("INBOX")
+var messageSummaries = await imapReceiver.ReadFrom("INBOX/Subfolder")
     .Query(SearchQuery.NotSeen)
-    .Items(MailFolderReader.CoreMessageItems)
+    .ItemsForMimeMessages()
     .GetMessageSummariesAsync(cancellationToken);
 ```
 
