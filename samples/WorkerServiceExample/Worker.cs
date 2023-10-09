@@ -123,7 +123,7 @@ public class Worker : BackgroundService
             {
                 if (messageSummary.UniqueId.Id > newestEmail?.UniqueId.Id)
                 {
-                    var mimeMessage = await messageSummary.GetMimeMessageAsync();
+                    var mimeMessage = await messageSummary.GetMimeMessageAsync(cancellationToken);
                     //var mimeMessage = await _imapReceiver.ReadMail.GetMimeMessageAsync(messageSummary.UniqueId);
                     await messageSummary.AddFlagsAsync(MessageFlags.Seen);
                     _logger.LogDebug($"{_imapReceiver} message #{messageSummary.UniqueId} message downloaded, Seen flag added.");

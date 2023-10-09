@@ -45,6 +45,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="messageSummary">IMessageSummary to convert to a MimeMessage.</param>
         /// <param name="cancellationToken">Request cancellation token.</param>
         /// <returns>List of <see cref="MimeMessage"/> items.</returns>
+        [Obsolete("Use messageSummary.GetMimeMessageEnvelopeBodyAsync() instead.")]
         Task<MimeMessage> GetMimeMessageEnvelopeBodyAsync(IMessageSummary messageSummary, CancellationToken cancellationToken = default);
 
         /// <summary>

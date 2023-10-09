@@ -137,7 +137,7 @@ namespace MailKitSimplified.Receiver.Extensions
             var replyText = original.QuoteForReply(bodyText, prependText, includeMessageId, cancellationToken);
             var format = isHtml ? TextFormat.Html : TextFormat.Plain;
             var textPart = new TextPart(format) { Text = replyText };
-            var mimeAttachments = await original.GetAttachmentsAsync(includeAttachments, includeEmbedded, cancellationToken).ConfigureAwait(false);
+            var mimeAttachments = await original.GetAttachmentsAsync(includeEmbedded, includeAttachments, cancellationToken).ConfigureAwait(false);
             var multipartMimeBody = textPart.BuildMultipart(mimeAttachments);
             if (peekFolder)
                 await original.Folder.CloseAsync(false, cancellationToken);
@@ -245,6 +245,62 @@ namespace MailKitSimplified.Receiver.Extensions
             var mimeMessage = await original.Folder.GetMessageAsync(original.UniqueId, cancellationToken, progress).ConfigureAwait(false);
             if (peekFolder)
                 await original.Folder.CloseAsync(false, cancellationToken);
+
+            return mimeMessage;
+        }
+
+        public static async Task<MimeMessage> GetMimeMessageEnvelopeBodyAsync(this IMessageSummary messageSummary, CancellationToken cancellationToken = default, bool includeAttachments = false, bool includeEmbedded = false)
+        {
+            var mimeMessage = new MimeMessage();
+            if (messageSummary == null)
+                return mimeMessage;
+
+            // Add message Envelope parts
+            if (messageSummary.Envelope != null)
+            {
+                mimeMessage.Subject = messageSummary.Envelope.Subject;
+                mimeMessage.From.AddRange(messageSummary.Envelope.From);
+                if (messageSummary.Envelope.Sender.Mailboxes.FirstOrDefault() is MailboxAddress sender)
+                    mimeMessage.Sender = sender;
+                mimeMessage.ReplyTo.AddRange(messageSummary.Envelope.ReplyTo);
+                mimeMessage.To.AddRange(messageSummary.Envelope.To);
+                mimeMessage.Cc.AddRange(messageSummary.Envelope.Cc);
+                mimeMessage.Bcc.AddRange(messageSummary.Envelope.Bcc);
+                mimeMessage.MessageId = messageSummary.Envelope.MessageId;
+                if (messageSummary.Envelope.Date.HasValue)
+                    mimeMessage.Date = messageSummary.Envelope.Date.Value;
+            }
+
+            // Add message References
+            if (messageSummary.References != null)
+                mimeMessage.References.AddRange(messageSummary.References);
+
+            // Add message TextBody and HtmlBody parts
+            bool peekFolder = !messageSummary.Folder.IsOpen;
+            if (peekFolder || messageSummary.Folder.Access == FolderAccess.None)
+                _ = await messageSummary.Folder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
+
+            MimeEntity textEntity = null;
+            if (messageSummary.HtmlBody is BodyPart htmlBody)
+                textEntity = await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, htmlBody, cancellationToken);
+            else if (messageSummary.TextBody is BodyPart textBody)
+                textEntity = await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, textBody, cancellationToken);
+
+            if (textEntity is TextPart bodyText)
+            {
+                if (!includeAttachments)
+                {
+                    mimeMessage.Body = bodyText;
+                }
+                else
+                {
+                    var mimeAttachments = await messageSummary.GetAttachmentsAsync(includeEmbedded, includeAttachments, cancellationToken).ConfigureAwait(false);
+                    mimeMessage.Body = bodyText.BuildMultipart(mimeAttachments);
+                }
+            }
+
+            if (peekFolder)
+                await messageSummary.Folder.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);
 
             return mimeMessage;
         }
