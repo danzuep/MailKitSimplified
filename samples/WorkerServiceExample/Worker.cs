@@ -89,10 +89,19 @@ public class Worker : BackgroundService
         var filteredMessages = await _imapReceiver.ReadMail.Query(SearchQuery.Seen)
             .GetMessageSummariesAsync(cancellationTokenSource.Token);
         _logger.LogInformation($"{_imapReceiver} folder query returned {filteredMessages.Count} messages.");
-        var sentFolder = _imapReceiver.MailFolderClient.SentFolder.Value;
-        var messagesDeleted = await _imapReceiver.MailFolderClient
-            .MoveToAsync(filteredMessages.Select(m => m.UniqueId), sentFolder, cancellationTokenSource.Token);
-        _logger.LogInformation($"Deleted {messagesDeleted} messages from {_imapReceiver} {filteredMessages.Count} Seen messages.");
+        //var sentFolder = _imapReceiver.MailFolderClient.SentFolder.Value;
+        //var messagesDeleted = await _imapReceiver.MailFolderClient
+        //    .MoveToAsync(filteredMessages.Select(m => m.UniqueId), sentFolder, cancellationTokenSource.Token);
+        filteredMessages.ActionEach(async (m) => await _imapReceiver.MoveToSentAsync(m, cancellationTokenSource.Token));
+        _logger.LogInformation($"Deleted messages from {_imapReceiver} {filteredMessages.Count} Seen messages.");
+    }
+
+    private async Task MoveTopOneToDraftAsync()
+    {
+        var mimeMessage = CreateTemplate().MimeMessage;
+        var draftsFolder = _imapReceiver.MailFolderClient.DraftsFolder.Value;
+        var uniqueId = await draftsFolder.AppendAsync(mimeMessage);
+        _logger.LogInformation($"Added mime message to {_imapReceiver} {draftsFolder.FullName} folder as #{uniqueId}.");
     }
 
     private async Task DeleteSeenAsync(CancellationTokenSource cancellationTokenSource)

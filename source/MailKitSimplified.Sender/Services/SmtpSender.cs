@@ -118,7 +118,7 @@ namespace MailKitSimplified.Sender.Services
         /// Logging setup for those not using dependency injection.
         /// <example>LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole());</example>
         /// </summary>
-        public SmtpSender SetLogger(ILoggerFactory loggerFactory, ILogger<SmtpSender> logger)
+        public SmtpSender SetLogger(ILoggerFactory loggerFactory, ILogger<SmtpSender> logger = null)
         {
             _loggerFactory = loggerFactory ?? _loggerFactory ?? NullLoggerFactory.Instance;
             _logger = logger ?? _logger ?? _loggerFactory.CreateLogger<SmtpSender>();

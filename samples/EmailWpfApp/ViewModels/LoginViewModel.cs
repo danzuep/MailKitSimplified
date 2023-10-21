@@ -2,15 +2,15 @@
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
-using MailKitSimplified.Receiver.Abstractions;
-using MailKitSimplified.Sender.Abstractions;
-using System.Threading.Tasks;
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
+using MailKitSimplified.Receiver.Abstractions;
+using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Sender.Models;
-using Microsoft.Extensions.Logging;
 
 namespace EmailWpfApp.ViewModels
 {

@@ -23,6 +23,7 @@ namespace MailKitSimplified.Receiver.Services
 
         private IMailFolder _mailFolder = null;
         private IList<string> SentFolderNames;
+        private IList<string> DraftsFolderNames;
         private ILogger _logger;
         private readonly IImapReceiver _imapReceiver;
 
@@ -31,6 +32,7 @@ namespace MailKitSimplified.Receiver.Services
             _logger = logger ?? NullLogger<MailFolderClient>.Instance;
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
             SentFolderNames = options?.Value?.SentFolderNames ?? FolderClientOptions.CommonSentFolderNames;
+            DraftsFolderNames = options?.Value?.DraftsFolderNames ?? FolderClientOptions.CommonDraftsFolderNames;
         }
 
         public static MailFolderClient Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderClient> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null)
@@ -172,6 +174,26 @@ namespace MailKitSimplified.Receiver.Services
                 SearchQuery.DeliveredBefore(absolute).And(filter);
             return await AddFlagsAsync(searchQuery, MessageFlags.Deleted, silent: true, cancellationToken).ConfigureAwait(false);
         }
+
+        public Lazy<IMailFolder> DraftsFolder => new Lazy<IMailFolder>(() =>
+        {
+            IMailFolder draftFolder = null;
+            var client = _imapReceiver.ImapClient;
+            if ((client.Capabilities & (ImapCapabilities.SpecialUse | ImapCapabilities.XList)) != 0)
+            {
+                lock (client.SyncRoot)
+                    draftFolder = client.GetFolder(SpecialFolder.Drafts);
+            }
+            else
+            {
+                lock (client.SyncRoot)
+                    draftFolder = client.GetFolder(client.PersonalNamespaces[0]);
+                lock (draftFolder.SyncRoot)
+                    draftFolder = draftFolder.GetSubfolders(false, CancellationToken.None).FirstOrDefault(x =>
+                        DraftsFolderNames.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
+            }
+            return draftFolder;
+        });
 
         public Lazy<IMailFolder> SentFolder => new Lazy<IMailFolder>(() =>
         {

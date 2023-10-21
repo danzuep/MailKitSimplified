@@ -12,6 +12,8 @@ namespace MailKitSimplified.Receiver.Abstractions
     {
         Lazy<IMailFolder> SentFolder { get; }
 
+        Lazy<IMailFolder> DraftsFolder { get; }
+
         /// <summary>
         /// Connect to the configured mail folder.
         /// </summary>
