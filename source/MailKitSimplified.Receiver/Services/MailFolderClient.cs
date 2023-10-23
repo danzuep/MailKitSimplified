@@ -24,6 +24,8 @@ namespace MailKitSimplified.Receiver.Services
         private IMailFolder _mailFolder = null;
         private IList<string> SentFolderNames;
         private IList<string> DraftsFolderNames;
+        private IList<string> JunkFolderNames;
+        private IList<string> TrashFolderNames;
         private ILogger _logger;
         private readonly IImapReceiver _imapReceiver;
 
@@ -33,6 +35,8 @@ namespace MailKitSimplified.Receiver.Services
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
             SentFolderNames = options?.Value?.SentFolderNames ?? FolderClientOptions.CommonSentFolderNames;
             DraftsFolderNames = options?.Value?.DraftsFolderNames ?? FolderClientOptions.CommonDraftsFolderNames;
+            JunkFolderNames = options?.Value?.JunkFolderNames ?? FolderClientOptions.CommonJunkFolderNames;
+            TrashFolderNames = options?.Value?.TrashFolderNames ?? FolderClientOptions.CommonTrashFolderNames;
         }
 
         public static MailFolderClient Create(EmailReceiverOptions emailReceiverOptions, ILogger<MailFolderClient> logger = null, ILogger<ImapReceiver> logImap = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null)
@@ -175,66 +179,67 @@ namespace MailKitSimplified.Receiver.Services
             return await AddFlagsAsync(searchQuery, MessageFlags.Deleted, silent: true, cancellationToken).ConfigureAwait(false);
         }
 
-        public Lazy<IMailFolder> DraftsFolder => new Lazy<IMailFolder>(() =>
+        private IEnumerable<string> GetFolderNames(SpecialFolder specialFolder)
         {
-            IMailFolder draftFolder = null;
+            var folderNames = specialFolder switch
+            {
+                SpecialFolder.Sent => SentFolderNames,
+                SpecialFolder.Drafts => DraftsFolderNames,
+                SpecialFolder.Junk => JunkFolderNames,
+                SpecialFolder.Trash => TrashFolderNames,
+                // All, Archive, Flagged, Important
+                _ => throw new NotImplementedException()
+            };
+            return folderNames;
+        }
+
+        private Lazy<IMailFolder> GetFolder(SpecialFolder specialFolder) => new Lazy<IMailFolder>(() =>
+        {
+            IMailFolder folder = null;
             var client = _imapReceiver.ImapClient;
             if ((client.Capabilities & (ImapCapabilities.SpecialUse | ImapCapabilities.XList)) != 0)
             {
                 lock (client.SyncRoot)
-                    draftFolder = client.GetFolder(SpecialFolder.Drafts);
+                    folder = client.GetFolder(specialFolder);
             }
             else
             {
+                var folderNames = GetFolderNames(specialFolder);
                 lock (client.SyncRoot)
-                    draftFolder = client.GetFolder(client.PersonalNamespaces[0]);
-                lock (draftFolder.SyncRoot)
-                    draftFolder = draftFolder.GetSubfolders(false, CancellationToken.None).FirstOrDefault(x =>
-                        DraftsFolderNames.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
+                    folder = client.GetFolder(client.PersonalNamespaces[0]);
+                lock (folder.SyncRoot)
+                    folder = folder.GetSubfolders(false, CancellationToken.None).FirstOrDefault(x =>
+                        folderNames.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
             }
-            return draftFolder;
+            return folder;
         });
 
-        public Lazy<IMailFolder> SentFolder => new Lazy<IMailFolder>(() =>
+        /// <summary>
+        /// Get a mail folder from a list of possible names.
+        /// </summary>
+        /// <param name="folderNames">Folder names to search for.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Mail folder with a matching name.</returns>
+        public async Task<IMailFolder> GetFolderAsync(IEnumerable<string> folderNames, CancellationToken cancellationToken = default)
         {
-            IMailFolder sentFolder = null;
-            var client = _imapReceiver.ImapClient;
-            if ((client.Capabilities & (ImapCapabilities.SpecialUse | ImapCapabilities.XList)) != 0)
-            {
-                lock (client.SyncRoot)
-                    sentFolder = client.GetFolder(SpecialFolder.Sent);
-            }
-            else
-            {
-                lock (client.SyncRoot)
-                    sentFolder = client.GetFolder(client.PersonalNamespaces[0]);
-                lock (sentFolder.SyncRoot)
-                    sentFolder = sentFolder.GetSubfolders(false, CancellationToken.None).FirstOrDefault(x =>
-                        SentFolderNames.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
-            }
-            return sentFolder;
-        });
-
-        public async Task<IMailFolder> GetSentFolderAsync(CancellationToken cancellationToken = default)
-        {
-            IMailFolder sentFolder = null;
-            var client = _imapReceiver.ImapClient;
-            if ((client.Capabilities & (ImapCapabilities.SpecialUse | ImapCapabilities.XList)) != 0)
-            {
-                lock (client.SyncRoot)
-                    sentFolder = client.GetFolder(SpecialFolder.Sent);
-            }
-            else
-            {
-                var namespaceFolders = await client.GetFoldersAsync(client.PersonalNamespaces[0]).ConfigureAwait(false);
-                var namespaceSubfolders = await namespaceFolders[0].GetSubfoldersAsync(false, cancellationToken).ConfigureAwait(false);
-                sentFolder = namespaceSubfolders.FirstOrDefault(x => SentFolderNames.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
-            }
+            if (folderNames == null || !folderNames.Any())
+                throw new ArgumentNullException(nameof(folderNames));
+            var namespaceFolders = await _imapReceiver.ImapClient.GetFoldersAsync(_imapReceiver.ImapClient.PersonalNamespaces[0]).ConfigureAwait(false);
+            var namespaceSubfolders = await namespaceFolders[0].GetSubfoldersAsync(false, cancellationToken).ConfigureAwait(false);
+            var sentFolder = namespaceSubfolders.FirstOrDefault(x => folderNames.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
             return sentFolder;
         }
 
+        public IMailFolder SentFolder => GetFolder(SpecialFolder.Sent).Value;
+
+        public IMailFolder DraftsFolder => GetFolder(SpecialFolder.Drafts).Value;
+
+        public IMailFolder JunkFolder => GetFolder(SpecialFolder.Junk).Value;
+
+        public IMailFolder TrashFolder => GetFolder(SpecialFolder.Trash).Value;
+
         public async Task<UniqueId?> AppendSentMessageAsync(MimeMessage message, MessageFlags messageFlags = MessageFlags.Seen, CancellationToken cancellationToken = default, ITransferProgress transferProgress = default) =>
-            await SentFolder.Value.AppendAsync(message, messageFlags, cancellationToken, transferProgress).ConfigureAwait(false);
+            await SentFolder.AppendAsync(message, messageFlags, cancellationToken, transferProgress).ConfigureAwait(false);
 
         internal async Task<UniqueId?> MoveOrCopyAsync(UniqueId messageUid, IMailFolder source, IMailFolder destination, bool move = true, CancellationToken cancellationToken = default)
         {

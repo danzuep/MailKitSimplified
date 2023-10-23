@@ -10,9 +10,17 @@ namespace MailKitSimplified.Receiver.Abstractions
 {
     public interface IMailFolderClient : IAsyncDisposable, IDisposable
     {
-        Lazy<IMailFolder> SentFolder { get; }
+        /// <summary>Mail folder that contains sent messages.</summary>
+        IMailFolder SentFolder { get; }
 
-        Lazy<IMailFolder> DraftsFolder { get; }
+        /// <summary>Mail folder that contains message drafts.</summary>
+        IMailFolder DraftsFolder { get; }
+
+        /// <summary>Mail folder that contains spam messages.</summary>
+        IMailFolder JunkFolder { get; }
+
+        /// <summary>Mail folder that contains deleted messages.</summary>
+        IMailFolder TrashFolder { get; }
 
         /// <summary>
         /// Connect to the configured mail folder.
