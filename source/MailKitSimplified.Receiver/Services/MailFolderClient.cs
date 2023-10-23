@@ -181,14 +181,24 @@ namespace MailKitSimplified.Receiver.Services
 
         private IEnumerable<string> GetFolderNames(SpecialFolder specialFolder)
         {
-            var folderNames = specialFolder switch
+            IList<string> folderNames;
+            switch (specialFolder)
             {
-                SpecialFolder.Sent => SentFolderNames,
-                SpecialFolder.Drafts => DraftsFolderNames,
-                SpecialFolder.Junk => JunkFolderNames,
-                SpecialFolder.Trash => TrashFolderNames,
+                case SpecialFolder.Sent:
+                    folderNames = SentFolderNames;
+                    break;
+                case SpecialFolder.Drafts:
+                    folderNames = DraftsFolderNames;
+                    break;
+                case SpecialFolder.Junk:
+                    folderNames = JunkFolderNames;
+                    break;
+                case SpecialFolder.Trash:
+                    folderNames = TrashFolderNames;
+                    break;
                 // All, Archive, Flagged, Important
-                _ => throw new NotImplementedException()
+                default:
+                    throw new NotImplementedException();
             };
             return folderNames;
         }

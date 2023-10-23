@@ -324,7 +324,7 @@ namespace MailKitSimplified.Receiver.Services
         public async Task<UniqueId?> MoveToSentAsync(IMessageSummary messageSummary, CancellationToken cancellationToken = default)
         {
             using (var mailFolderClient = _mailFolderClient.Value)
-                return await mailFolderClient.MoveOrCopyAsync(messageSummary.UniqueId, messageSummary.Folder, mailFolderClient.SentFolder.Value, move: true, cancellationToken).ConfigureAwait(false);
+                return await mailFolderClient.MoveOrCopyAsync(messageSummary.UniqueId, messageSummary.Folder, mailFolderClient.SentFolder, move: true, cancellationToken).ConfigureAwait(false);
         }
 
         public IImapReceiver Clone()
