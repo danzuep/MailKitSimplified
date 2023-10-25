@@ -22,6 +22,7 @@ namespace MailKitSimplified.Sender.Models
         public SecureSocketOptions SocketOptions { get; set; } = SecureSocketOptions.Auto;
         public SmtpCapabilities CapabilitiesToRemove { get; set; } = SmtpCapabilities.None;
         public NetworkCredential SmtpCredential { get; set; } = null;
+        public SaslMechanism AuthenticationMechanism { get; set; } = null;
         public string ProtocolLog { get; set; } = null;
         public bool ProtocolLogFileAppend { get; set; } = false;
         public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(1);

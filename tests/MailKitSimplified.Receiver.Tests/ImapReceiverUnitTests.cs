@@ -83,9 +83,13 @@ namespace MailKitSimplified.Receiver.Tests
             using var imapReceiver = ImapReceiver.Create(_localhost)
                 .SetPort(It.IsAny<ushort>(), It.IsAny<SecureSocketOptions>())
                 .SetCredential(It.IsAny<string>(), It.IsAny<string>())
-                .SetProtocolLog(It.IsAny<string>(), It.IsAny<bool>())
                 .SetFolder(It.IsAny<string>(), It.IsAny<FolderAccess>())
-                .SetCustomAuthentication(It.IsAny<Func<IImapClient, Task>>());
+                .SetLogger(It.IsAny<ILoggerFactory>(), It.IsAny<ILogger<ImapReceiver>>())
+                .SetProtocolLog(It.IsAny<string>(), It.IsAny<bool>())
+                .SetProtocolLog(It.IsAny<IProtocolLogger>())
+                .SetImapClient(It.IsAny<IImapClient>())
+                .SetCustomAuthentication(It.IsAny<Func<IImapClient, Task>>())
+                .RemoveCapabilities(It.IsAny<ImapCapabilities>());
             imapReceiver.RemoveAuthenticationMechanism("XOAUTH2");
             Assert.NotNull(imapReceiver);
             Assert.IsAssignableFrom<IImapReceiver>(imapReceiver);

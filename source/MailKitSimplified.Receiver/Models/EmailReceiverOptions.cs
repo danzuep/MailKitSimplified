@@ -27,6 +27,7 @@ namespace MailKitSimplified.Receiver.Models
         public SecureSocketOptions SocketOptions { get; set; } = SecureSocketOptions.Auto;
         public ImapCapabilities CapabilitiesToRemove { get; set; } = ImapCapabilities.None;
         public NetworkCredential ImapCredential { get; set; } = new NetworkCredential();
+        public SaslMechanism AuthenticationMechanism { get; set; } = null;
         public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(1);
 
         public ProtocolLoggerOptions ProtocolLogger { get; set; } = new ProtocolLoggerOptions();

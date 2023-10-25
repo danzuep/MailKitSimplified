@@ -170,6 +170,12 @@ namespace MailKitSimplified.Sender.Services
             return this;
         }
 
+        public SmtpSender SetCustomAuthentication(SaslMechanism saslMechanism)
+        {
+            _senderOptions.AuthenticationMechanism = saslMechanism;
+            return this;
+        }
+
         [Obsolete("Use EmailSenderOptions.CreateProtocolLogger instead.")]
         public static IProtocolLogger GetProtocolLogger(string logFilePath = null, bool append = false, IFileSystem fileSystem = null)
         {
@@ -260,6 +266,8 @@ namespace MailKitSimplified.Sender.Services
             {
                 if (_customAuthenticationMethod != null) // for XOAUTH2 and OAUTHBEARER
                     await _customAuthenticationMethod(_smtpClient).ConfigureAwait(false);
+                else if (_senderOptions.AuthenticationMechanism != null)
+                    await _smtpClient.AuthenticateAsync(_senderOptions.AuthenticationMechanism).ConfigureAwait(false);
                 else
                 {
                     var ntlm = _smtpClient.AuthenticationMechanisms.Contains("NTLM") ?

@@ -104,6 +104,7 @@ namespace MailKitSimplified.Receiver
             return services;
         }
 
+        [Obsolete("This is for development testing only.")]
         public static IServiceCollection AddTlsImapClient(this IServiceCollection services)
         {
             services.AddTransient<IImapClient>((serviceProvider) => {

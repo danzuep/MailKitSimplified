@@ -205,6 +205,12 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
+        public ImapReceiver SetCustomAuthentication(SaslMechanism saslMechanism)
+        {
+            _receiverOptions.AuthenticationMechanism = saslMechanism;
+            return this;
+        }
+
         public IMailFolderClient GetFolder(string mailFolderName)
         {
             _receiverOptions.MailFolderName = mailFolderName;
@@ -262,6 +268,8 @@ namespace MailKitSimplified.Receiver.Services
             {
                 if (_customAuthenticationMethod != null) // for XOAUTH2 and OAUTHBEARER
                     await _customAuthenticationMethod(_imapClient).ConfigureAwait(false);
+                else if (_receiverOptions.AuthenticationMechanism != null)
+                    await _imapClient.AuthenticateAsync(_receiverOptions.AuthenticationMechanism).ConfigureAwait(false);
                 else
                 {
                     var ntlm = _imapClient.AuthenticationMechanisms.Contains("NTLM") ?
