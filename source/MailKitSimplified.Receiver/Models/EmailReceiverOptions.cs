@@ -16,7 +16,12 @@ namespace MailKitSimplified.Receiver.Models
         public const string SectionName = "EmailReceiver";
         private static readonly string _inbox = "INBOX";
 
-        public string MailFolderName { get; set; } = _inbox;
+        public string MailFolderName
+        {
+            get => MailFolderNames.FirstOrDefault() ?? _inbox;
+            set => MailFolderNames = new List<string> { value };
+        }
+
         public IList<string> MailFolderNames { get; set; } = new List<string> { _inbox };
 
         public FolderAccess MailFolderAccess { get; set; } = FolderAccess.None;
@@ -76,11 +81,24 @@ namespace MailKitSimplified.Receiver.Models
         {
             var imapClient = protocolLogger != null ? new ImapClient(protocolLogger) : new ImapClient();
             imapClient.Timeout = (int)Timeout.TotalMilliseconds;
-            await imapClient.ConnectAsync(ImapHost, ImapPort, SecureSocketOptions.Auto, cancellationToken).ConfigureAwait(false);
+            await imapClient.ConnectAsync(ImapHost, ImapPort, SocketOptions, cancellationToken).ConfigureAwait(false);
+            if (CapabilitiesToRemove != ImapCapabilities.None)
+                imapClient.Capabilities &= ~CapabilitiesToRemove;
             if (imapClient.Capabilities.HasFlag(ImapCapabilities.Compress))
                 await imapClient.CompressAsync(cancellationToken).ConfigureAwait(false);
-            await imapClient.AuthenticateAsync(ImapCredential, cancellationToken).ConfigureAwait(false);
-            //await imapClient.Inbox.OpenAsync(FolderAccess.ReadOnly).ConfigureAwait(false);
+            if (AuthenticationMechanism != null)
+                await imapClient.AuthenticateAsync(AuthenticationMechanism).ConfigureAwait(false);
+            else
+            {
+                var ntlm = imapClient.AuthenticationMechanisms.Contains("NTLM") ?
+                    new SaslMechanismNtlm(ImapCredential) : null;
+                if (ntlm?.Workstation != null)
+                    await imapClient.AuthenticateAsync(ntlm, cancellationToken).ConfigureAwait(false);
+                else
+                    await imapClient.AuthenticateAsync(ImapCredential, cancellationToken).ConfigureAwait(false);
+            }
+            if (MailFolderAccess != FolderAccess.None)
+                await imapClient.Inbox.OpenAsync(MailFolderAccess).ConfigureAwait(false);
             return imapClient;
         }
 

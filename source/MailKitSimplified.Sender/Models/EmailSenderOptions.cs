@@ -57,8 +57,20 @@ namespace MailKitSimplified.Sender.Models
         {
             var smtpClient = protocolLogger != null ? new SmtpClient(protocolLogger) : new SmtpClient();
             smtpClient.Timeout = (int)Timeout.TotalMilliseconds;
-            await smtpClient.ConnectAsync(SmtpHost, SmtpPort, SecureSocketOptions.Auto, cancellationToken).ConfigureAwait(false);
-            await smtpClient.AuthenticateAsync(SmtpCredential, cancellationToken).ConfigureAwait(false);
+            await smtpClient.ConnectAsync(SmtpHost, SmtpPort, SocketOptions, cancellationToken).ConfigureAwait(false);
+            if (CapabilitiesToRemove != SmtpCapabilities.None)
+                smtpClient.Capabilities &= ~CapabilitiesToRemove;
+            if (AuthenticationMechanism != null)
+                await smtpClient.AuthenticateAsync(AuthenticationMechanism).ConfigureAwait(false);
+            else
+            {
+                var ntlm = smtpClient.AuthenticationMechanisms.Contains("NTLM") ?
+                    new SaslMechanismNtlm(SmtpCredential) : null;
+                if (ntlm?.Workstation != null)
+                    await smtpClient.AuthenticateAsync(ntlm, cancellationToken).ConfigureAwait(false);
+                else
+                    await smtpClient.AuthenticateAsync(SmtpCredential, cancellationToken).ConfigureAwait(false);
+            }
             return smtpClient;
         }
 

@@ -31,8 +31,21 @@ namespace MailKitSimplified.Receiver.Services
             {
                 foreach (var emailReceiver in emailReceiverOptions)
                 {
-                    var imapReceiver = GetImapReceiver(emailReceiver);
-                    imapReceivers.Add(imapReceiver);
+                    if (emailReceiver.MailFolderNames?.Count > 0)
+                    {
+                        foreach (var mailFolderName in emailReceiver.MailFolderNames)
+                        {
+                            var options = emailReceiver.Copy();
+                            options.MailFolderName = mailFolderName;
+                            var imapReceiver = GetImapReceiver(options);
+                            imapReceivers.Add(imapReceiver);
+                        }
+                    }
+                    else
+                    {
+                        var imapReceiver = GetImapReceiver(emailReceiver);
+                        imapReceivers.Add(imapReceiver);
+                    }
                 }
             }
             return imapReceivers;

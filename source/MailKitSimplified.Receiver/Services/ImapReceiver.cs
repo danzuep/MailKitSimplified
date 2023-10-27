@@ -250,8 +250,8 @@ namespace MailKitSimplified.Receiver.Services
             {
                 await _imapClient.ConnectAsync(_receiverOptions.ImapHost, _receiverOptions.ImapPort, _receiverOptions.SocketOptions, cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace($"IMAP client connected to {_receiverOptions.ImapHost}.");
-                if (_imapClient is ImapClient client && _receiverOptions.CapabilitiesToRemove != ImapCapabilities.None)
-                    client.Capabilities &= ~_receiverOptions.CapabilitiesToRemove;
+                if (_receiverOptions.CapabilitiesToRemove != ImapCapabilities.None)
+                    _imapClient.Capabilities &= ~_receiverOptions.CapabilitiesToRemove;
                 if (_imapClient.Capabilities.HasFlag(ImapCapabilities.Compress))
                     await _imapClient.CompressAsync(cancellationToken).ConfigureAwait(false);
             }
