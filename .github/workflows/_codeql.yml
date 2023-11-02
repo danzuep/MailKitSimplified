@@ -2,13 +2,12 @@ name: "CodeQL"
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ "main", "release/*" ]
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ "main" ]
-  #schedule:
-  #    - cron: '43 7 * * 0'
+  workflow_call:
+    inputs:
+      project-name:
+        description: 'The name of the project'
+        default: MailKitSimplified
+        type: string
 
 jobs:
   analyze:
@@ -24,7 +23,7 @@ jobs:
       contents: read
       security-events: write
     env:
-      SOLUTION_FILE: 'source/MailKitSimplified.sln'
+      SOLUTION_FILE: 'source/${{ inputs.project-name }}.sln'
 
     # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
     strategy:
@@ -33,20 +32,10 @@ jobs:
         language: [ 'csharp' ]
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    # https://github.com/actions/setup-dotnet
-    - name: Get .NET externals
-      uses: actions/setup-dotnet@v3
-
-    # https://github.com/actions/cache/blob/main/examples.md#c---nuget
-    - name: Get any cached NuGet packages from the last run
-      uses: actions/cache@v3
+    - name: Download artifact from build job
+      uses: actions/download-artifact@v3
       with:
-        path: '~/.nuget/packages'
-        key: nugetpackages-${{ runner.os }}-${{ hashFiles('source/**/*.csproj') }}
-        restore-keys: nugetpackages-${{ runner.os }}
+        name: ${{ inputs.project-name }}
 
     # Initialize the CodeQL tools for scanning. Prefix the query list with "+" to use these queries and those in the config file.
     # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
@@ -55,10 +44,6 @@ jobs:
       with:
         languages: ${{ matrix.language }}
         queries: security-extended,security-and-quality
-
-    # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
-    - name: Restore and build all projects in the solution
-      run: dotnet build $SOLUTION_FILE --configuration Release
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
