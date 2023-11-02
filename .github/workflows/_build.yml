@@ -1,0 +1,60 @@
+name: "Build"
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      project-name:
+        description: 'The name of the project'
+        default: MailKitSimplified
+        type: string
+    outputs:
+      sender:
+        description: 'Sender project path'
+        value: ${{ jobs.build.outputs.sender }}
+      receiver:
+        description: 'Receiver project path'
+        value: ${{ jobs.build.outputs.receiver }}
+      artifact:
+        description: 'Artifact name'
+        value: ${{ jobs.build.outputs.artifact }}
+
+jobs:
+  build:
+    name: Build
+    runs-on: 'ubuntu-latest'
+    env:
+      SOURCE: "source"
+      SENDER: "${{ inputs.project-name }}.Sender"
+      RECEIVER: "${{ inputs.project-name }}.Receiver"
+      SENDER_PROJECT: "source/${{ inputs.project-name }}.Sender/${{ inputs.project-name }}.Sender.csproj"
+      RECEIVER_PROJECT: "source/${{ inputs.project-name }}.Receiver/${{ inputs.project-name }}.Receiver.csproj"
+
+    outputs:
+      artifact: ${{ env.SOURCE }}
+      sender: ${{ env.SENDER_PROJECT }}
+      receiver: ${{ env.RECEIVER_PROJECT }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # https://github.com/actions/setup-dotnet
+    - name: Get .NET externals
+      uses: actions/setup-dotnet@v3
+
+    - name: Restore project dependencies
+      run: |
+        dotnet restore $SENDER_PROJECT
+        dotnet restore $RECEIVER_PROJECT
+
+    # https://github.com/actions/upload-artifact
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.SOURCE }}
+        path: |
+          ${{ env.SOURCE }}/${{ env.SENDER }}
+          ${{ env.SOURCE }}/${{ env.RECEIVER }}
+        retention-days: 1
+        if-no-files-found: error # or 'ignore', defaults to `warn`

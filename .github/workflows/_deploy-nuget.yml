@@ -43,9 +43,9 @@ jobs:
         with:
           dotnet-version: 6.0.x
           dotnet-quality: 'ga'
-          
+
       - name: List files in the folder
-        run: find . -name "*.nupkg" -type f -exec echo {} \;
+        run: Get-ChildItem -Path "./.nupkg" | Where-Object {$_.PSIsContainer -eq $false} | SELECT Name
 
       # https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-nuget-registry#authenticating-with-github_token-in-github-actions
       # https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions#publishing-a-package-using-an-action

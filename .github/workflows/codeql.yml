@@ -1,0 +1,42 @@
+name: "Analysis"
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [ "main", "release/*" ]
+  # pull_request:
+  #   # The branches below must be a subset of the branches above
+  #   branches: [ "main" ]
+  # schedule:
+  #    - cron: '43 7 * * 0'
+  workflow_call:
+    inputs:
+      project-name:
+        description: 'The name of the project'
+        type: string
+      configuration:
+        description: 'The build configuration'
+        default: Release
+        type: string
+      dotnet-target:
+        description: 'The target .NET version'
+        default: net7.0
+        type: string
+
+jobs:
+  build:
+    name: Build
+    uses: ./.github/workflows/_build.yml
+    with:
+      project-name: ${{ inputs.project-name || 'MailKitSimplified' }}
+
+  analyze:
+    name: Analyze
+    needs: build
+    uses: ./.github/workflows/_codeql.yml
+    with:
+      dotnet-target: ${{ inputs.dotnet-target || 'net7.0' }} # netstandard2.0
+      configuration: ${{ inputs.configuration || 'Release' }}
+      artifact-name: ${{ needs.build.outputs.artifact }}
+      sender-project: ${{ needs.build.outputs.sender }}
+      receiver-project: ${{ needs.build.outputs.receiver }}
