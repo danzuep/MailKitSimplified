@@ -26,7 +26,6 @@ namespace MailKitSimplified.Sender.Services
     {
         private CancellationTokenSource _cts = null;
         private readonly ConcurrentQueue<MimeMessage> _sendQueue = new ConcurrentQueue<MimeMessage>();
-        private Func<ISmtpClient, Task> _customAuthenticationMethod;
         private bool _isClientInjected;
         private ISmtpClient _smtpClient;
         private IProtocolLogger _smtpLogger;
@@ -166,7 +165,7 @@ namespace MailKitSimplified.Sender.Services
 
         public SmtpSender SetCustomAuthentication(Func<ISmtpClient, Task> customAuthenticationMethod)
         {
-            _customAuthenticationMethod = customAuthenticationMethod;
+            _senderOptions.CustomAuthenticationMethod = customAuthenticationMethod;
             return this;
         }
 
@@ -264,8 +263,8 @@ namespace MailKitSimplified.Sender.Services
         {
             if (_senderOptions.SmtpCredential != null && !_smtpClient.IsAuthenticated)
             {
-                if (_customAuthenticationMethod != null) // for XOAUTH2 and OAUTHBEARER
-                    await _customAuthenticationMethod(_smtpClient).ConfigureAwait(false);
+                if (_senderOptions.CustomAuthenticationMethod != null) // for XOAUTH2 and OAUTHBEARER
+                    await _senderOptions.CustomAuthenticationMethod(_smtpClient).ConfigureAwait(false);
                 else if (_senderOptions.AuthenticationMechanism != null)
                     await _smtpClient.AuthenticateAsync(_senderOptions.AuthenticationMechanism).ConfigureAwait(false);
                 else

@@ -23,6 +23,7 @@ namespace MailKitSimplified.Sender.Models
         public SmtpCapabilities CapabilitiesToRemove { get; set; } = SmtpCapabilities.None;
         public NetworkCredential SmtpCredential { get; set; } = null;
         public SaslMechanism AuthenticationMechanism { get; set; } = null;
+        public Func<ISmtpClient, Task> CustomAuthenticationMethod { get; set; } = null;
         public string ProtocolLog { get; set; } = null;
         public bool ProtocolLogFileAppend { get; set; } = false;
         public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(1);
@@ -60,7 +61,9 @@ namespace MailKitSimplified.Sender.Models
             await smtpClient.ConnectAsync(SmtpHost, SmtpPort, SocketOptions, cancellationToken).ConfigureAwait(false);
             if (CapabilitiesToRemove != SmtpCapabilities.None)
                 smtpClient.Capabilities &= ~CapabilitiesToRemove;
-            if (AuthenticationMechanism != null)
+            if (CustomAuthenticationMethod != null) // for XOAUTH2 and OAUTHBEARER
+                await CustomAuthenticationMethod(smtpClient).ConfigureAwait(false);
+            else if (AuthenticationMechanism != null)
                 await smtpClient.AuthenticateAsync(AuthenticationMechanism).ConfigureAwait(false);
             else
             {

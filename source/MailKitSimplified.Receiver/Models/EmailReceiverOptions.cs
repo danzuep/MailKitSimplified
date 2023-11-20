@@ -33,18 +33,19 @@ namespace MailKitSimplified.Receiver.Models
         public ImapCapabilities CapabilitiesToRemove { get; set; } = ImapCapabilities.None;
         public NetworkCredential ImapCredential { get; set; } = new NetworkCredential();
         public SaslMechanism AuthenticationMechanism { get; set; } = null;
+        public Func<IImapClient, Task> CustomAuthenticationMethod { get; set; } = null;
         public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(1);
 
         public ProtocolLoggerOptions ProtocolLogger { get; set; } = new ProtocolLoggerOptions();
 
-        //[Obsolete("Use ProtocolLogger.FileWrite.FileWritePath or ILogger instead.")]
+        //[Obsolete("Use ProtocolLogger.FileWriter.FilePath or ILogger instead.")]
         public string ProtocolLog
         {
             get => ProtocolLogger.FileWriter.FilePath;
             set => ProtocolLogger.FileWriter.FilePath = value;
         }
 
-        //[Obsolete("Use ProtocolLogger.FileWrite.AppendToExisting or ILogger instead.")]
+        //[Obsolete("Use ProtocolLogger.FileWriter.AppendToExisting or ILogger instead.")]
         public bool ProtocolLogFileAppend
         {
             get => ProtocolLogger.FileWriter.AppendToExisting;
@@ -86,7 +87,10 @@ namespace MailKitSimplified.Receiver.Models
                 imapClient.Capabilities &= ~CapabilitiesToRemove;
             if (imapClient.Capabilities.HasFlag(ImapCapabilities.Compress))
                 await imapClient.CompressAsync(cancellationToken).ConfigureAwait(false);
-            if (AuthenticationMechanism != null)
+
+            if (CustomAuthenticationMethod != null) // for XOAUTH2 and OAUTHBEARER
+                await CustomAuthenticationMethod(imapClient).ConfigureAwait(false);
+            else if (AuthenticationMechanism != null)
                 await imapClient.AuthenticateAsync(AuthenticationMechanism).ConfigureAwait(false);
             else
             {
@@ -97,8 +101,10 @@ namespace MailKitSimplified.Receiver.Models
                 else
                     await imapClient.AuthenticateAsync(ImapCredential, cancellationToken).ConfigureAwait(false);
             }
+
             if (MailFolderAccess != FolderAccess.None)
                 await imapClient.Inbox.OpenAsync(MailFolderAccess).ConfigureAwait(false);
+
             return imapClient;
         }
 

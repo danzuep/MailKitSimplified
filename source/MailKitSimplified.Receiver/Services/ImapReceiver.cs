@@ -21,7 +21,6 @@ namespace MailKitSimplified.Receiver.Services
         private Lazy<MailFolderClient> _mailFolderClient;
         private Lazy<MailFolderReader> _mailFolderReader;
         private Lazy<MailFolderMonitor> _mailFolderMonitor;
-        private Func<IImapClient, Task> _customAuthenticationMethod;
         private bool _isClientInjected;
         private IImapClient _imapClient;
         private IProtocolLogger _imapLogger;
@@ -201,7 +200,7 @@ namespace MailKitSimplified.Receiver.Services
 
         public ImapReceiver SetCustomAuthentication(Func<IImapClient, Task> customAuthenticationMethod)
         {
-            _customAuthenticationMethod = customAuthenticationMethod;
+            _receiverOptions.CustomAuthenticationMethod = customAuthenticationMethod;
             return this;
         }
 
@@ -261,13 +260,15 @@ namespace MailKitSimplified.Receiver.Services
         /// Authenticating via a SASL mechanism may be a multi-step process.
         /// <see href="http://www.mimekit.net/docs/html/T_MailKit_Security_SaslMechanism.htm"/>
         /// <seealso href="http://www.mimekit.net/docs/html/T_MailKit_Security_SaslMechanismOAuth2.htm"/>
+        /// <seealso href="https://github.com/jstedfast/MailKit/blob/master/ExchangeOAuth2.md"/>
+        /// <seealso href="https://github.com/jstedfast/MailKit/blob/master/GMailOAuth2.md"/>
         /// </summary>
         internal async ValueTask AuthenticateImapClientAsync(CancellationToken cancellationToken = default)
         {
             if (!_imapClient.IsAuthenticated)
             {
-                if (_customAuthenticationMethod != null) // for XOAUTH2 and OAUTHBEARER
-                    await _customAuthenticationMethod(_imapClient).ConfigureAwait(false);
+                if (_receiverOptions.CustomAuthenticationMethod != null) // for XOAUTH2 and OAUTHBEARER
+                    await _receiverOptions.CustomAuthenticationMethod(_imapClient).ConfigureAwait(false);
                 else if (_receiverOptions.AuthenticationMechanism != null)
                     await _imapClient.AuthenticateAsync(_receiverOptions.AuthenticationMechanism).ConfigureAwait(false);
                 else
