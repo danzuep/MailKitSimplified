@@ -9,12 +9,6 @@ on:
         default: MailKitSimplified
         type: string
     outputs:
-      sender:
-        description: 'Sender project path'
-        value: ${{ jobs.build.outputs.sender }}
-      receiver:
-        description: 'Receiver project path'
-        value: ${{ jobs.build.outputs.receiver }}
       artifact:
         description: 'Artifact name'
         value: ${{ jobs.build.outputs.artifact }}
@@ -27,13 +21,9 @@ jobs:
       SOURCE: "source"
       SENDER: "${{ inputs.project-name }}.Sender"
       RECEIVER: "${{ inputs.project-name }}.Receiver"
-      SENDER_PROJECT: "source/${{ inputs.project-name }}.Sender/${{ inputs.project-name }}.Sender.csproj"
-      RECEIVER_PROJECT: "source/${{ inputs.project-name }}.Receiver/${{ inputs.project-name }}.Receiver.csproj"
 
     outputs:
       artifact: ${{ env.SOURCE }}
-      sender: ${{ env.SENDER_PROJECT }}
-      receiver: ${{ env.RECEIVER_PROJECT }}
 
     steps:
     - name: Checkout repository
@@ -45,8 +35,10 @@ jobs:
 
     - name: Restore project dependencies
       run: |
-        dotnet restore $SENDER_PROJECT
-        dotnet restore $RECEIVER_PROJECT
+        Get-ChildItem -Path "./${{ env.SOURCE }}" -Filter "*er.csproj" -File -Recurse |
+        Select-Object -ExpandProperty BaseName | ForEach-Object {
+          dotnet restore "./${{ env.SOURCE }}/$_/$_.csproj" #Write-Output
+        }
 
     # https://github.com/actions/upload-artifact
     - name: Upload build artifacts

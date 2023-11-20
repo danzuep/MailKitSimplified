@@ -46,7 +46,8 @@ jobs:
 
       - name: List files in the folder
         run: Get-ChildItem -Path "./.nupkg" | Where-Object {$_.PSIsContainer -eq $false} | SELECT Name
-
+        # run: find . -name "*.csproj" -type f -exec echo {} \;
+  
       # https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-nuget-registry#authenticating-with-github_token-in-github-actions
       # https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions#publishing-a-package-using-an-action
       - name: Publish to NuGet

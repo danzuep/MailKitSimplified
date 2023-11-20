@@ -40,10 +40,6 @@ jobs:
     env:
       DOTNET_TARGET: ${{ inputs.dotnet-target }}
       CONFIGURATION: ${{ inputs.configuration }}
-      SENDER_PROJECT: ${{ inputs.sender-project }}
-      RECEIVER_PROJECT: ${{ inputs.receiver-project }}
-      # SENDER_PROJECT: "${{ inputs.sender-project }}/${{ inputs.sender-project }}.csproj"
-      # RECEIVER_PROJECT: "${{ inputs.receiver-project }}/${{ inputs.receiver-project }}.csproj"
 
     # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
     strategy:
@@ -59,9 +55,6 @@ jobs:
         name: ${{ inputs.artifact-name }}
         path: ${{ inputs.artifact-name }}
 
-    - name: List project files in the folder
-      run: find . -name "*.csproj" -type f -exec echo {} \;
-
     # Initialize the CodeQL tools for scanning. Prefix the query list with "+" to use these queries and those in the config file.
     # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
     - name: Initialize CodeQL
@@ -71,12 +64,12 @@ jobs:
         queries: security-extended,security-and-quality
 
     # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
-    - name: Restore and build all projects in the solution
+    - name: Build all projects in the solution
       run: |
-        echo ${{ env.SENDER_PROJECT }};
-        echo ${{ env.RECEIVER_PROJECT }};
-        dotnet build $SENDER_PROJECT --configuration $CONFIGURATION --framework $DOTNET_TARGET
-        dotnet build $RECEIVER_PROJECT --configuration $CONFIGURATION --framework $DOTNET_TARGET
+        PROJECTS=$(find . -name "*.csproj" -type f -print0)
+        while IFS= read -r -d $'\0' PROJECT; do
+          dotnet build $PROJECT --configuration $CONFIGURATION --framework $DOTNET_TARGET
+        done <<< "$PROJECTS"
       
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
