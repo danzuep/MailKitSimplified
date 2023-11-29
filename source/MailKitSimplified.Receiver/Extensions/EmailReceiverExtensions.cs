@@ -46,21 +46,33 @@ namespace MailKitSimplified.Receiver.Extensions
             }
         }
 
-        /// <summary>Recursively combine and return an 'Or' query.</summary>
-        /// <param name="queries">List of queries to combine.</param>
-        /// <returns>Queries combined with an 'Or' statement.</returns>
-        public static SearchQuery EnumerateOr(this IList<SearchQuery> queries)
+        private static SearchQuery Enumerate(this IEnumerable<SearchQuery> queries, bool or = true)
         {
-            var query = queries?.FirstOrDefault();
-            if (query != null)
+            SearchQuery fullQuery = null;
+            if (queries != null)
             {
-                queries.Remove(query);
-                return query.Or(EnumerateOr(queries));
+                foreach (var query in queries)
+                {
+                    fullQuery = fullQuery == null ? query : or ?
+                        fullQuery.Or(query) : fullQuery.And(query);
+                }
             }
-            return query ?? new SearchQuery();
+            return fullQuery ?? SearchQuery.All;
         }
 
-        /// <summary>Recursively combine and return an 'Or' query of keywords.</summary>
+        /// <summary>Combine and return an 'And' query.</summary>
+        /// <param name="queries">List of queries to combine.</param>
+        /// <returns>Queries combined with an 'And' statement.</returns>
+        public static SearchQuery EnumerateAnd(this IEnumerable<SearchQuery> queries) =>
+            Enumerate(queries, or: false);
+
+        /// <summary>Combine and return an 'Or' query.</summary>
+        /// <param name="queries">List of queries to combine.</param>
+        /// <returns>Queries combined with an 'Or' statement.</returns>
+        public static SearchQuery EnumerateOr(this IEnumerable<SearchQuery> queries) =>
+            Enumerate(queries, or: true);
+
+        /// <summary>Combine and return an 'Or' query of keywords.</summary>
         /// <param name="keywords">List of keywords to combine.</param>
         /// <returns>Queries combined with an 'Or' statement.</returns>
         public static SearchQuery MatchAny(this IEnumerable<string> keywords, Func<string, SearchQuery> selector)
@@ -69,8 +81,8 @@ namespace MailKitSimplified.Receiver.Extensions
                 throw new ArgumentNullException(nameof(keywords));
             if (selector == null)
                 throw new ArgumentNullException(nameof(selector));
-            var query = EnumerateOr(keywords.Select(selector).ToList());
-            return query ?? SearchQuery.All;
+            var query = Enumerate(keywords.Select(selector), or: true);
+            return query;
         }
     }
 }

@@ -4,6 +4,7 @@ global using MimeKit;
 global using MailKit;
 global using MailKit.Net.Imap;
 using MailKit.Security;
+using MailKit.Search;
 using System.Net;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
+using MailKitSimplified.Receiver.Extensions;
 
 namespace MailKitSimplified.Receiver.Tests
 {
@@ -219,6 +221,17 @@ namespace MailKitSimplified.Receiver.Tests
         {
             var description = _imapReceiver.ToString();
             Assert.Contains(_localhost, description);
+        }
+
+        private static readonly string[] _keywords = new string[] { "Hi", "Hey" };
+
+        [Fact]
+        public void EnumerateOr_Verify()
+        {
+            SearchQuery expected = SearchQuery.SubjectContains(_keywords[0]);
+            expected = expected.Or(SearchQuery.SubjectContains(_keywords[1]));
+            var subjectMatch = _keywords.MatchAny(SearchQuery.SubjectContains);
+            Assert.Equal(expected.ToString(), subjectMatch.ToString());
         }
     }
 }

@@ -40,6 +40,8 @@ namespace MailKitSimplified.Sender.Extensions
             mimeMessage.WriteTo(memoryBlockStream, cancellationToken);
             memoryBlockStream.Position = 0;
             var result = MimeMessage.Load(memoryBlockStream, persistent, cancellationToken);
+            //await memoryBlockStream.FlushAsync().ConfigureAwait(false);
+            // MemoryStream doesn't have any unmanaged resources, so it doesn't need to be disposed.
             if (persistent)
                 result.MessageId = MimeUtils.GenerateMessageId();
             return result;
@@ -58,6 +60,8 @@ namespace MailKitSimplified.Sender.Extensions
             await mimeMessage.WriteToAsync(memoryBlockStream, cancellationToken);
             memoryBlockStream.Position = 0;
             var result = await MimeMessage.LoadAsync(memoryBlockStream, persistent, cancellationToken).ConfigureAwait(false);
+            //await memoryBlockStream.FlushAsync().ConfigureAwait(false);
+            // MemoryStream doesn't have any unmanaged resources, so it doesn't need to be disposed.
             if (persistent)
                 result.MessageId = MimeUtils.GenerateMessageId();
             return result;
