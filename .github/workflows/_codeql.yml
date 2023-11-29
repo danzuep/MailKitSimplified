@@ -47,6 +47,10 @@ jobs:
         name: ${{ inputs.artifact-name }}
         path: ${{ inputs.artifact-name }}
 
+    # https://github.com/actions/setup-dotnet
+    - name: Get .NET externals
+      uses: actions/setup-dotnet@v3
+
     # Initialize the CodeQL tools for scanning. Prefix the query list with "+" to use these queries and those in the config file.
     # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
     - name: Initialize CodeQL
@@ -55,14 +59,14 @@ jobs:
         languages: ${{ matrix.language }}
         queries: security-extended,security-and-quality
 
-    # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
+    # List project files in the folder, then build each one. Double quotes around the `$project` variable ensures that paths with spaces are handled correctly.
     - name: Build all projects in the solution
+      shell: pwsh
       run: |
-        PROJECTS=$(find . -name "*.csproj" -type f -print0)
-        while IFS= read -r -d $'\0' PROJECT; do
-          dotnet build $PROJECT --configuration $CONFIGURATION --framework $DOTNET_TARGET
-        done <<< "$PROJECTS"
-      
+        Get-ChildItem -Path . -Filter "*.csproj" -File -Recurse | ForEach-Object {
+          dotnet build $_.FullName --configuration $ENV:CONFIGURATION --framework $ENV:DOTNET_TARGET
+        }
+
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
       with:
