@@ -38,5 +38,3 @@ jobs:
       dotnet-target: ${{ inputs.dotnet-target || 'net7.0' }} # netstandard2.0
       configuration: ${{ inputs.configuration || 'Release' }}
       artifact-name: ${{ needs.build.outputs.artifact }}
-      sender-project: ${{ needs.build.outputs.sender }}
-      receiver-project: ${{ needs.build.outputs.receiver }}

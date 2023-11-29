@@ -34,6 +34,7 @@ jobs:
       uses: actions/setup-dotnet@v3
 
     - name: Restore project dependencies
+      shell: pwsh
       run: |
         Get-ChildItem -Path "./${{ env.SOURCE }}" -Filter "*er.csproj" -File -Recurse |
         Select-Object -ExpandProperty BaseName | ForEach-Object {

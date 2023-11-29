@@ -15,14 +15,6 @@ on:
         description: 'The artifact name'
         required: true
         type: string
-      sender-project:
-        description: 'Sender project file path'
-        required: true
-        type: string
-      receiver-project:
-        description: 'Receiver project file path'
-        required: true
-        type: string
 
 jobs:
   analyze:
