@@ -39,45 +39,39 @@ namespace MailKitSimplified.Email.Services
 
         public ISmtpClient SmtpClient => _smtpClient;
 
-        public static bool ValidateEmailAddresses(IEnumerable<string> sourceEmailAddresses, IEnumerable<string> destinationEmailAddresses, ILogger logger)
+        public static string ValidateEmailAddresses(IEnumerable<string> sourceEmailAddresses, IEnumerable<string> destinationEmailAddresses)
         {
             if (sourceEmailAddresses is null)
                 throw new ArgumentNullException(nameof(sourceEmailAddresses));
             if (destinationEmailAddresses is null)
                 throw new ArgumentNullException(nameof(destinationEmailAddresses));
-            if (logger is null)
-                logger = NullLogger.Instance;
-            bool isValid = true;
+            string warning = null;
             int sourceEmailAddressCount = 0, destinationEmailAddressCount = 0;
             foreach (var from in sourceEmailAddresses)
             {
                 if (!from.Contains('@'))
                 {
-                    logger.LogInformation("From address is invalid.");
-                    isValid = false;
+                    warning = $"from address is invalid ({from})";
                 }
                 foreach (var to in destinationEmailAddresses)
                 {
                     if (!to.Contains('@'))
                     {
-                        logger.LogInformation("To address is invalid.");
-                        isValid = false;
+                        warning = $"to address is invalid ({to})";
                     }
                     if (to.Equals(from, StringComparison.OrdinalIgnoreCase))
                     {
-                        logger.LogInformation("Circular reference, To == From.");
-                        isValid = false;
+                        warning = $"circular reference, To ({to}) == From ({from})";
                     }
                     destinationEmailAddressCount++;
                 }
                 sourceEmailAddressCount++;
             }
             if (sourceEmailAddressCount == 0)
-                logger.LogInformation("Source email address not specified");
+                warning = "cource email address not specified";
             else if (destinationEmailAddressCount == 0)
-                logger.LogInformation("Destination email address not specified");
-            isValid &= sourceEmailAddressCount > 0 && destinationEmailAddressCount > 0;
-            return isValid;
+                warning = "destination email address not specified";
+            return warning;
         }
 
         public static bool ValidateMimeMessage(MimeMessage mimeMessage, ILogger logger = null)
@@ -91,9 +85,10 @@ namespace MailKitSimplified.Email.Services
                 var toCcBcc = mimeMessage.To.Mailboxes.Select(m => m.Address)
                     .Concat(mimeMessage.Cc.Mailboxes.Select(m => m.Address))
                     .Concat(mimeMessage.Bcc.Mailboxes.Select(m => m.Address));
-                isValid = ValidateEmailAddresses(from, toCcBcc, logger);
-                if (!isValid)
-                    logger.LogWarning($"Email address validation failed for ID {mimeMessage.MessageId}.");
+                var warning = ValidateEmailAddresses(from, toCcBcc);
+                isValid = string.IsNullOrEmpty(warning);
+                if (!isValid && logger != null)
+                    logger.LogWarning($"Email address validation failed for ID {mimeMessage.MessageId}, {warning}.");
                 if (mimeMessage.ReplyTo.Count == 0 && mimeMessage.From.Count == 0)
                     mimeMessage.ReplyTo.Add(new MailboxAddress("Unmonitored", $"noreply@localhost"));
                 if (mimeMessage.From.Count == 0)

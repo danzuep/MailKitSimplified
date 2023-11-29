@@ -182,29 +182,21 @@ namespace MailKitSimplified.Sender.Tests
             _smtpClientMock.Verify(_ => _.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>(), It.IsAny<ITransferProgress>()), Times.Once);
         }
 
-        [Fact]
-        public void ValidateEmailAddresses_WithValidEmails_VerifyValid()
+        [Theory]
+        [InlineData(new string[] { "from@localhost" }, new string[] { "to@localhost" })]
+        public void ValidateEmailAddresses_WithValidEmails_VerifyValid(string[] source, string[] destination)
         {
-            var source = new string[] { "from@localhost" };
-            var destination = new string[] { "to@localhost" };
-            var valid = SmtpSender.ValidateEmailAddresses(source, destination, NullLogger.Instance);
-            Assert.True(valid);
+            var warning = SmtpSender.ValidateEmailAddresses(source, destination);
+            Assert.True(string.IsNullOrEmpty(warning));
         }
 
-        [Fact]
-        public void ValidateEmailAddresses_WithInvalidEmails_VerifyInvalid()
+        [Theory]
+        [InlineData(new string[] { }, new string[] { })]
+        [InlineData(new string[] { "from@localhost", "admin@localhost", "me" }, new string[] { "to@localhost", "admin@localhost", "you" })]
+        public void ValidateEmailAddresses_WithInvalidEmails_VerifyInvalid(string[] source, string[] destination)
         {
-            var source = new string[] { "from@localhost", "admin@localhost", "me" };
-            var destination = new string[] { "to@localhost", "admin@localhost", "you" };
-            var valid = SmtpSender.ValidateEmailAddresses(source, destination, NullLogger.Instance);
-            Assert.False(valid);
-        }
-
-        [Fact]
-        public void ValidateEmailAddresses_WithNoEmails_VerifyInvalid()
-        {
-            var valid = SmtpSender.ValidateEmailAddresses(new string[] { }, new string[] { }, NullLogger.Instance);
-            Assert.False(valid);
+            var warning = SmtpSender.ValidateEmailAddresses(source, destination);
+            Assert.False(string.IsNullOrEmpty(warning));
         }
 
         [Fact]

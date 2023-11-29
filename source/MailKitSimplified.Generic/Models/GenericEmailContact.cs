@@ -102,45 +102,39 @@ namespace MailKitSimplified.Generic.Models
             return result;
         }
 
-        public static bool ValidateEmailAddresses(IEnumerable<string> sourceEmailAddresses, IEnumerable<string> destinationEmailAddresses, ILogger logger)
+        public static string ValidateEmailAddresses(IEnumerable<string> sourceEmailAddresses, IEnumerable<string> destinationEmailAddresses)
         {
             if (sourceEmailAddresses is null)
                 throw new ArgumentNullException(nameof(sourceEmailAddresses));
             if (destinationEmailAddresses is null)
                 throw new ArgumentNullException(nameof(destinationEmailAddresses));
-            if (logger is null)
-                logger = NullLogger<GenericEmailContact>.Instance;
-            bool isValid = true;
+            string warning = null;
             int sourceEmailAddressCount = 0, destinationEmailAddressCount = 0;
             foreach (var from in sourceEmailAddresses)
             {
-                if (!from.Contains("@"))
+                if (!from.Contains('@'))
                 {
-                    logger.LogWarning($"From address is invalid ({from})");
-                    isValid = false;
+                    warning = $"from address is invalid ({from})";
                 }
                 foreach (var to in destinationEmailAddresses)
                 {
-                    if (!to.Contains("@"))
+                    if (!to.Contains('@'))
                     {
-                        logger.LogWarning($"To address is invalid ({to})");
-                        isValid = false;
+                        warning = $"to address is invalid ({to})";
                     }
                     if (to.Equals(from, StringComparison.OrdinalIgnoreCase))
                     {
-                        logger.LogWarning($"Circular reference, To ({to}) == From ({from})");
-                        isValid = false;
+                        warning = $"circular reference, To ({to}) == From ({from})";
                     }
                     destinationEmailAddressCount++;
                 }
                 sourceEmailAddressCount++;
             }
             if (sourceEmailAddressCount == 0)
-                logger.LogWarning("Source email address not specified");
-            if (destinationEmailAddressCount == 0)
-                logger.LogWarning("Destination email address not specified");
-            isValid &= sourceEmailAddressCount > 0 && destinationEmailAddressCount > 0;
-            return isValid;
+                warning = "cource email address not specified";
+            else if (destinationEmailAddressCount == 0)
+                warning = "destination email address not specified";
+            return warning;
         }
 
         public override string ToString() => $"\"{Name}\" <{EmailAddress}>";

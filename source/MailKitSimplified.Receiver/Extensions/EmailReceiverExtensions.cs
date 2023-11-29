@@ -52,7 +52,7 @@ namespace MailKitSimplified.Receiver.Extensions
         public static SearchQuery EnumerateOr(this IList<SearchQuery> queries)
         {
             var query = queries?.FirstOrDefault();
-            if (queries?.Count > 1)
+            if (query != null)
             {
                 queries.Remove(query);
                 return query.Or(EnumerateOr(queries));

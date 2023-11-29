@@ -334,11 +334,9 @@ namespace MailKitSimplified.Receiver.Services
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, transferProgress).ConfigureAwait(false);
+                    _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage?.MessageId}.");
                     if (mimeMessage != null)
-                    {
-                        _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage.MessageId}.");
                         mimeMessages.Add(mimeMessage);
-                    }
                 }
             }
             else if (!_top.HasValue)
@@ -348,6 +346,7 @@ namespace MailKitSimplified.Receiver.Services
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var mimeMessage = await mailFolder.GetMessageAsync(index, cancellationToken, transferProgress).ConfigureAwait(false);
+                    _logger.LogTrace($"{_imapReceiver} received #{index}, {mimeMessage?.MessageId}.");
                     if (mimeMessage != null)
                         mimeMessages.Add(mimeMessage);
                 }
@@ -360,6 +359,7 @@ namespace MailKitSimplified.Receiver.Services
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var mimeMessage = await mailFolder.GetMessageAsync(index, cancellationToken, transferProgress).ConfigureAwait(false);
+                    _logger.LogTrace($"{_imapReceiver} received #{index}, {mimeMessage?.MessageId}.");
                     if (mimeMessage != null)
                         mimeMessages.Add(mimeMessage);
                 }
@@ -402,7 +402,7 @@ namespace MailKitSimplified.Receiver.Services
             MimeMessage mimeMessage;
             (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
             mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
-            _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage.MessageId}.");
+            _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage?.MessageId}.");
             if (closeWhenFinished)
                 await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
             return mimeMessage;
@@ -420,11 +420,9 @@ namespace MailKitSimplified.Receiver.Services
                 try
                 {
                     var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
+                    _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage?.MessageId}.");
                     if (mimeMessage != null)
-                    {
-                        _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage.MessageId}.");
                         mimeMessages.Add(mimeMessage);
-                    }
                 }
                 catch (Exception ex)
                 {
@@ -615,7 +613,7 @@ namespace MailKitSimplified.Receiver.Services
                     if (cancellationToken.IsCancellationRequested)
                         break;
                     var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
-                    _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage.MessageId}.");
+                    _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage?.MessageId}.");
                     if (mimeMessage != null)
                         yield return mimeMessage;
                 }
@@ -692,8 +690,9 @@ namespace MailKitSimplified.Receiver.Services
                     if (cancellationToken.IsCancellationRequested)
                         break;
                     var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
-                    _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage.MessageId}.");
-                    yield return mimeMessage;
+                    _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage?.MessageId}.");
+                    if (mimeMessage != null)
+                        yield return mimeMessage;
                     count++;
                 }
                 await CloseMailFolderAsync(mailFolder, closeWhenFinished, count).ConfigureAwait(false);
