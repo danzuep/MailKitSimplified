@@ -376,7 +376,8 @@ namespace MailKitSimplified.Receiver.Services
             if (_arrival.IsCancellationRequested)
                 _arrival = new CancellationTokenSource();
             var newMail = _messageCache.TryAddUniqueRange(fetched);
-            if (!firstConnection || (firstConnection && !_folderMonitorOptions.IgnoreExistingMailOnConnect))
+            bool isIgnoreExistingMailOnConnect = firstConnection && !_folderMonitorOptions.IgnoreExistingMailOnConnect;
+            if (!firstConnection || isIgnoreExistingMailOnConnect)
             {
                 foreach (var mailItem in newMail)
                 {

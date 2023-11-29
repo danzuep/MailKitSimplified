@@ -16,6 +16,7 @@ using MailKitSimplified.Receiver.Extensions;
 
 namespace MailKitSimplified.Receiver.Services
 {
+    /// <inheritdoc cref="IImapReceiver" />
     public sealed class ImapReceiver : IImapReceiver
     {
         private Lazy<MailFolderClient> _mailFolderClient;
@@ -28,6 +29,7 @@ namespace MailKitSimplified.Receiver.Services
         private ILoggerFactory _loggerFactory;
         private EmailReceiverOptions _receiverOptions;
 
+        /// <inheritdoc cref="IImapReceiver" />
         public ImapReceiver(IOptions<EmailReceiverOptions> receiverOptions, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null, ILoggerFactory loggerFactory = null)
         {
             _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
@@ -284,7 +286,7 @@ namespace MailKitSimplified.Receiver.Services
             }
         }
 
-        /// <exception cref="FolderNotFoundException">No mail folder has the specified name</exception>
+        /// <inheritdoc cref="ImapClient.GetFolderAsync"/>
         public async ValueTask<IMailFolder> ConnectMailFolderAsync(CancellationToken cancellationToken = default)
         {
             _ = await ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);

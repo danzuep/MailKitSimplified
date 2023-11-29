@@ -117,9 +117,8 @@ namespace MailKitSimplified.Receiver.Extensions
             var multipart = new Multipart();
             if (mimeBody != null)
                 multipart.Add(mimeBody);
-            foreach (var mimeEntity in mimeEntities)
-                if (mimeEntity != null)
-                    multipart.Add(mimeEntity);
+            foreach (var mimeEntity in mimeEntities.Where(m => m != null))
+                multipart.Add(mimeEntity);
 
             return multipart;
         }
@@ -233,6 +232,7 @@ namespace MailKitSimplified.Receiver.Extensions
             return result;
         }
 
+        /// <inheritdoc cref="IMailFolder.GetMessageAsync"/>
         /// <exception cref="NotSupportedException">Thrown if IMailFolder is reused.</exception>
         public static async Task<MimeMessage> GetMimeMessageAsync(this IMessageSummary original, CancellationToken cancellationToken = default, ITransferProgress progress = null)
         {
@@ -281,9 +281,9 @@ namespace MailKitSimplified.Receiver.Extensions
                 _ = await messageSummary.Folder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
 
             MimeEntity textEntity = null;
-            if (messageSummary.HtmlBody is BodyPart htmlBody)
+            if (messageSummary.HtmlBody is BodyPartText htmlBody)
                 textEntity = await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, htmlBody, cancellationToken);
-            else if (messageSummary.TextBody is BodyPart textBody)
+            else if (messageSummary.TextBody is BodyPartText textBody)
                 textEntity = await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, textBody, cancellationToken);
 
             if (textEntity is TextPart bodyText)
@@ -313,6 +313,8 @@ namespace MailKitSimplified.Receiver.Extensions
         /// <returns><see cref="TextPart"/> of the message body <see cref="MimeEntity"/>.</returns>
         public static async Task<string> GetBodyTextAsync(this IMessageSummary messageSummary, CancellationToken cancellationToken = default)
         {
+            if (messageSummary == null)
+                return string.Empty;
             MimeEntity textEntity = null;
             bool peekFolder = !messageSummary.Folder?.IsOpen ?? false;
             if (peekFolder)
@@ -392,18 +394,12 @@ namespace MailKitSimplified.Receiver.Extensions
             UniqueId? resultUid = null;
             if (messageSummary.UniqueId.IsValid && destination != null)
             {
-                try
-                {
-                    bool peekSourceFolder = !messageSummary.Folder.IsOpen;
-                    if (peekSourceFolder || messageSummary.Folder.Access != FolderAccess.ReadWrite)
-                        _ = await messageSummary.Folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
-                    resultUid = await messageSummary.Folder.MoveToAsync(messageSummary.UniqueId, destination, cancellationToken).ConfigureAwait(false);
-                    if (peekSourceFolder)
-                        await messageSummary.Folder.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);
-                }
-                catch (Exception)
-                {
-                }
+                bool peekSourceFolder = !messageSummary.Folder.IsOpen;
+                if (peekSourceFolder || messageSummary.Folder.Access != FolderAccess.ReadWrite)
+                    _ = await messageSummary.Folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
+                resultUid = await messageSummary.Folder.MoveToAsync(messageSummary.UniqueId, destination, cancellationToken).ConfigureAwait(false);
+                if (peekSourceFolder)
+                    await messageSummary.Folder.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);
             }
             return resultUid;
         }

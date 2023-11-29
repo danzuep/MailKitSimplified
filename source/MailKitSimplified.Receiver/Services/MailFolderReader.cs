@@ -246,7 +246,7 @@ namespace MailKitSimplified.Receiver.Services
                 var descendingUids = noFilter ? null :
                     new UniqueIdSet(searchResults.UniqueIds, SortOrder.Descending).Skip(_skip);
                 var filteredUids = noFilter ? null :
-                    descendingUids.Take(_take);
+                    descendingUids?.Take(_take);
                 var ascendingUids = noFilter ? searchResults.UniqueIds :
                     new UniqueIdSet(filteredUids, SortOrder.Ascending);
                 var messageSummaries = await mailFolder.FetchAsync(ascendingUids, filter, cancellationToken).ConfigureAwait(false);
@@ -334,8 +334,11 @@ namespace MailKitSimplified.Receiver.Services
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, transferProgress).ConfigureAwait(false);
-                    _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage.MessageId}.");
-                    mimeMessages.Add(mimeMessage);
+                    if (mimeMessage != null)
+                    {
+                        _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage.MessageId}.");
+                        mimeMessages.Add(mimeMessage);
+                    }
                 }
             }
             else if (!_top.HasValue)
@@ -345,7 +348,8 @@ namespace MailKitSimplified.Receiver.Services
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var mimeMessage = await mailFolder.GetMessageAsync(index, cancellationToken, transferProgress).ConfigureAwait(false);
-                    mimeMessages.Add(mimeMessage);
+                    if (mimeMessage != null)
+                        mimeMessages.Add(mimeMessage);
                 }
             }
             else
@@ -356,7 +360,8 @@ namespace MailKitSimplified.Receiver.Services
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var mimeMessage = await mailFolder.GetMessageAsync(index, cancellationToken, transferProgress).ConfigureAwait(false);
-                    mimeMessages.Add(mimeMessage);
+                    if (mimeMessage != null)
+                        mimeMessages.Add(mimeMessage);
                 }
             }
             _logger.LogTrace($"{_imapReceiver} received {mimeMessages.Count} email(s).");
@@ -415,13 +420,16 @@ namespace MailKitSimplified.Receiver.Services
                 try
                 {
                     var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
-                    _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage.MessageId}.");
-                    mimeMessages.Add(mimeMessage);
+                    if (mimeMessage != null)
+                    {
+                        _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage.MessageId}.");
+                        mimeMessages.Add(mimeMessage);
+                    }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, $"{_imapReceiver} failed to get message #{uniqueId}.");
-                    throw;
+                    throw; // preserve the stack trace
                 }
             }
             _logger.LogTrace($"{_imapReceiver} received {mimeMessages.Count} email(s).");
@@ -474,9 +482,9 @@ namespace MailKitSimplified.Receiver.Services
                 _ = await messageSummary.Folder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
 
             MimeEntity textEntity = null;
-            if (messageSummary.HtmlBody is BodyPart htmlBody)
+            if (messageSummary.HtmlBody is BodyPartText htmlBody)
                 textEntity = await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, htmlBody, cancellationToken);
-            else if (messageSummary.TextBody is BodyPart textBody)
+            else if (messageSummary.TextBody is BodyPartText textBody)
                 textEntity = await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, textBody, cancellationToken);
 
             if (textEntity is TextPart bodyText)

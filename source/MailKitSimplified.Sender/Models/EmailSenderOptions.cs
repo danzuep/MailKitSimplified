@@ -93,10 +93,9 @@ namespace MailKitSimplified.Sender.Models
                 var directoryName = fileSystem.Path.GetDirectoryName(ProtocolLog);
                 if (!string.IsNullOrWhiteSpace(directoryName))
                     fileSystem.Directory.CreateDirectory(directoryName);
-                if (isMockFileSystem)
-                    protocolLogger = new ProtocolLogger(Stream.Null);
-                else
-                    protocolLogger = new ProtocolLogger(ProtocolLog, ProtocolLogFileAppend);
+                protocolLogger = isMockFileSystem ?
+                    new ProtocolLogger(Stream.Null) :
+                    new ProtocolLogger(ProtocolLog, ProtocolLogFileAppend);
             }
             return protocolLogger;
         }

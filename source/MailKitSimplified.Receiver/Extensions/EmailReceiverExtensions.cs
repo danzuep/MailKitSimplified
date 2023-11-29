@@ -11,27 +11,27 @@ namespace MailKitSimplified.Receiver.Extensions
     [ExcludeFromCodeCoverage]
     public static class EmailReceiverExtensions
     {
+        /// <inheritdoc cref="string.Join"/>
         public static string ToEnumeratedString<T>(this IEnumerable<T> data, string div = ", ") =>
             data is null ? "" : string.Join(div, data.Select(o => o?.ToString() ?? ""));
 
+        /// <inheritdoc cref="List{T}.AddRange(IEnumerable{T})"/>
         public static IList<T> TryAddUniqueRange<T>(this IList<T> list, IEnumerable<T> items) where T : IMessageSummary        {
             var result = new List<T>();
             if (list is null)
                 list = new List<T>();
             if (items != null)
             {
-                foreach (T item in items)
+                foreach (T item in items.Where(t => t != null && !list.Any(m => m.UniqueId == t.UniqueId)))
                 {
-                    if (item != null && !list.Any(m => m.UniqueId == item.UniqueId))
-                    {
-                        list.Add(item);
-                        result.Add(item);
-                    }
+                    list.Add(item);
+                    result.Add(item);
                 }
             }
             return result;
         }
 
+        /// <inheritdoc cref="List{T}.ForEach(Action{T})"/>
         public static void ActionEach<T>(this IEnumerable<T> items, Action<T> action, CancellationToken cancellationToken = default)
         {
             if (items != null && action != null)
@@ -51,15 +51,18 @@ namespace MailKitSimplified.Receiver.Extensions
         /// <returns>Queries combined with an 'Or' statement.</returns>
         public static SearchQuery EnumerateOr(this IList<SearchQuery> queries)
         {
-            SearchQuery query = queries.FirstOrDefault();
+            var query = queries?.FirstOrDefault();
             if (queries?.Count > 1)
             {
                 queries.Remove(query);
                 return query.Or(EnumerateOr(queries));
             }
-            return query;
+            return query ?? new SearchQuery();
         }
 
+        /// <summary>Recursively combine and return an 'Or' query of keywords.</summary>
+        /// <param name="keywords">List of keywords to combine.</param>
+        /// <returns>Queries combined with an 'Or' statement.</returns>
         public static SearchQuery MatchAny(this IEnumerable<string> keywords, Func<string, SearchQuery> selector)
         {
             if (keywords == null)

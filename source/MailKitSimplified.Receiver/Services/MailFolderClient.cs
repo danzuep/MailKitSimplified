@@ -21,12 +21,12 @@ namespace MailKitSimplified.Receiver.Services
         public string MailFolderName => _mailFolder?.FullName ?? _imapReceiver.ToString();
         public int MailFolderCount => _mailFolder?.Count ?? 0;
 
+        private ILogger _logger;
         private IMailFolder _mailFolder = null;
         private IList<string> SentFolderNames;
-        private IList<string> DraftsFolderNames;
-        private IList<string> JunkFolderNames;
-        private IList<string> TrashFolderNames;
-        private ILogger _logger;
+        private readonly IList<string> DraftsFolderNames;
+        private readonly IList<string> JunkFolderNames;
+        private readonly IList<string> TrashFolderNames;
         private readonly IImapReceiver _imapReceiver;
 
         public MailFolderClient(IImapReceiver imapReceiver, IOptions<FolderClientOptions> options = null, ILogger<MailFolderClient> logger = null)
@@ -203,6 +203,7 @@ namespace MailKitSimplified.Receiver.Services
             return folderNames;
         }
 
+        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1);
         private Lazy<IMailFolder> GetFolder(SpecialFolder specialFolder) => new Lazy<IMailFolder>(() =>
         {
             IMailFolder folder = null;
@@ -259,9 +260,11 @@ namespace MailKitSimplified.Receiver.Services
             {
                 if (!messageUid.IsValid)
                     throw new ArgumentException("IMessageSummary UniqueId is invalid.");
+                if (source == null)
+                    throw new ArgumentNullException(nameof(source));
                 if (destination == null)
                     throw new ArgumentNullException(nameof(destination));
-                bool peekSourceFolder = !source?.IsOpen ?? true;
+                bool peekSourceFolder = !source.IsOpen;
                 bool peekDestinationFolder = !destination.IsOpen;
                 _ = await ConnectMailFolderAsync(source, enableWrite: false, cancellationToken).ConfigureAwait(false);
                 _ = await ConnectMailFolderAsync(destination, enableWrite: true, cancellationToken).ConfigureAwait(false);

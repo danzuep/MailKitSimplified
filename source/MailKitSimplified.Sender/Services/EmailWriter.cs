@@ -42,7 +42,7 @@ namespace MailKitSimplified.Sender.Services
             _options = options?.Value ?? new EmailWriterOptions();
             _customExceptionMethod = (email, ex) =>
             {
-                _logger.LogTrace(ex, $"Exception message ready to be sent by {_emailClient}.");
+                _logger.LogTrace(ex, "Exception message ready to be sent.");
                 email.Subject(ex.Message);
                 return Task.FromResult(email);
             };
@@ -231,11 +231,8 @@ namespace MailKitSimplified.Sender.Services
             if (filePaths != null && filePaths.Length > 0)
             {
                 var mimeEntities = new List<MimePart>();
-                foreach (var filePath in filePaths)
-                {
-                    var mimeEntity = GetMimePart(filePath, _fileSystem);
+                foreach (var mimeEntity in filePaths.Select(fp => GetMimePart(fp, _fileSystem)))
                     mimeEntities.Add(mimeEntity);
-                }
                 Attach(mimeEntities);
             }
             return this;
@@ -338,7 +335,7 @@ namespace MailKitSimplified.Sender.Services
             if (Template == null && File.Exists(_options.TemplateFilePath))
             {
                 Template = await MimeMessage.LoadAsync(_options.TemplateFilePath, cancellationToken).ConfigureAwait(false);
-                _logger.LogDebug($"Saved email {_options.TemplateFilePath} loaded as a template by {_emailClient}.");
+                _logger.LogTrace("Saved email loaded as a template.");
             }
             MimeMessage = Template != null ? await Template.CopyAsync(cancellationToken) : new MimeMessage();
         }

@@ -53,19 +53,19 @@ namespace MailKitSimplified.Email.Services
             {
                 if (!from.Contains('@'))
                 {
-                    logger.LogWarning($"From address is invalid ({from})");
+                    logger.LogInformation("From address is invalid.");
                     isValid = false;
                 }
                 foreach (var to in destinationEmailAddresses)
                 {
                     if (!to.Contains('@'))
                     {
-                        logger.LogWarning($"To address is invalid ({to})");
+                        logger.LogInformation("To address is invalid.");
                         isValid = false;
                     }
                     if (to.Equals(from, StringComparison.OrdinalIgnoreCase))
                     {
-                        logger.LogWarning($"Circular reference, To ({to}) == From ({from})");
+                        logger.LogInformation("Circular reference, To == From.");
                         isValid = false;
                     }
                     destinationEmailAddressCount++;
@@ -73,9 +73,9 @@ namespace MailKitSimplified.Email.Services
                 sourceEmailAddressCount++;
             }
             if (sourceEmailAddressCount == 0)
-                logger.LogWarning("Source email address not specified");
+                logger.LogInformation("Source email address not specified");
             else if (destinationEmailAddressCount == 0)
-                logger.LogWarning("Destination email address not specified");
+                logger.LogInformation("Destination email address not specified");
             isValid &= sourceEmailAddressCount > 0 && destinationEmailAddressCount > 0;
             return isValid;
         }
@@ -92,6 +92,8 @@ namespace MailKitSimplified.Email.Services
                     .Concat(mimeMessage.Cc.Mailboxes.Select(m => m.Address))
                     .Concat(mimeMessage.Bcc.Mailboxes.Select(m => m.Address));
                 isValid = ValidateEmailAddresses(from, toCcBcc, logger);
+                if (!isValid)
+                    logger.LogWarning($"Email address validation failed for ID {mimeMessage.MessageId}.");
                 if (mimeMessage.ReplyTo.Count == 0 && mimeMessage.From.Count == 0)
                     mimeMessage.ReplyTo.Add(new MailboxAddress("Unmonitored", $"noreply@localhost"));
                 if (mimeMessage.From.Count == 0)

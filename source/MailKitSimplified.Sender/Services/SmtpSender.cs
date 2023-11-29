@@ -191,10 +191,9 @@ namespace MailKitSimplified.Sender.Services
                 var directoryName = _fileSystem.Path.GetDirectoryName(logFilePath);
                 if (!string.IsNullOrWhiteSpace(directoryName))
                     _fileSystem.Directory.CreateDirectory(directoryName);
-                if (isMockFileSystem)
-                    protocolLogger = new ProtocolLogger(Stream.Null);
-                else
-                    protocolLogger = new ProtocolLogger(logFilePath, append);
+                protocolLogger = isMockFileSystem ?
+                    new ProtocolLogger(Stream.Null) :
+                    new ProtocolLogger(logFilePath, append);
             }
             return protocolLogger;
         }

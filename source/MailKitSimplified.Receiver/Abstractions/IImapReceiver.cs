@@ -8,6 +8,9 @@ using System.Collections.Generic;
 
 namespace MailKitSimplified.Receiver.Abstractions
 {
+    /// <summary>
+    /// Receives MailKit <see cref="IMessageSummary"/> or <see cref="MimeKit.MimeMessage"/> emails.
+    /// </summary>
     public interface IImapReceiver : IAsyncDisposable, IDisposable
     {
         /// <summary>

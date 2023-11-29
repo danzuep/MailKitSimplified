@@ -37,7 +37,7 @@ namespace MailKitSimplified.Receiver.Services
         public bool IsHtml { get => MimeMessage.HtmlBody != null; }
         public string Body { get => MimeMessage.HtmlBody ?? MimeMessage.TextBody ?? string.Empty; }
         public string BodyText { get => IsHtml ? DecodeHtmlBody(Body) : MimeMessage.TextBody ?? string.Empty; }
-        private static ILogger _logger = NullLogger<MimeMessageReader>.Instance;
+        private ILogger _logger = NullLogger<MimeMessageReader>.Instance;
 
         private MimeMessageReader() { }
 
@@ -87,13 +87,10 @@ namespace MailKitSimplified.Receiver.Services
             return SetLogger(loggerFactory);
         }
 
-        /// <exception cref="MessageNotFoundException">Message was moved before it could be downloaded</exception>
-        /// <exception cref="ImapCommandException">Message was moved before it could be downloaded</exception>
-        /// <exception cref="FolderNotOpenException">Mail folder was closed</exception>
-        /// <exception cref="IOException">Message not downloaded</exception>
-        /// <exception cref="ImapProtocolException">Message not downloaded</exception>
-        /// <exception cref="InvalidOperationException">Message not downloaded</exception>
-        /// <exception cref="OperationCanceledException">Message download task was cancelled.</exception>
+        /// <inheritdoc cref="IMailFolder.GetMessageAsync"/>
+        /// <inheritdoc cref="IMailFolderExtensions.AddFlagsAsync"/>
+        /// <inheritdoc cref="IMailFolder.OpenAsync"/>
+        /// <inheritdoc cref="IMailFolder.CloseAsync"/>
         public static async Task<MimeMessageReader> CreateAsync(IMessageSummary messageSummary, CancellationToken cancellationToken = default)
         {
             if (messageSummary == null)
@@ -227,6 +224,7 @@ namespace MailKitSimplified.Receiver.Services
             }
         }
 
+        /// <inheritdoc cref="MimeMessage.WriteToAsync"/>
         public async Task SaveAsync(string fileName = null, bool useUnixNewLine = false, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fileName))
@@ -236,6 +234,7 @@ namespace MailKitSimplified.Receiver.Services
             await _mimeMessage.WriteToAsync(format, fileName, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc cref="MimeMessage.WriteToAsync"/>
         public async Task<IList<string>> DownloadAllAttachmentsAsync(string downloadFolderPath, bool createDirectory = false, CancellationToken cancellationToken = default)
         {
             if (createDirectory)

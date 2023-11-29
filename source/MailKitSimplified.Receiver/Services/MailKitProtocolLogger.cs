@@ -49,9 +49,9 @@ namespace MailKitSimplified.Receiver.Services
             if (logFilePath != _protocolLoggerOptions.FileWriter.FilePath)
                 _protocolLoggerOptions.FileWriter.FilePath = logFilePath;
             _protocolLoggerOptions.FileWriter.AppendToExisting = appendToExisting;
-            _protocolLoggerOptions.TimestampFormat = useTimestamp == true ?
+            _protocolLoggerOptions.TimestampFormat = useTimestamp ?
                 ProtocolLoggerOptions.DefaultTimestampFormat : null;
-            if (redactSecrets == false)
+            if (!redactSecrets)
                 _nullLogger.AuthenticationSecretDetector = null;
             return this;
         }
