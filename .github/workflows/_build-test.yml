@@ -131,8 +131,12 @@ jobs:
 
       - name: Markdown code coverage job summary
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.merged == true }}
-        run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
-
+        run: |
+          echo '### ${{ env.title }}' >> $GITHUB_STEP_SUMMARY
+          cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+        env:
+          title: '${{ inputs.project-name }} Code Coverage Results'
+  
       # Use either GeneratePackageOnBuild or dotnet pack, not both. See https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-pack
       - name: Create NuGet package
         if: ${{ inputs.environment == 'release' }}

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using MimeKit;
 using MailKit;
 using MailKit.Search;
+using MailKit.Security;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Services;
@@ -45,6 +46,14 @@ public class Worker : BackgroundService
         //await MailFolderMonitorFactoryAsync(cancellationToken);
         //await GetMessageSummaryRepliesAsync(cancellationToken);
         await GetMimeMessageRepliesAsync(cancellationToken);
+    }
+
+    private static ImapReceiver CreateExchangeOAuth2ImapClientExample(SaslMechanismOAuth2 oauth2)
+    {
+        var imapReceiver = ImapReceiver.Create("localhost:143").SetLogger()
+            //.SetPort(993, SecureSocketOptions.SslOnConnect) //"outlook.office365.com:993"
+            .SetCustomAuthentication(async (client) => await client.AuthenticateAsync(oauth2));
+        return imapReceiver;
     }
 
     private async Task ImapReceiverFactoryAsync(CancellationToken cancellationToken = default)
@@ -90,8 +99,8 @@ public class Worker : BackgroundService
             .GetMessageSummariesAsync(cancellationTokenSource.Token);
         _logger.LogInformation($"{_imapReceiver} folder query returned {filteredMessages.Count} messages.");
         //var sentFolder = _imapReceiver.MailFolderClient.SentFolder;
-        //var messagesDeleted = await _imapReceiver.MailFolderClient
-        //    .MoveToAsync(filteredMessages.Select(m => m.UniqueId), sentFolder, cancellationTokenSource.Token);
+        //var messagesDeleted = await _imapReceiver.MailFolderClient.MoveToAsync(
+        //    filteredMessages.Select(m => m.UniqueId), sentFolder, cancellationTokenSource.Token);
         filteredMessages.ActionEach(async (m) => await _imapReceiver.MoveToSentAsync(m, cancellationTokenSource.Token));
         _logger.LogInformation($"Deleted messages from {_imapReceiver} {filteredMessages.Count} Seen messages.");
     }

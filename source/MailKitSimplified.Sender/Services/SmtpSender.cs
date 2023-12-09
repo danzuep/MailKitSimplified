@@ -328,10 +328,7 @@ namespace MailKitSimplified.Sender.Services
                 var warning = ValidateEmailAddresses(from, toCcBcc);
                 isValid = string.IsNullOrEmpty(warning);
                 if (!isValid && logger != null)
-                {
-                    var warningMessage = $"Email address validation failed for ID {mimeMessage.MessageId}";
-                    logger.LogWarning($"{warningMessage}, {warning}.");
-                }
+                    logger.LogWarning($"Email address validation failed for ID {mimeMessage.MessageId}, {warning}.");
             }
             return isValid;
         }
