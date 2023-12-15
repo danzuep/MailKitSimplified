@@ -11,7 +11,7 @@
     <PackageTags>SMTP; email; simple; easy; fluent; C#; .NET; ASP.NET</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
     <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
     <PackageReleaseNotes>

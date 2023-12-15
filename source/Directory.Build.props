@@ -5,17 +5,61 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <Authors>Daniel Collingwood</Authors>
-    <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+    <AccelerateBuildsInVisualStudio>True</AccelerateBuildsInVisualStudio>
   </PropertyGroup>
 
-  <ItemGroup>
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('er'))">
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageIcon>icon.png</PackageIcon>
+  </PropertyGroup>
+  
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('er'))">
+    <PackageReference Include="MailKit" Version="4.3.0" />
+    <PackageReference Include="MimeKit" Version="4.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+    <PackageReference Include="System.IO.Abstractions" Version="20.0.4" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)' != 'Release' and $(MSBuildProjectName.EndsWith('er'))">
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('er'))">
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+      <Link>Resources\LICENSE</Link>
+    </None>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+      <Link>Resources\README.md</Link>
+    </None>
+    <None Include="..\..\resources\icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+      <Link>Resources\icon.png</Link>
+    </None>
+    <None Include="..\..\.github\**">
+      <LinkBase>Resources/Automation Actions</LinkBase>
+    </None>
+    <None Include="..\..\source\*">
+      <LinkBase>Resources/Solution Items</LinkBase>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup Condition="!$(MSBuildProjectName.EndsWith('.Tests'))">
     <InternalsVisibleTo Include="$(AssemblyName).Tests" />
   </ItemGroup>
+
 </Project>
