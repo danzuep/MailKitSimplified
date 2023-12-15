@@ -34,7 +34,7 @@ var emailReceiverOptions = Options.Create(configuration.GetRequiredSection(Email
 using var imapReceiver = new ImapReceiver(emailReceiverOptions, loggerFactory.CreateLogger<ImapReceiver>()); //ImapReceiver.Create("localhost");
 
 var mailFolderReader = imapReceiver.ReadFrom("INBOX").Skip(5).Take(2);
-var messageSummaries = await mailFolderReader.GetMessageSummariesAsync(MessageSummaryItems.UniqueId);
+var messageSummaries = await mailFolderReader.Items(MessageSummaryItems.UniqueId).GetMessageSummariesAsync();
 //logger.LogDebug("Email(s) received: {fields}", messageSummaries.FirstOrDefault()?.Fields);
 logger.LogDebug("Email(s) received: {ids}.", messageSummaries.Select(m => m.UniqueId).ToEnumeratedString());
 
