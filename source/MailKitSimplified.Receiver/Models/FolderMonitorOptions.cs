@@ -1,5 +1,4 @@
 ﻿using MailKit;
-using System;
 
 namespace MailKitSimplified.Receiver.Models
 {
@@ -13,13 +12,6 @@ namespace MailKitSimplified.Receiver.Models
         /// Specify custom email receiver options.
         /// </summary>
         public EmailReceiverOptions EmailReceiver { get; set; } = null;
-
-        [Obsolete("Use EmailReceiver as the name instead.")]
-        public EmailReceiverOptions EmailReceiverOptions
-        {
-            get => EmailReceiver;
-            set => EmailReceiver = value;
-        }
 
         /// <summary>
         /// Specify whether to process existing messages, default is false.

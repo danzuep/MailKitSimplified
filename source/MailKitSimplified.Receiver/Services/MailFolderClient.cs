@@ -375,30 +375,6 @@ namespace MailKitSimplified.Receiver.Services
         public async Task<UniqueIdMap> MoveToAsync(IEnumerable<UniqueId> messageUids, string destinationFolder, CancellationToken cancellationToken = default) =>
             await MoveOrCopyAsync(messageUids, destinationFolder, move: true, cancellationToken).ConfigureAwait(false);
 
-        /// <summary>
-        /// Query the server for the unique IDs of messages with properties that match the search filters.
-        /// </summary>
-        /// <param name="searchQuery">Mail folder search query.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The first 250 <see cref="UniqueId"/>s.</returns>
-        [Obsolete("Use IMailReader.Query().GetMessageSummariesAsync() instead.")]
-        public async Task<IList<UniqueId>> SearchAsync(SearchQuery searchQuery, CancellationToken cancellationToken = default)
-        {
-            _ = await ConnectAsync(false, cancellationToken).ConfigureAwait(false);
-            var uniqueIds = await _mailFolder.SearchAsync(searchQuery, cancellationToken).ConfigureAwait(false);
-            return uniqueIds;
-        }
-
-        [Obsolete("Use MailFolderReader.Top(1).GetMessageSummariesAsync() with FirstOrDefault() instead.")]
-        public async Task<IMessageSummary> GetNewestMessageSummaryAsync(MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default)
-        {
-            _ = await ConnectAsync(true, cancellationToken).ConfigureAwait(false);
-            var index = _mailFolder.Count > 0 ? _mailFolder.Count - 1 : _mailFolder.Count;
-            var messageSummaries = await _mailFolder.FetchAsync(index, index, filter, cancellationToken).ConfigureAwait(false);
-            await _mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
-            return messageSummaries.FirstOrDefault();
-        }
-
         public IMailFolderClient Copy() => MemberwiseClone() as IMailFolderClient;
 
         public override string ToString() => $"{MailFolderName} ({MailFolderCount})";
