@@ -4,7 +4,6 @@ using MailKit.Search;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System;
 
 namespace MailKitSimplified.Receiver.Abstractions
 {
@@ -69,16 +68,6 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="messageSummaryItems">Message summary item filter.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>
         IMailReader Items(MessageSummaryItems messageSummaryItems);
-
-        /// <summary>
-        /// Get a list of the message summaries with just the requested MessageSummaryItems.
-        /// MailKit returns results in ascending order by default, use Reverse() to get descending results.
-        /// </summary>
-        /// <param name="filter"><see cref="MessageSummaryItems"/> to download.</param>
-        /// <param name="cancellationToken">Request cancellation token.</param>
-        /// <returns>List of <see cref="IMessageSummary"/> items.</returns>
-        [Obsolete("Use Items().GetMessageSummariesAsync() instead.")]
-        Task<IList<IMessageSummary>> GetMessageSummariesAsync(MessageSummaryItems filter, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get a list of the message summaries with basic MessageSummaryItems.

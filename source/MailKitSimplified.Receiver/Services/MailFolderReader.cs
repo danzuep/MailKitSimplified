@@ -19,51 +19,6 @@ namespace MailKitSimplified.Receiver.Services
 {
     public sealed class MailFolderReader : IMailFolderReader
     {
-        /// <summary>Core message summary items: UniqueId, Envelope, Headers, Size, and BodyStructure.</summary>
-        [Obsolete("Use the IMailReader.ItemsForMimeMessages() extension instead.")]
-        public static readonly MessageSummaryItems CoreMessageItems =
-            MessageSummaryItems.UniqueId |
-            MessageSummaryItems.Envelope |
-            MessageSummaryItems.Headers |
-            MessageSummaryItems.Size |
-            MessageSummaryItems.BodyStructure;
-
-        /// <summary>Query just the arrival dates of messages on the server.</summary>
-        /// <param name="deliveredAfter">Search for messages after this date.</param>
-        /// <param name="deliveredBefore">Search for messages before this date.</param>
-        /// <returns><see cref="SearchQuery"/> with a maximum of 250 results.</returns>
-        [Obsolete("Use the IMailReader.QueryBetweenDates() extension instead.")]
-        public static SearchQuery QueryBetweenDates(DateTime deliveredAfter, DateTime? deliveredBefore = null)
-        {
-            DateTime before = deliveredBefore != null ? deliveredBefore.Value : DateTime.Now;
-            var query = SearchQuery.DeliveredAfter(deliveredAfter).And(SearchQuery.DeliveredBefore(before));
-            return query;
-        }
-
-        /// <summary>Query the server for messages with matching keywords in the subject or body text.</summary>
-        /// <param name="keywords">Keywords to search for.</param>
-        /// <returns><see cref="SearchQuery"/> with a maximum of 250 results.</returns>
-        [Obsolete("Use the IMailReader.QueryKeywords() extension instead.")]
-        public static SearchQuery QueryKeywords(IEnumerable<string> keywords)
-        {
-            var subjectMatch = keywords.MatchAny(SearchQuery.SubjectContains);
-            var bodyMatch = keywords.MatchAny(SearchQuery.BodyContains);
-            var query = subjectMatch.Or(bodyMatch);
-            return query;
-        }
-
-        /// <summary>Query the server for message(s) with a matching message ID.</summary>
-        /// <param name="messageId">Message-ID to search for.</param>
-        /// <param name="addAngleBrackets">Angle brackets added by default.</param>
-        /// <returns><see cref="SearchQuery"/> with a maximum of 250 results.</returns>
-        [Obsolete("Use the IMailReader.QueryMessageId() extension instead.")]
-        public static SearchQuery QueryMessageId(string messageId, bool addAngleBrackets = true)
-        {
-            var searchText = addAngleBrackets ? $"<{messageId}>" : messageId;
-            var query = SearchQuery.HeaderContains("Message-Id", searchText);
-            return query;
-        }
-
         private int _skip = 0;
         private int _take = _all;
         private ushort? _top = null;
@@ -279,21 +234,6 @@ namespace MailKitSimplified.Receiver.Services
             return filteredSummaries;
         }
 
-        [Obsolete("Use Items().GetMessageSummariesAsync() instead.")]
-        public async Task<IList<IMessageSummary>> GetMessageSummariesAsync(MessageSummaryItems filter, CancellationToken cancellationToken = default)
-        {
-            if (_take == 0)
-            {
-                _logger.LogInformation("Take(0) means no results will be returned.");
-                return Array.Empty<IMessageSummary>();
-            }
-            filter |= MessageSummaryItems.UniqueId;
-            (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
-            var messageSummaries = await GetMessageSummariesAsync(mailFolder, filter, cancellationToken).ConfigureAwait(false);
-            await CloseMailFolderAsync(mailFolder, closeWhenFinished, messageSummaries.Count).ConfigureAwait(false);
-            return messageSummaries;
-        }
-
         public async Task<IList<IMessageSummary>> GetMessageSummariesAsync(CancellationToken cancellationToken = default)
         {
             if (_take == 0)
@@ -383,31 +323,6 @@ namespace MailKitSimplified.Receiver.Services
             return filteredSummaries ?? Array.Empty<IMessageSummary>();
         }
 
-        [Obsolete("Use Range(UidStart, UidEnd).GetMessageSummariesAsync() instead.")]
-        public async Task<IList<IMessageSummary>> GetMessageSummariesAsync(IEnumerable<UniqueId> uniqueIds, MessageSummaryItems filter = MessageSummaryItems.UniqueId, CancellationToken cancellationToken = default)
-        {
-            if (uniqueIds == null)
-                return Array.Empty<IMessageSummary>();
-            filter |= MessageSummaryItems.UniqueId;
-            (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
-            var filteredSummaries = await GetMessageSummariesAsync(mailFolder, uniqueIds, filter, cancellationToken).ConfigureAwait(false);
-            _logger.LogTrace($"{_imapReceiver} received {filteredSummaries.Count} email(s).");
-            await CloseMailFolderAsync(mailFolder, closeWhenFinished, filteredSummaries.Count).ConfigureAwait(false);
-            return filteredSummaries;
-        }
-
-        [Obsolete("Use Range(uniqueId).GetMimeMessagesAsync() instead.")]
-        public async Task<MimeMessage> GetMimeMessageAsync(UniqueId uniqueId, CancellationToken cancellationToken = default, ITransferProgress progress = null)
-        {
-            MimeMessage mimeMessage;
-            (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
-            mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
-            _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage?.MessageId}.");
-            if (closeWhenFinished)
-                await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
-            return mimeMessage;
-        }
-
         private async Task<IList<MimeMessage>> GetMimeMessagesAsync(IMailFolder mailFolder, IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default, ITransferProgress progress = null)
         {
             IList<MimeMessage> mimeMessages = new List<MimeMessage>();
@@ -434,67 +349,6 @@ namespace MailKitSimplified.Receiver.Services
             return mimeMessages;
         }
 
-        [Obsolete("Use Range(UidStart, UidEnd).GetMimeMessagesAsync() instead.")]
-        public async Task<IList<MimeMessage>> GetMimeMessagesAsync(IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default, ITransferProgress progress = null)
-        {
-            IList<MimeMessage> mimeMessages = null;
-            if (uniqueIds != null)
-            {
-                (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
-                mimeMessages = await GetMimeMessagesAsync(mailFolder, uniqueIds, cancellationToken, progress).ConfigureAwait(false);
-                await CloseMailFolderAsync(mailFolder, closeWhenFinished, mimeMessages.Count).ConfigureAwait(false);
-            }
-            return mimeMessages ?? new List<MimeMessage>();
-        }
-
-        [Obsolete("Use messageSummary.GetMimeMessageEnvelopeBodyAsync() instead.")]
-        public async Task<MimeMessage> GetMimeMessageEnvelopeBodyAsync(IMessageSummary messageSummary, CancellationToken cancellationToken = default)
-        {
-            var mimeMessage = new MimeMessage();
-            if (messageSummary == null)
-                return mimeMessage;
-
-            // Add message Envelope parts
-            if (messageSummary.Envelope != null)
-            {
-                mimeMessage.Subject = messageSummary.Envelope.Subject;
-                mimeMessage.From.AddRange(messageSummary.Envelope.From);
-                if (messageSummary.Envelope.Sender.Mailboxes.FirstOrDefault() is MailboxAddress sender)
-                    mimeMessage.Sender = sender;
-                mimeMessage.ReplyTo.AddRange(messageSummary.Envelope.ReplyTo);
-                mimeMessage.To.AddRange(messageSummary.Envelope.To);
-                mimeMessage.Cc.AddRange(messageSummary.Envelope.Cc);
-                mimeMessage.Bcc.AddRange(messageSummary.Envelope.Bcc);
-                mimeMessage.MessageId = messageSummary.Envelope.MessageId;
-                if (messageSummary.Envelope.Date.HasValue)
-                    mimeMessage.Date = messageSummary.Envelope.Date.Value;
-            }
-
-            // Add message References
-            if (messageSummary.References != null)
-                mimeMessage.References.AddRange(messageSummary.References);
-
-            // Add message TextBody and HtmlBody parts
-            bool peekFolder = !messageSummary.Folder.IsOpen;
-            if (peekFolder || messageSummary.Folder.Access == FolderAccess.None)
-                _ = await messageSummary.Folder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
-
-            MimeEntity textEntity = null;
-            if (messageSummary.HtmlBody is BodyPartText htmlBody)
-                textEntity = await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, htmlBody, cancellationToken);
-            else if (messageSummary.TextBody is BodyPartText textBody)
-                textEntity = await messageSummary.Folder.GetBodyPartAsync(messageSummary.UniqueId, textBody, cancellationToken);
-
-            if (textEntity is TextPart bodyText)
-                mimeMessage.Body = bodyText;
-
-            if (peekFolder)
-                await messageSummary.Folder.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);
-            _logger.LogTrace($"{_imapReceiver} received {mimeMessage.MessageId} ({messageSummary.Folder.FullName} {messageSummary.Index}).");
-
-            return mimeMessage;
-        }
-
         private async Task<IList<MimeMessage>> GetMimeMessagesEnvelopeBodyAsync(IMailFolder mailFolder, IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default)
         {
             IList<MimeMessage> mimeMessages = new List<MimeMessage>();
@@ -516,21 +370,6 @@ namespace MailKitSimplified.Receiver.Services
                 mimeMessages.Add(mimeMessage);
                 _logger.LogTrace($"{_imapReceiver} received {mimeMessage.MessageId} ({messageSummary.Folder.FullName} {messageSummary.Index}).");
             }
-            return mimeMessages;
-        }
-
-        [Obsolete("Use Range(UidStart, UidEnd).GetMimeMessagesEnvelopeBodyAsync() instead.")]
-        public async Task<IList<MimeMessage>> GetMimeMessagesEnvelopeBodyAsync(IEnumerable<UniqueId> uniqueIds, CancellationToken cancellationToken = default)
-        {
-            IList<MimeMessage> mimeMessages = new List<MimeMessage>();
-            if (uniqueIds == null)
-            {
-                _logger.LogInformation($"Range(null) means no results will be returned.");
-                return mimeMessages;
-            }
-            (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
-            await GetMimeMessagesEnvelopeBodyAsync(mailFolder, uniqueIds, cancellationToken).ConfigureAwait(false);
-            await CloseMailFolderAsync(mailFolder, closeWhenFinished, mimeMessages.Count).ConfigureAwait(false);
             return mimeMessages;
         }
 
@@ -583,79 +422,6 @@ namespace MailKitSimplified.Receiver.Services
         }
 
 #if NET5_0_OR_GREATER
-        [Obsolete("Use Range(UidStart, UidEnd).GetMessageSummariesAsync() instead.")]
-        public async IAsyncEnumerable<IList<IMessageSummary>> GetMessageSummariesAsync(uint startUid, ushort batchSize, MessageSummaryItems filter = MessageSummaryItems.UniqueId, [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
-            for (uint start = startUid; start <= uint.MaxValue; start += batchSize)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                    break;
-                uint endUid = start + batchSize - 1;
-                var range = new UniqueIdRange(new UniqueId(start), new UniqueId(endUid));
-                var messageSummaries = await mailFolder.FetchAsync(range, filter, cancellationToken).ConfigureAwait(false);
-                _logger.LogTrace($"{_imapReceiver} received {messageSummaries.Count} messages(s).");
-                yield return messageSummaries;
-            }
-            if (closeWhenFinished)
-                await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
-        }
-
-        [Obsolete("Use Range(UidStart, UidEnd).GetMimeMessages() instead.")]
-        public async IAsyncEnumerable<MimeMessage> GetMimeMessages(IEnumerable<UniqueId> uniqueIds, [EnumeratorCancellation] CancellationToken cancellationToken = default, ITransferProgress progress = null)
-        {
-            if (uniqueIds != null)
-            {
-                (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
-                var filteredUids = await GetValidUniqueIdsAsync(mailFolder, uniqueIds, cancellationToken).ConfigureAwait(false);
-                foreach (var uniqueId in filteredUids)
-                {
-                    if (cancellationToken.IsCancellationRequested)
-                        break;
-                    var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
-                    _logger.LogTrace($"{_imapReceiver} received #{uniqueId}, {mimeMessage?.MessageId}.");
-                    if (mimeMessage != null)
-                        yield return mimeMessage;
-                }
-                if (closeWhenFinished)
-                    await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
-            }
-        }
-
-        [Obsolete("Use Range(UidStart, UidEnd).GetMimeMessagesEnvelopeBody() instead.")]
-        public async IAsyncEnumerable<MimeMessage> GetMimeMessagesEnvelopeBody(IEnumerable<UniqueId> uniqueIds, [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
-            var ascendingIds = uniqueIds is IList<UniqueId> ids ? ids : new UniqueIdSet(uniqueIds, SortOrder.Ascending);
-            var filter = MessageSummaryItems.UniqueId | MessageSummaryItems.Envelope | MessageSummaryItems.References | MessageSummaryItems.BodyStructure;
-            var messageSummaries = await mailFolder.FetchAsync(ascendingIds, filter, cancellationToken).ConfigureAwait(false);
-            foreach (var messageSummary in messageSummaries)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                    break;
-                var mimeMessage = await messageSummary.GetMimeMessageEnvelopeBodyAsync(cancellationToken).ConfigureAwait(false);
-                yield return mimeMessage;
-            }
-            if (closeWhenFinished)
-                await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
-        }
-
-        [Obsolete("Use Range(UidStart, UidEnd).SaveAllAsync() instead.")]
-        public async Task SaveAllAsync(IEnumerable<UniqueId> uniqueIds, string folderPath, bool createDirectory = false, CancellationToken cancellationToken = default, ITransferProgress progress = null)
-        {
-            if (createDirectory)
-                Directory.CreateDirectory(folderPath);
-            else if (!Directory.Exists(folderPath))
-                throw new DirectoryNotFoundException($"Directory not found: {folderPath}.");
-            var format = FormatOptions.Default.Clone();
-            format.NewLineFormat = NewLineFormat.Dos;
-            await foreach (var mimeMessage in GetMimeMessages(uniqueIds, cancellationToken, progress))
-            {
-                string fileName = Path.Combine(folderPath, $"{mimeMessage.MessageId}.eml");
-                await mimeMessage.WriteToAsync(format, fileName, cancellationToken).ConfigureAwait(false);
-            }
-        }
-
         public async IAsyncEnumerable<MimeMessage> GetMimeMessagesEnvelopeBody([EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             if (_uniqueIds == null)
@@ -719,35 +485,6 @@ namespace MailKitSimplified.Receiver.Services
             }
         }
 #else
-        [Obsolete("Use Range(UidStart, UidEnd).SaveAllAsync() instead.")]
-        public async Task SaveAllAsync(IEnumerable<UniqueId> uniqueIds, string folderPath, bool createDirectory = false, CancellationToken cancellationToken = default, ITransferProgress progress = null)
-        {
-            if (uniqueIds != null)
-            {
-                if (createDirectory)
-                    Directory.CreateDirectory(folderPath);
-                else if (!Directory.Exists(folderPath))
-                    throw new DirectoryNotFoundException($"Directory not found: {folderPath}.");
-                var format = FormatOptions.Default.Clone();
-                format.NewLineFormat = NewLineFormat.Dos;
-                (var mailFolder, var closeWhenFinished) = await OpenMailFolderAsync(cancellationToken).ConfigureAwait(false);
-                var filteredUids = await GetValidUniqueIdsAsync(mailFolder, uniqueIds, cancellationToken).ConfigureAwait(false);
-                foreach (var uniqueId in filteredUids)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var mimeMessage = await mailFolder.GetMessageAsync(uniqueId, cancellationToken, progress).ConfigureAwait(false);
-                    _logger.LogTrace($"{_imapReceiver} received {mimeMessage.MessageId}.");
-                    if (mimeMessage != null)
-                    {
-                        string fileName = Path.Combine(folderPath, $"{mimeMessage.MessageId}.eml");
-                        await mimeMessage.WriteToAsync(format, fileName, cancellationToken).ConfigureAwait(false);
-                    }
-                }
-                if (closeWhenFinished)
-                    await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
-            }
-        }
-
         public async Task SaveAllAsync(string folderPath, bool createDirectory = false, CancellationToken cancellationToken = default, ITransferProgress progress = null)
         {
             if (_uniqueIds == null)
@@ -801,41 +538,6 @@ namespace MailKitSimplified.Receiver.Services
                 await mailFolder.CloseAsync(false, CancellationToken.None).ConfigureAwait(false);
         }
 #endif
-        /// <summary>Query just the arrival dates of messages on the server.</summary>
-        /// <param name="deliveredAfter">Search for messages after this date.</param>
-        /// <param name="deliveredBefore">Search for messages before this date.</param>
-        /// <returns>List of <see cref="IMessageSummary"/> items.</returns>
-        [Obsolete("Use MailFolderReader.Query().GetMessageSummariesAsync() or the IMailReader.QueryBetweenDates() extension instead.")]
-        public async Task<IList<IMessageSummary>> SearchBetweenDatesAsync(DateTime deliveredAfter, DateTime? deliveredBefore = null, CancellationToken cancellationToken = default)
-        {
-            this.QueryBetweenDates(deliveredAfter, deliveredBefore);
-            var messageSummaries = await GetMessageSummariesAsync(cancellationToken).ConfigureAwait(false);
-            return messageSummaries;
-        }
-
-        /// <summary>Query the server for message IDs with matching keywords in the subject or body text.</summary>
-        /// <param name="keywords">Keywords to search for.</param>
-        /// <returns>List of <see cref="IMessageSummary"/> items.</returns>
-        [Obsolete("Use MailFolderReader.Query().GetMessageSummariesAsync() or the IMailReader.QueryKeywords() extension instead.")]
-        public async Task<IList<IMessageSummary>> SearchKeywordsAsync(IEnumerable<string> keywords, CancellationToken cancellationToken = default)
-        {
-            this.QueryKeywords(keywords);
-            var messageSummaries = await GetMessageSummariesAsync(cancellationToken).ConfigureAwait(false);
-            return messageSummaries;
-        }
-
-        /// <summary>Query the server for message(s) with a matching message ID.</summary>
-        /// <param name="messageId">Message-ID to search for.</param>
-        /// <param name="addAngleBrackets">Angle brackets added by default.</param>
-        /// <returns>List of <see cref="IMessageSummary"/> items.</returns>
-        [Obsolete("Use MailFolderReader.Query().GetMessageSummariesAsync() or the IMailReader.QueryMessageId() extension instead.")]
-        public async Task<IList<IMessageSummary>> SearchMessageIdAsync(string messageId, bool addAngleBrackets = true, CancellationToken cancellationToken = default)
-        {
-            this.QueryMessageId(messageId, addAngleBrackets);
-            var messageSummaries = await GetMessageSummariesAsync(cancellationToken).ConfigureAwait(false);
-            return messageSummaries;
-        }
-
         public IMailFolderReader Copy() => MemberwiseClone() as IMailFolderReader;
 
         public override string ToString() => $"{_imapReceiver} (skip {_skip}, take {_take})";
