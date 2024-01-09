@@ -8,7 +8,6 @@ using System.Net;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.IO.Abstractions;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Options;
@@ -173,29 +172,6 @@ namespace MailKitSimplified.Sender.Services
         {
             _senderOptions.AuthenticationMechanism = saslMechanism;
             return this;
-        }
-
-        [Obsolete("Use EmailSenderOptions.CreateProtocolLogger instead.")]
-        public static IProtocolLogger GetProtocolLogger(string logFilePath = null, bool append = false, IFileSystem fileSystem = null)
-        {
-            IProtocolLogger protocolLogger = null;
-            if (logFilePath?.Equals("console", StringComparison.OrdinalIgnoreCase) ?? false)
-            {
-                protocolLogger = new ProtocolLogger(Console.OpenStandardError());
-            }
-            else if (!string.IsNullOrWhiteSpace(logFilePath))
-            {
-                bool isMockFileSystem = fileSystem != null &&
-                    fileSystem.GetType().Name == "MockFileSystem";
-                var _fileSystem = fileSystem ?? new FileSystem();
-                var directoryName = _fileSystem.Path.GetDirectoryName(logFilePath);
-                if (!string.IsNullOrWhiteSpace(directoryName))
-                    _fileSystem.Directory.CreateDirectory(directoryName);
-                protocolLogger = isMockFileSystem ?
-                    new ProtocolLogger(Stream.Null) :
-                    new ProtocolLogger(logFilePath, append);
-            }
-            return protocolLogger;
         }
 
         public IEmailWriter WithTemplate(MimeMessage mimeMessageTemplate)

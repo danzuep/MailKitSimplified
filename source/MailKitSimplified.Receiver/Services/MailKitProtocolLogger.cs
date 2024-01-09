@@ -43,19 +43,6 @@ namespace MailKitSimplified.Receiver.Services
             return protocolLogger;
         }
 
-        [Obsolete("Use ProtocolLoggerOptions or use any file logger that implements ILogger (e.g NLog or Serilog) instead.")]
-        public IProtocolLogger SetLogFilePath(string logFilePath = null, bool appendToExisting = false, bool useTimestamp = false, bool redactSecrets = true)
-        {
-            if (logFilePath != _protocolLoggerOptions.FileWriter.FilePath)
-                _protocolLoggerOptions.FileWriter.FilePath = logFilePath;
-            _protocolLoggerOptions.FileWriter.AppendToExisting = appendToExisting;
-            _protocolLoggerOptions.TimestampFormat = useTimestamp ?
-                ProtocolLoggerOptions.DefaultTimestampFormat : null;
-            if (!redactSecrets)
-                _nullLogger.AuthenticationSecretDetector = null;
-            return this;
-        }
-
         private bool _clientMidline;
         private bool _serverMidline;
 

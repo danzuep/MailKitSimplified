@@ -75,21 +75,5 @@ namespace MailKitSimplified.Receiver.Tests
             mailKitProtocolLogger.LogClient(_testBytes, TestReplyMid, TestReplyEnd);
             //_logFileWriterMock.Verify(_ => _.WriteLine(It.IsAny<string>()), Times.Exactly(3));
         }
-
-        [Fact]
-        [Obsolete]
-        public void SetLogFilePath_ToConsole()
-        {
-            _mailKitProtocolLogger.SetLogFilePath("Console");
-            _mailKitProtocolLogger.LogServer(_testBytes, 0, TestReplyMid);
-        }
-
-        [Fact]
-        [Obsolete]
-        public void SetLogFilePath_ToLogFile()
-        {
-            _mailKitProtocolLogger.SetLogFilePath(LogFilePath);
-            _mailKitProtocolLogger.LogServer(_testBytes, 0, TestReplyMid);
-        }
     }
 }
