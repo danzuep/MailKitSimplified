@@ -1,7 +1,6 @@
 name: "Build"
 
 on:
-  workflow_dispatch:
   workflow_call:
     inputs:
       project-name:
@@ -10,7 +9,7 @@ on:
         type: string
     outputs:
       artifact:
-        description: 'Artifact name'
+        description: 'Build artifact name'
         value: ${{ jobs.build.outputs.artifact }}
 
 jobs:
@@ -21,17 +20,21 @@ jobs:
       SOURCE: "source"
       SENDER: "${{ inputs.project-name }}.Sender"
       RECEIVER: "${{ inputs.project-name }}.Receiver"
+      NET_VERSION: '8.x'
 
     outputs:
-      artifact: ${{ env.SOURCE }}
+      artifact: ${{ env.SOURCE }} # -${{ matrix.runs-on }}
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
     # https://github.com/actions/setup-dotnet
-    - name: Get .NET externals
-      uses: actions/setup-dotnet@v3
+    - name: Get .NET ${{ env.NET_VERSION }} externals
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.NET_VERSION }}
+        dotnet-quality: 'ga'
 
     - name: Restore project dependencies
       shell: pwsh
@@ -43,7 +46,7 @@ jobs:
 
     # https://github.com/actions/upload-artifact
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.SOURCE }}
         path: |
