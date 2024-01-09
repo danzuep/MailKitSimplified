@@ -49,7 +49,7 @@ jobs:
 
     # https://github.com/actions/setup-dotnet
     - name: Get .NET externals
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
 
     # Initialize the CodeQL tools for scanning. Prefix the query list with "+" to use these queries and those in the config file.
     # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
