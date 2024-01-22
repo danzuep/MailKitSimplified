@@ -33,16 +33,16 @@ jobs:
       PACKAGE_NAMES: '${{ inputs.project-name }}.*.nupkg'
 
     steps:
+      # https://github.com/actions/download-artifact/blob/main/docs/MIGRATION.md
       - name: Download artifact from build job
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.project-name }}
+          path: .
+          merge-multiple: true
 
-      - name: Setup .NET environment
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 6.0.x
-          dotnet-quality: 'ga'
+      - name: Get .NET externals
+        uses: actions/setup-dotnet@v4
 
       - name: List files in the folder
         run: find . -name "*.nupkg" -type f -exec echo {} \;
