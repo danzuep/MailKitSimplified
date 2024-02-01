@@ -71,7 +71,7 @@ jobs:
 
       # https://github.com/actions/cache/blob/main/examples.md#c---nuget
       - name: Get any cached NuGet packages from the last run
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: '~/.nuget/packages'
           key: nugetpackages-${{ runner.os }}-${{ hashFiles('source/**/*.csproj') }}
