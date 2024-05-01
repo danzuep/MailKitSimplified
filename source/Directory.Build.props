@@ -26,7 +26,7 @@
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
-    <PackageReference Include="System.IO.Abstractions" Version="20.0.15" />
+    <PackageReference Include="System.IO.Abstractions" Version="21.0.2" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' != 'Release' and $(MSBuildProjectName.EndsWith('er'))">
