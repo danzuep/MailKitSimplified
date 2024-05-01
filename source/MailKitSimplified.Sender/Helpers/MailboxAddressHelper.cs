@@ -10,6 +10,21 @@ namespace MailKitSimplified.Sender.Helpers
         private static readonly char[] _emailReplace = new char[] { '_', '.', '-' };
         private static readonly char[] _emailSeparator = new char[] { ';', ',', ' ', '&', '|' };
 
+#if NET5_0_OR_GREATER
+        /// <summary>
+        /// Truncated hexadecimal string with up to 16^32 combinations, used for logging.
+        /// </summary>
+        /// <param name="count">Base 16 exponent.</param>
+        /// <returns>Truncated hexadecimal string</returns>
+        public static string GenerateHexId(byte count = 32)
+        {
+            if (count > 32)
+                count = 32;
+            var uuid = Guid.NewGuid().ToString("n", null)[..count];
+            return uuid;
+        }
+#endif
+
         public static IEnumerable<MailboxAddress> ParseEmailContacts(string value)
         {
             IEnumerable<MailboxAddress> contacts = null;
