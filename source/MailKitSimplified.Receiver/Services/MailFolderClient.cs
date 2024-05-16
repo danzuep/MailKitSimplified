@@ -236,23 +236,6 @@ namespace MailKitSimplified.Receiver.Services
             return mailFolder;
         }
 
-        /// <inheritdoc />
-        public async Task<IMailFolder> GetOrCreateSubfolderAsync(string mailFolderName, IMailFolder baseFolder = null, CancellationToken cancellationToken = default)
-        {
-            if (baseFolder == null)
-                baseFolder = _imapReceiver.ImapClient.Inbox;
-            IMailFolder mailFolder;
-            try
-            {
-                mailFolder = await baseFolder.GetSubfolderAsync(mailFolderName, cancellationToken);
-            }
-            catch (FolderNotFoundException)
-            {
-                mailFolder = await baseFolder.CreateAsync(mailFolderName, isMessageFolder: true, cancellationToken);
-            }
-            return mailFolder;
-        }
-
         public IMailFolder SentFolder => GetFolder(SpecialFolder.Sent).Value;
 
         public IMailFolder DraftsFolder => GetFolder(SpecialFolder.Drafts).Value;

@@ -39,15 +39,6 @@ namespace MailKitSimplified.Receiver.Abstractions
         Task<IMailFolder> GetFolderAsync(IEnumerable<string> folderNames, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Get a mail subfolder if it exists, or create it if not.
-        /// </summary>
-        /// <param name="mailFolderName">Folder name to search for.</param>
-        /// <param name="baseFolder">Base folder to search in, Inbox by default</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>Mail folder with a matching name.</returns>
-        Task<IMailFolder> GetOrCreateSubfolderAsync(string mailFolderName, IMailFolder baseFolder = null, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Add flags with checks to make sure the folder is open and writeable.
         /// If there's a delete flag then it calls the Expunge method.
         /// </summary>
