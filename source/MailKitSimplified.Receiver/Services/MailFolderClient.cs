@@ -21,6 +21,8 @@ namespace MailKitSimplified.Receiver.Services
         public string MailFolderName => _mailFolder?.FullName ?? _imapReceiver.ToString();
         public int MailFolderCount => _mailFolder?.Count ?? 0;
 
+        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1);
+
         private ILogger _logger;
         private IMailFolder _mailFolder = null;
         private IList<string> SentFolderNames;
@@ -203,7 +205,6 @@ namespace MailKitSimplified.Receiver.Services
             return folderNames;
         }
 
-        //private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1);
         private Lazy<IMailFolder> GetFolder(SpecialFolder specialFolder) => new Lazy<IMailFolder>(() =>
         {
             IMailFolder folder = null;
@@ -225,15 +226,54 @@ namespace MailKitSimplified.Receiver.Services
             return folder;
         });
 
+        public async Task<IMailFolder> GetOrCreateMailFolderAsync(string mailFolderName, CancellationToken cancellationToken = default)
+        {
+            IMailFolder folder = null;
+            _semaphoreSlim.Wait();
+            try
+            {
+                var client = _imapReceiver.ImapClient;
+                var baseFolder = client.GetFolder(client.PersonalNamespaces[0]);
+                folder = baseFolder.GetSubfolders(false, CancellationToken.None).FirstOrDefault(x =>
+                    mailFolderName.Equals(x.Name, StringComparison.OrdinalIgnoreCase));
+                if (folder == null)
+                {
+                    try
+                    {
+                        folder = await client.GetFolderAsync(mailFolderName, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (FolderNotFoundException)
+                    {
+                        folder = await baseFolder.CreateAsync(mailFolderName, isMessageFolder: true, cancellationToken);
+                    }
+                }
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }
+            return folder;
+        }
+
         /// <inheritdoc />
         public async Task<IMailFolder> GetFolderAsync(IEnumerable<string> folderNames, CancellationToken cancellationToken = default)
         {
             if (folderNames == null || !folderNames.Any())
                 throw new ArgumentNullException(nameof(folderNames));
-            var namespaceFolders = await _imapReceiver.ImapClient.GetFoldersAsync(_imapReceiver.ImapClient.PersonalNamespaces[0]).ConfigureAwait(false);
-            var namespaceSubfolders = await namespaceFolders[0].GetSubfoldersAsync(false, cancellationToken).ConfigureAwait(false);
-            var mailFolder = namespaceSubfolders.FirstOrDefault(x => folderNames.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
-            return mailFolder;
+            IMailFolder folder = null;
+            _semaphoreSlim.Wait();
+            try
+            {
+                var client = _imapReceiver.ImapClient;
+                var namespaceFolders = await client.GetFoldersAsync(client.PersonalNamespaces[0]).ConfigureAwait(false);
+                var namespaceSubfolders = await namespaceFolders[0].GetSubfoldersAsync(false, cancellationToken).ConfigureAwait(false);
+                var mailFolder = namespaceSubfolders.FirstOrDefault(x => folderNames.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }
+            return folder;
         }
 
         public IMailFolder SentFolder => GetFolder(SpecialFolder.Sent).Value;

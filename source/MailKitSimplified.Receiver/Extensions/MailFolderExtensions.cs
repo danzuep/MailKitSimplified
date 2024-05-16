@@ -26,6 +26,5 @@ namespace MailKitSimplified.Receiver.Extensions
             }
             return mailFolder;
         }
-
     }
 }
