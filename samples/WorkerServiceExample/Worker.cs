@@ -8,6 +8,7 @@ using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Sender.Abstractions;
+using System.Threading;
 
 namespace ExampleNamespace;
 
@@ -105,12 +106,59 @@ public class Worker : BackgroundService
         _logger.LogInformation($"Deleted messages from {_imapReceiver} {filteredMessages.Count} Seen messages.");
     }
 
-    private async Task MoveTopOneToDraftAsync()
+    private async Task AddToDraftFolderAsync()
     {
         var mimeMessage = CreateTemplate().MimeMessage;
         var draftsFolder = _imapReceiver.MailFolderClient.DraftsFolder;
         var uniqueId = await draftsFolder.AppendAsync(mimeMessage);
         _logger.LogInformation($"Added mime message to {_imapReceiver} {draftsFolder.FullName} folder as #{uniqueId}.");
+    }
+
+    private async Task MoveTopOneToFolderAsync(string destinationFolderName = "INBOX/Processed", CancellationToken cancellationToken = default)
+    {
+        var destinationFolder = await GetOrCreateMailFolderAsync(destinationFolderName, null, cancellationToken);
+        var messageSummary = await GetTopMessageSummaryAsync(cancellationToken);
+        var uniqueId = await messageSummary.MoveToAsync(destinationFolder, cancellationToken);
+        _logger.LogInformation($"Added mime message to {_imapReceiver} {destinationFolder.FullName} folder as #{uniqueId}.");
+    }
+
+    public async Task<IMailFolder> GetMailFolderAsync(string mailFolderName, CancellationToken cancellationToken = default)
+    {
+        var mailFolderClient = new MailFolderClient(_imapReceiver);
+        var destinationFolder = await mailFolderClient.GetFolderAsync([mailFolderName], cancellationToken);
+        return destinationFolder;
+    }
+
+    public async Task<IMailFolder> GetOrCreateMailFolderAsync(string mailFolderName, IMailFolder? baseFolder = null, CancellationToken cancellationToken = default)
+    {
+        if (baseFolder == null)
+            baseFolder = _imapReceiver.ImapClient.Inbox;
+        IMailFolder mailFolder;
+        try
+        {
+            mailFolder = await baseFolder.GetSubfolderAsync(mailFolderName, cancellationToken);
+        }
+        catch (FolderNotFoundException)
+        {
+            mailFolder = await baseFolder.CreateAsync(mailFolderName, isMessageFolder: true, cancellationToken);
+        }
+        return mailFolder;
+    }
+
+    private async Task MoveToDestinationAsync(IMessageSummary messageSummary, string destinationFolderName, CancellationToken cancellationToken = default)
+    {
+        IMailFolder destinationFolder;
+
+        try
+        {
+            destinationFolder = await messageSummary.Folder.GetSubfolderAsync(destinationFolderName, cancellationToken);
+        }
+        catch (FolderNotFoundException)
+        {
+            destinationFolder = await messageSummary.Folder.CreateAsync(destinationFolderName, isMessageFolder: true, cancellationToken);
+        }
+
+        await messageSummary.MoveToAsync(destinationFolder, cancellationToken);
     }
 
     private async Task DeleteSeenAsync(CancellationTokenSource cancellationTokenSource)
@@ -319,6 +367,12 @@ public class Worker : BackgroundService
         var mimeMessages = await _imapReceiver.ReadMail.Range(uniqueId, uniqueId)
             .GetMimeMessagesEnvelopeBodyAsync(cancellationToken);
         return mimeMessages.FirstOrDefault();
+    }
+
+    private async Task<IMessageSummary> GetTopMessageSummaryAsync(CancellationToken cancellationToken = default)
+    {
+        var messageSummaries = await _imapReceiver.ReadMail.Top(1).GetMessageSummariesAsync(cancellationToken);
+        return messageSummaries.First();
     }
 
     private async Task ReceiveAsync(CancellationToken cancellationToken = default)
