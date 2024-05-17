@@ -62,6 +62,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="messageSummary"><see cref="IMailFolder"/> and <see cref="UniqueId"/>.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns><see cref="UniqueId"/> of the moved message.</returns>
+        [Obsolete("Use MailFolderClient.MoveToAsync method instead")]
         Task<UniqueId?> MoveToSentAsync(IMessageSummary messageSummary, CancellationToken cancellationToken = default);
 
         /// <summary>

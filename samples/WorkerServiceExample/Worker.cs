@@ -96,13 +96,13 @@ public class Worker : BackgroundService
 
     private async Task MoveSeenToSentAsync(CancellationTokenSource cancellationTokenSource)
     {
-        var filteredMessages = await _imapReceiver.ReadMail.Query(SearchQuery.Seen)
-            .GetMessageSummariesAsync(cancellationTokenSource.Token);
+        var ct = cancellationTokenSource.Token;
+        var filteredMessages = await _imapReceiver.ReadMail.Query(SearchQuery.Seen).GetMessageSummariesAsync(ct);
         _logger.LogInformation($"{_imapReceiver} folder query returned {filteredMessages.Count} messages.");
         //var sentFolder = _imapReceiver.MailFolderClient.SentFolder;
         //var messagesDeleted = await _imapReceiver.MailFolderClient.MoveToAsync(
-        //    filteredMessages.Select(m => m.UniqueId), sentFolder, cancellationTokenSource.Token);
-        filteredMessages.ActionEach(async (m) => await _imapReceiver.MoveToSentAsync(m, cancellationTokenSource.Token));
+        //    filteredMessages.Select(m => m.UniqueId), sentFolder, ct);
+        filteredMessages.ActionEach(async (m) => await _imapReceiver.MailFolderClient.MoveToAsync(m, SpecialFolder.Sent, ct));
         _logger.LogInformation($"Deleted messages from {_imapReceiver} {filteredMessages.Count} Seen messages.");
     }
 
@@ -116,18 +116,21 @@ public class Worker : BackgroundService
 
     private async Task MoveTopOneToFolderAsync(string destinationFolderName = "INBOX/Processed", CancellationToken cancellationToken = default)
     {
-        var mailFolderClient = new MailFolderClient(_imapReceiver);
-        var destinationFolder = await mailFolderClient.GetOrCreateMailFolderAsync(destinationFolderName, cancellationToken);
+        var destinationFolder = await _imapReceiver.MailFolderClient.GetFolderAsync([destinationFolderName], cancellationToken);
         var messageSummary = await GetTopMessageSummaryAsync(cancellationToken);
         var uniqueId = await messageSummary.MoveToAsync(destinationFolder, cancellationToken);
         _logger.LogInformation($"Added mime message to {_imapReceiver} {destinationFolder.FullName} folder as #{uniqueId}.");
     }
 
-    public async Task<IMailFolder> GetMailFolderAsync(string mailFolderName, CancellationToken cancellationToken = default)
+    public async Task GetMailFolderAsync(string mailFolderName, CancellationToken cancellationToken = default)
     {
-        var mailFolderClient = new MailFolderClient(_imapReceiver);
-        var destinationFolder = await mailFolderClient.GetFolderAsync([mailFolderName], cancellationToken);
-        return destinationFolder;
+        var messageSummary = await GetTopMessageSummaryAsync(cancellationToken);
+        var mailFolder1 = await _imapReceiver.MailFolderClient.GetOrCreateFolderAsync(mailFolderName, cancellationToken);
+        var mailFolder2 = await _imapReceiver.MailFolderClient.GetFolderAsync([mailFolderName], cancellationToken);
+        var mailFolder3 = await _imapReceiver.ImapClient.Inbox.GetOrCreateSubfolderAsync(mailFolderName, cancellationToken);
+        var mailFolder4 = await messageSummary.Folder.GetOrCreateSubfolderAsync(mailFolderName, cancellationToken);
+        //var mimeMessage = await messageSummary.GetMimeMessageAsync(cancellationToken);
+        _logger.LogInformation($"Mail folder: {mailFolderName}");
     }
 
     private async Task DeleteSeenAsync(CancellationTokenSource cancellationTokenSource)
@@ -184,7 +187,6 @@ public class Worker : BackgroundService
         foreach (var messageSummary in messageSummaries)
         {
             await ForwardMessageSummaryAsync(messageSummary);
-            await _imapReceiver.MoveToSentAsync(messageSummary, cancellationToken);
         }
     }
 
@@ -196,6 +198,8 @@ public class Worker : BackgroundService
         mimeForward.To.Add("to@example.com");
         _logger.LogInformation($"{_imapReceiver} reply: \r\n{mimeForward.HtmlBody}");
         await _smtpSender.SendAsync(mimeForward, cancellationToken);
+        await _imapReceiver.MailFolderClient.SentFolder.AppendAsync(mimeForward);
+        //await _imapReceiver.MailFolderClient.MoveToAsync(messageSummary, SpecialFolder.Sent, cancellationToken);
         //_smtpSender.Enqueue(mimeForward);
     }
 
