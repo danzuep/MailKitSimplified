@@ -1,10 +1,9 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Caching.Memory;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
 
@@ -13,13 +12,11 @@ namespace MailKitSimplified.Receiver.Services
     public class ImapReceiverFactory : IImapReceiverFactory
     {
         private readonly IOptionsMonitor<MailboxOptions> _mailboxOptions;
-        private readonly IMemoryCache _memoryCache;
         private readonly ILoggerFactory _loggerFactory;
 
-        public ImapReceiverFactory(IOptionsMonitor<MailboxOptions> mailboxOptions, IMemoryCache memoryCache, ILoggerFactory loggerFactory = null)
+        public ImapReceiverFactory(IOptionsMonitor<MailboxOptions> mailboxOptions, ILoggerFactory loggerFactory = null)
         {
             _mailboxOptions = mailboxOptions ?? throw new ArgumentNullException(nameof(mailboxOptions));
-            _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
             _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
         }
 
@@ -60,19 +57,7 @@ namespace MailKitSimplified.Receiver.Services
 
         internal IImapReceiver GetImapReceiver(EmailReceiverOptions emailReceiverOptions)
         {
-            var imapHost = emailReceiverOptions.ImapHost;
-            var cachedValue = _memoryCache.GetOrCreate(imapHost,
-                cacheEntry =>
-                {
-                    if (_mailboxOptions != null)
-                    {
-                        cacheEntry.SlidingExpiration = _mailboxOptions.CurrentValue.SlidingCacheTime;
-                        cacheEntry.AbsoluteExpirationRelativeToNow = _mailboxOptions.CurrentValue.MaximumCacheTime;
-                    }
-                    var imapReceiver = ImapReceiver.Create(emailReceiverOptions, _loggerFactory.CreateLogger<ImapReceiver>());
-                    return imapReceiver;
-                });
-            return cachedValue;
+            return ImapReceiver.Create(emailReceiverOptions, _loggerFactory.CreateLogger<ImapReceiver>());
         }
 
         private EmailReceiverOptions GetEmailReceiverOptions(string imapHost)
