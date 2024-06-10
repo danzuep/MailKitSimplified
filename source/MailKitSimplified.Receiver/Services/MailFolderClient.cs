@@ -26,14 +26,16 @@ namespace MailKitSimplified.Receiver.Services
         private ILogger _logger;
         private IMailFolder _mailFolder = null;
         private IList<string> SentFolderNames;
+        private readonly IMailFolderCache _mailFolderCache;
         private readonly IList<string> DraftsFolderNames;
         private readonly IList<string> JunkFolderNames;
         private readonly IList<string> TrashFolderNames;
         private readonly IImapReceiver _imapReceiver;
 
-        public MailFolderClient(IImapReceiver imapReceiver, IOptions<FolderClientOptions> options = null, ILogger<MailFolderClient> logger = null)
+        public MailFolderClient(IImapReceiver imapReceiver, IOptions<FolderClientOptions> options = null, ILogger<MailFolderClient> logger = null, IMailFolderCache mailFolderCache = null)
         {
             _logger = logger ?? NullLogger<MailFolderClient>.Instance;
+            _mailFolderCache = mailFolderCache;
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
             SentFolderNames = options?.Value?.SentFolderNames ?? FolderClientOptions.CommonSentFolderNames;
             DraftsFolderNames = options?.Value?.DraftsFolderNames ?? FolderClientOptions.CommonDraftsFolderNames;
@@ -292,6 +294,20 @@ namespace MailKitSimplified.Receiver.Services
 
         public async Task<UniqueId?> MoveToAsync(IMessageSummary messageSummary, SpecialFolder mailFolder = SpecialFolder.Sent, CancellationToken cancellationToken = default) =>
             await MoveOrCopyAsync(messageSummary.UniqueId, messageSummary.Folder, GetFolder(mailFolder).Value, move: true, cancellationToken).ConfigureAwait(false);
+
+        public async Task<UniqueId?> MoveToAsync(IMessageSummary messageSummary, string destinationFolderFullName, CancellationToken cancellationToken = default)
+        {
+            UniqueId? result;
+            if (_mailFolderCache == null)
+                result = await MoveOrCopyAsync(messageSummary.UniqueId, destinationFolderFullName, move: true, cancellationToken).ConfigureAwait(false);
+            else
+            {
+                var sourceFolder = await _mailFolderCache.GetMailFolderAsync(_imapReceiver, messageSummary.Folder.FullName, cancellationToken).ConfigureAwait(false);
+                var destinationFolder = await _mailFolderCache.GetMailFolderAsync(_imapReceiver, destinationFolderFullName, cancellationToken).ConfigureAwait(false);
+                result = await MoveOrCopyAsync(messageSummary.UniqueId, sourceFolder, destinationFolder, move: true, cancellationToken).ConfigureAwait(false);
+            }
+            return result;
+        }
 
         internal async Task<UniqueId?> MoveOrCopyAsync(UniqueId messageUid, IMailFolder source, IMailFolder destination, bool move = true, CancellationToken cancellationToken = default)
         {

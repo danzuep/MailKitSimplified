@@ -129,6 +129,15 @@ namespace MailKitSimplified.Receiver.Abstractions
         Task<UniqueId?> MoveToAsync(IMessageSummary messageSummary, SpecialFolder mailFolder = SpecialFolder.Sent, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Asynchronously move the specified message to the specified folder.
+        /// </summary>
+        /// <param name="messageSummary">Source <see cref="IMailFolder"/> and <see cref="UniqueId"/>.</param>
+        /// <param name="destinationFolder">Name of the destination mail folder.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns><see cref="UniqueId"/> of the moved message.</returns>
+        Task<UniqueId?> MoveToAsync(IMessageSummary messageSummary, string destinationFolder, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Asynchronously copy the specified message to the specified folder.
         /// </summary>
         /// <param name="messageSummary">Source <see cref="IMailFolder"/> and <see cref="UniqueId"/>.</param>

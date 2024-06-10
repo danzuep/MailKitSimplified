@@ -8,26 +8,23 @@ using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Sender.Abstractions;
-using System.Threading;
 
 namespace ExampleNamespace;
 
 public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ISmtpSender _smtpSender;
     private readonly IImapReceiver _imapReceiver;
-    private readonly IImapReceiverFactory _imapReceiverFactory;
-    private readonly IMailFolderMonitorFactory _mailFolderMonitorFactory;
     private readonly ILoggerFactory _loggerFactory;
 
-    public Worker(ISmtpSender smtpSender, IImapReceiver imapReceiver, IImapReceiverFactory imapReceiverFactory, IMailFolderMonitorFactory mailFolderMonitorFactory, ILoggerFactory loggerFactory)
+    public Worker(IServiceScopeFactory serviceScopeFactory, ISmtpSender smtpSender, IImapReceiver imapReceiver, ILoggerFactory loggerFactory)
     {
         _logger = loggerFactory.CreateLogger<Worker>();
+        _serviceScopeFactory = serviceScopeFactory;
         _smtpSender = smtpSender;
         _imapReceiver = imapReceiver;
-        _imapReceiverFactory = imapReceiverFactory;
-        _mailFolderMonitorFactory = mailFolderMonitorFactory;
         _loggerFactory = loggerFactory;
     }
 
@@ -59,7 +56,9 @@ public class Worker : BackgroundService
 
     private async Task ImapReceiverFactoryAsync(CancellationToken cancellationToken = default)
     {
-        var receivers = _imapReceiverFactory.GetAllImapReceivers();
+        using var scope = _serviceScopeFactory.CreateScope();
+        var imapReceiverFactory = scope.ServiceProvider.GetRequiredService<IImapReceiverFactory>();
+        var receivers = imapReceiverFactory.GetAllImapReceivers();
         foreach (var receiver in receivers)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -71,9 +70,21 @@ public class Worker : BackgroundService
 
     private async Task MailFolderMonitorFactoryAsync(CancellationToken cancellationToken = default)
     {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var mailFolderMonitorFactory = scope.ServiceProvider.GetRequiredService<IMailFolderMonitorFactory>();
         void LogUniqueIdArrived(IMessageSummary messageSummary) =>
             _logger.LogInformation($"Message #{messageSummary.UniqueId} arrived.");
-        await _mailFolderMonitorFactory.MonitorAllMailboxesAsync(LogUniqueIdArrived, cancellationToken);
+        await mailFolderMonitorFactory.MonitorAllMailboxesAsync(LogUniqueIdArrived, cancellationToken);
+    }
+
+    private async Task MailFolderMonitorMoveFolderAsync(string destinationFolderFullName, CancellationToken cancellationToken = default)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var mailFolderClient = scope.ServiceProvider.GetRequiredService<IMailFolderClient>();
+        var mailFolderMonitorFactory = scope.ServiceProvider.GetRequiredService<IMailFolderMonitorFactory>();
+        async Task UniqueIdArrivedAsync(IMessageSummary messageSummary) =>
+            await mailFolderClient.MoveToAsync(messageSummary, destinationFolderFullName, cancellationToken);
+        await mailFolderMonitorFactory.MonitorAllMailboxesAsync(UniqueIdArrivedAsync, cancellationToken);
     }
 
     private async Task DownloadEmailAsync(string filePath = "download.eml", CancellationToken cancellationToken = default)

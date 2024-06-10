@@ -57,14 +57,6 @@ namespace MailKitSimplified.Receiver.Abstractions
         ValueTask<IMailFolder> ConnectMailFolderAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Connect to the given mail folder.
-        /// </summary>
-        /// <param name="mailFolderFullName">Full name of the mail folder to connect to.</param>
-        /// <param name="cancellationToken">Request cancellation token.</param>
-        /// <returns>Connected <see cref="IMailFolder"/>.</returns>
-        ValueTask<IMailFolder> GetMailFolderAsync(string mailFolderFullName, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Asynchronously move the specified message to the Sent folder.
         /// </summary>
         /// <param name="messageSummary"><see cref="IMailFolder"/> and <see cref="UniqueId"/>.</param>

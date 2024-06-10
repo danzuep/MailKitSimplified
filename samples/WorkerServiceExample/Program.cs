@@ -6,8 +6,8 @@ IHost host = Host.CreateDefaultBuilder(args)
     {
         services.AddHostedService<ExampleNamespace.Worker>();
         //services.AddMailKitSimplifiedEmail(context.Configuration);
-        services.AddMailKitSimplifiedEmailSender(context.Configuration);
-        services.AddMailKitSimplifiedEmailReceiver(context.Configuration);
+        services.AddScopedMailKitSimplifiedEmailSender(context.Configuration);
+        services.AddScopedMailKitSimplifiedEmailReceiver(context.Configuration);
     })
     .Build();
 
