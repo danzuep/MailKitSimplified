@@ -19,6 +19,8 @@ namespace MailKitSimplified.Receiver.Services
     /// <inheritdoc cref="IImapReceiver" />
     public sealed class ImapReceiver : IImapReceiver
     {
+        private readonly IMailFolderCache _mailFolderCache;
+
         private Lazy<MailFolderClient> _mailFolderClient;
         private Lazy<MailFolderReader> _mailFolderReader;
         private Lazy<MailFolderMonitor> _mailFolderMonitor;
@@ -30,7 +32,7 @@ namespace MailKitSimplified.Receiver.Services
         private EmailReceiverOptions _receiverOptions;
 
         /// <inheritdoc cref="IImapReceiver" />
-        public ImapReceiver(IOptions<EmailReceiverOptions> receiverOptions, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null, ILoggerFactory loggerFactory = null)
+        public ImapReceiver(IOptions<EmailReceiverOptions> receiverOptions, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null, ILoggerFactory loggerFactory = null, IMailFolderCache mailFolderCache = null)
         {
             _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
             _logger = logger ?? _loggerFactory.CreateLogger<ImapReceiver>();
@@ -39,6 +41,7 @@ namespace MailKitSimplified.Receiver.Services
                 SetProtocolLog(protocolLogger);
             else
                 SetImapClient(imapClient);
+            _mailFolderCache = mailFolderCache;
         }
 
         public static ImapReceiver Create(string imapHost, ushort imapPort = 0, string username = null, string password = null, string mailFolderName = null, string protocolLog = null, bool protocolLogFileAppend = false, ILogger<ImapReceiver> logger = null, IProtocolLogger protocolLogger = null, IImapClient imapClient = null, ILoggerFactory loggerFactory = null)
@@ -284,6 +287,14 @@ namespace MailKitSimplified.Receiver.Services
                 }
                 _logger.LogTrace($"IMAP client authenticated with {_receiverOptions.ImapHost}.");
             }
+        }
+
+        /// <inheritdoc cref="ImapClient.GetFolderAsync"/>
+        public async ValueTask<IMailFolder> GetMailFolderAsync(string mailFolderFullName, CancellationToken cancellationToken = default)
+        {
+            if (_mailFolderCache == null)
+                return null;
+            return await _mailFolderCache.GetMailFolderAsync(Clone(), mailFolderFullName, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc cref="ImapClient.GetFolderAsync"/>

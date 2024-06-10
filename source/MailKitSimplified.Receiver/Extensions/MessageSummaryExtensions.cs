@@ -389,6 +389,15 @@ namespace MailKitSimplified.Receiver.Extensions
                 await messageSummary.Folder.ExpungeAsync(cancellationToken).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Move the message to the specified folder.
+        /// Warning: if the message is from a folder that is still being monitored,
+        /// then accessing that folder here is likely to conflict with the monitoring.
+        /// </summary>
+        /// <param name="messageSummary"><see cref="IMessageSummary"/> body to download.</param>
+        /// <param name="destination">Destination mail folder.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns><see cref="UniqueId"/> in the <see cref="IMailFolder"/> destination, or null.</returns>
         public static async Task<UniqueId?> MoveToAsync(this IMessageSummary messageSummary, IMailFolder destination, CancellationToken cancellationToken = default)
         {
             UniqueId? resultUid = null;

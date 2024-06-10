@@ -1,7 +1,6 @@
 ﻿using MailKit;
 using System.Threading.Tasks;
 using System.Threading;
-using System;
 
 namespace MailKitSimplified.Receiver.Extensions
 {
