@@ -7,6 +7,6 @@ namespace MailKitSimplified.Receiver.Services
 {
     public interface IMailFolderCache
     {
-        Task<IMailFolder> GetMailFolderAsync(IImapReceiver imapReceiver, string mailFolderFullName, CancellationToken cancellationToken = default);
+        Task<IMailFolder> GetMailFolderAsync(IImapReceiver imapReceiver, string mailFolderFullName, bool createIfMissing = false, CancellationToken cancellationToken = default);
     }
 }

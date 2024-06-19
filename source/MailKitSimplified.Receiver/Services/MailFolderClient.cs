@@ -192,19 +192,27 @@ namespace MailKitSimplified.Receiver.Services
             _semaphoreSlim.Wait();
             try
             {
-                var client = _imapReceiver.ImapClient;
-                var baseFolder = client.GetFolder(client.PersonalNamespaces[0]);
+                var imapClient = await _imapReceiver.ConnectAuthenticatedImapClientAsync().ConfigureAwait(false);
+                var namespaceFolder = imapClient.PersonalNamespaces.FirstOrDefault()
+                    ?? imapClient.SharedNamespaces.FirstOrDefault()
+                    ?? imapClient.OtherNamespaces.FirstOrDefault();
+                var baseFolder = string.IsNullOrEmpty(namespaceFolder?.Path) ?
+                    imapClient.Inbox : imapClient.GetFolder(namespaceFolder);
                 folder = baseFolder.GetSubfolders(false, CancellationToken.None).FirstOrDefault(x =>
                     mailFolderName.Equals(x.Name, StringComparison.OrdinalIgnoreCase));
                 if (folder == null)
                 {
                     try
                     {
-                        folder = await client.GetFolderAsync(mailFolderName, cancellationToken).ConfigureAwait(false);
+                        folder = await imapClient.GetFolderAsync(mailFolderName, cancellationToken).ConfigureAwait(false);
                     }
                     catch (FolderNotFoundException)
                     {
+                        bool peekFolder = !folder?.IsOpen ?? true;
+                        _ = await ConnectAsync(true, cancellationToken).ConfigureAwait(false);
                         folder = await baseFolder.CreateAsync(mailFolderName, isMessageFolder: true, cancellationToken);
+                        if (peekFolder)
+                            await folder.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);
                     }
                 }
             }
@@ -224,9 +232,14 @@ namespace MailKitSimplified.Receiver.Services
             _semaphoreSlim.Wait();
             try
             {
-                var client = _imapReceiver.ImapClient;
-                var namespaceFolders = await client.GetFoldersAsync(client.PersonalNamespaces[0]).ConfigureAwait(false);
+                var imapClient = await _imapReceiver.ConnectAuthenticatedImapClientAsync().ConfigureAwait(false);
+#if NET5_0_OR_GREATER
+
+                var namespaceFolders = await imapClient.GetFoldersAsync(imapClient.PersonalNamespaces[0]).ConfigureAwait(false);
                 var namespaceSubfolders = await namespaceFolders[0].GetSubfoldersAsync(false, cancellationToken).ConfigureAwait(false);
+#else
+                var namespaceSubfolders = await imapClient.GetAllSubfoldersAsync(cancellationToken).ConfigureAwait(false);
+#endif
                 var mailFolder = namespaceSubfolders.FirstOrDefault(x => folderNames.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
             }
             finally
@@ -302,8 +315,8 @@ namespace MailKitSimplified.Receiver.Services
                 result = await MoveOrCopyAsync(messageSummary.UniqueId, destinationFolderFullName, move: true, cancellationToken).ConfigureAwait(false);
             else
             {
-                var sourceFolder = await _mailFolderCache.GetMailFolderAsync(_imapReceiver, messageSummary.Folder.FullName, cancellationToken).ConfigureAwait(false);
-                var destinationFolder = await _mailFolderCache.GetMailFolderAsync(_imapReceiver, destinationFolderFullName, cancellationToken).ConfigureAwait(false);
+                var sourceFolder = await _mailFolderCache.GetMailFolderAsync(_imapReceiver, messageSummary.Folder.FullName, createIfMissing: false, cancellationToken).ConfigureAwait(false);
+                var destinationFolder = await _mailFolderCache.GetMailFolderAsync(_imapReceiver, destinationFolderFullName, createIfMissing: true, cancellationToken).ConfigureAwait(false);
                 result = await MoveOrCopyAsync(messageSummary.UniqueId, sourceFolder, destinationFolder, move: true, cancellationToken).ConfigureAwait(false);
             }
             return result;

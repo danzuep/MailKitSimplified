@@ -42,6 +42,8 @@ namespace MailKitSimplified.Receiver.Extensions
         {
             if (imapClient == null)
                 throw new ArgumentNullException(nameof(imapClient));
+            if (!imapClient.IsConnected)
+                throw new ServiceNotConnectedException(nameof(imapClient));
             foreach (var folderNamespace in imapClient.PersonalNamespaces)
             {
                 await foreach (var folder in imapClient.GetAllSubfoldersAsync(folderNamespace).WithCancellation(cancellationToken).ConfigureAwait(false))
@@ -82,6 +84,8 @@ namespace MailKitSimplified.Receiver.Extensions
         {
             if (imapClient == null)
                 throw new ArgumentNullException(nameof(imapClient));
+            if (!imapClient.IsConnected)
+                throw new ServiceNotConnectedException(nameof(imapClient));
             var results = new List<IMailFolder>();
             foreach (var folderNamespace in imapClient.PersonalNamespaces)
             {

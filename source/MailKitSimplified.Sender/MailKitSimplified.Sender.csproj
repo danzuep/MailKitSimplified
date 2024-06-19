@@ -14,8 +14,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Update="MailKit" Version="4.5.0" />
-    <PackageReference Update="MimeKit" Version="4.5.0" />
+    <PackageReference Update="MailKit" Version="4.6.0" />
+    <PackageReference Update="MimeKit" Version="4.6.0" />
   </ItemGroup>
 
 </Project>

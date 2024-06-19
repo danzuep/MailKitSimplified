@@ -263,7 +263,8 @@ namespace MailKitSimplified.Receiver.Extensions
                 string GetHtml(InternetAddressList contacts) => contacts.Mailboxes.Select(a => $"\"{a.Name}\" &lt;{a.Address}&gt;").ToEnumeratedString("; ");
                 stringBuilder.AppendLine("<div>");
                 stringBuilder.AppendLine(message ?? string.Empty);
-                stringBuilder.AppendLine("</div><br /><blockquote><hr /><div>");
+                stringBuilder.AppendLine("</div><br />");
+                stringBuilder.AppendLine("<blockquote><hr /><div>");
                 if (includeMessageId)
                     stringBuilder.AppendLine($"<b>Message-ID:</b> &lt;{original.MessageId}&gt;<br />");
                 stringBuilder.AppendLine($"<b>Sent:</b> {original.Date}<br />");
