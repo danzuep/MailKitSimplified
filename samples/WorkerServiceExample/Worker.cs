@@ -29,7 +29,7 @@ public class Worker : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
         using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        await ReceiveAsync(cancellationToken);
+        //await ReceiveAsync(cancellationToken);
         //await TemplateSendAsync(1, cancellationToken);
         //await SendAttachmentAsync(500);
         //await ReceiveAsync(cancellationToken);
@@ -131,7 +131,7 @@ public class Worker : BackgroundService
         var uniqueId = await mailFolderClient.MoveToAsync(messageSummary, destinationFolderFullName, cancellationToken);
         //var destinationFolder = await mailFolderClient.GetFolderAsync([destinationFolderFullName], cancellationToken);
         //var uniqueId = await messageSummary.MoveToAsync(destinationFolder, cancellationToken);
-        _logger.LogInformation($"Added mime message to {_imapReceiver} {destinationFolderFullName} folder as #{uniqueId}.");
+        _logger.LogInformation($"Moved {_imapReceiver} mime message {messageSummary.UniqueId} to {destinationFolderFullName} folder as #{uniqueId}.");
     }
 
     private async Task CreateFolderAndMoveTopOneAsync(string mailFolderFullName = "Processed", CancellationToken cancellationToken = default)
@@ -144,11 +144,17 @@ public class Worker : BackgroundService
         await MoveTopOneToFolderAsync(mailFolderClient, mailFolderFullName, cancellationToken);
     }
 
-    private async Task GetMailFolderCacheAsync(string destinationFolderFullName = "INBOX", CancellationToken cancellationToken = default)
+    private async Task GetMailFolderCacheAsync(string mailFolderFullName = "Processed", CancellationToken cancellationToken = default)
     {
+        using var mailFolderClient = _serviceScope.ServiceProvider.GetRequiredService<IMailFolderClient>();
         var mailFolderCache = _serviceScope.ServiceProvider.GetRequiredService<IMailFolderCache>();
-        var folder = await mailFolderCache.GetMailFolderAsync(_imapReceiver, destinationFolderFullName, createIfMissing: true, cancellationToken);
-        _logger.LogInformation(folder?.FullName);
+        var folder = await mailFolderCache.GetMailFolderAsync(_imapReceiver, mailFolderFullName, createIfMissing: true, cancellationToken);
+        _logger.LogInformation(folder.FullName);
+        var messageSummary = await GetTopMessageSummaryAsync(cancellationToken);
+        var uniqueId = await mailFolderCache.MoveToAsync(_imapReceiver, messageSummary, mailFolderFullName, cancellationToken);
+        //var destinationFolder = await mailFolderClient.GetFolderAsync([destinationFolderFullName], cancellationToken);
+        //var uniqueId = await messageSummary.MoveToAsync(destinationFolder, cancellationToken);
+        _logger.LogInformation($"Moved {_imapReceiver} mime message #{messageSummary.UniqueId} to {mailFolderFullName} folder as #{uniqueId}.");
     }
 
     public async Task GetMailFolderAsync(string mailFolderName, CancellationToken cancellationToken = default)

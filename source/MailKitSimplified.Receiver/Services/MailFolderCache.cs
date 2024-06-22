@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MailKit;
@@ -14,6 +13,7 @@ namespace MailKitSimplified.Receiver.Services
 {
     public class MailFolderCache : IMailFolderCache
     {
+        private static readonly string _inbox = "INBOX";
         private CancellationTokenSource _cancellationTokenSource;
         private readonly IMemoryCache _memoryCache;
         private readonly IOptionsMonitor<MailboxOptions> _mailboxOptions;
@@ -35,36 +35,19 @@ namespace MailKitSimplified.Receiver.Services
             {
                 _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 var imapClient = await imapReceiver.ConnectAuthenticatedImapClientAsync(_cancellationTokenSource.Token);
-                int folderCount = await CacheAllMailFoldersAsync(imapReceiver, imapClient).ConfigureAwait(false);
-                if (folderCount == 0)
+                if (mailFolderFullName.Equals(_inbox, StringComparison.OrdinalIgnoreCase))
+                    mailFolder = imapClient.Inbox;
+                else
                 {
-                    var inbox = imapClient.Inbox;
-                    var inboxKey = GetKey(imapReceiver, inbox.FullName);
-                    CacheMailFolder(inboxKey, inbox);
-                }
-                if (createIfMissing && !_memoryCache.TryGetValue(key, out mailFolder))
-                {
-                    var namespaceFolder = imapClient.PersonalNamespaces.FirstOrDefault()
-                        ?? imapClient.SharedNamespaces.FirstOrDefault()
-                        ?? imapClient.OtherNamespaces.FirstOrDefault();
-                    var baseFolder = string.IsNullOrEmpty(namespaceFolder?.Path) ?
-                        imapClient.Inbox : await imapClient.GetFolderAsync(namespaceFolder.Path);
-
-                    //if (mailFolderFullName.Length >= baseFolder.FullName.Length &&
-                    //    mailFolderFullName.Substring(0, baseFolder.FullName.Length) == baseFolder.FullName)
-                    //    mailFolderFullName = mailFolderFullName.Substring(baseFolder.FullName.Length).Trim('/');
-
-                    bool peekFolder = !baseFolder?.IsOpen ?? true;
-                    _ = await imapReceiver.MailFolderClient.ConnectAsync(true, cancellationToken).ConfigureAwait(false);
-                    mailFolder = await baseFolder.CreateAsync(mailFolderFullName, isMessageFolder: true, cancellationToken);
-                    if (peekFolder)
-                        await baseFolder.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);
-
-                    //mailFolder = await imapReceiver.MailFolderClient.GetOrCreateFolderAsync(mailFolderFullName, cancellationToken).ConfigureAwait(false);
-                    if (mailFolder != null)
+                    int folderCount = await CacheAllMailFoldersAsync(imapReceiver, imapClient).ConfigureAwait(false);
+                    if (createIfMissing && !_memoryCache.TryGetValue(key, out mailFolder))
                     {
-                        var createdKey = GetKey(imapReceiver, mailFolder.FullName);
-                        CacheMailFolder(createdKey, mailFolder);
+                        mailFolder = await imapReceiver.MailFolderClient.GetOrCreateFolderAsync(mailFolderFullName, cancellationToken).ConfigureAwait(false);
+                        if (mailFolder != null)
+                        {
+                            var createdKey = GetKey(imapReceiver, mailFolder.FullName);
+                            CacheMailFolder(createdKey, mailFolder);
+                        }
                     }
                 }
             }
@@ -90,29 +73,39 @@ namespace MailKitSimplified.Receiver.Services
                 });
         }
 
-#if NET5_0_OR_GREATER
-        private async Task<int> AsyncCacheAllMailFoldersAsync(IImapReceiver imapReceiver, IImapClient imapClient)
+        private async Task<int> CacheAllMailFoldersAsync(IImapReceiver imapReceiver, IImapClient imapClient)
         {
             int folderCount = 0;
-            await foreach (var mailFolder in imapClient.AsyncGetAllSubfolders(_cancellationTokenSource.Token).ConfigureAwait(false))
+            var key = GetKey(imapReceiver, _inbox);
+            if (!_memoryCache.TryGetValue(key, out var _))
             {
-                var key = GetKey(imapReceiver, mailFolder.FullName);
+                CacheMailFolder(key, imapClient.Inbox);
+                folderCount++;
+            }
+            foreach (var mailFolder in await imapClient.GetAllSubfoldersAsync(_cancellationTokenSource.Token).ConfigureAwait(false))
+            {
+                key = GetKey(imapReceiver, mailFolder.FullName);
                 CacheMailFolder(key, mailFolder);
                 folderCount++;
             }
             return folderCount;
         }
-#endif
-        private async Task<int> CacheAllMailFoldersAsync(IImapReceiver imapReceiver, IImapClient imapClient)
+
+        public async Task<UniqueId?> MoveToAsync(IImapReceiver imapReceiver, IMessageSummary messageSummary, string destinationFolderFullName, CancellationToken cancellationToken = default)
         {
-            int folderCount = 0;
-            foreach (var mailFolder in await imapClient.GetAllSubfoldersAsync(_cancellationTokenSource.Token).ConfigureAwait(false))
-            {
-                var key = GetKey(imapReceiver, mailFolder.FullName);
-                CacheMailFolder(key, mailFolder);
-                folderCount++;
-            }
-            return folderCount;
+            if (imapReceiver == null || messageSummary == null || !messageSummary.UniqueId.IsValid)
+                return null;
+            var source = await GetMailFolderAsync(imapReceiver, messageSummary.Folder.FullName, createIfMissing: false, cancellationToken).ConfigureAwait(false);
+            var destination = await GetMailFolderAsync(imapReceiver, destinationFolderFullName, createIfMissing: true, cancellationToken).ConfigureAwait(false);
+
+            bool peekSourceFolder = !source.IsOpen;
+            if (!source.IsOpen || source.Access != FolderAccess.ReadWrite)
+                await source.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
+            var resultUid = await source.MoveToAsync(messageSummary.UniqueId, destination, cancellationToken).ConfigureAwait(false);
+            if (peekSourceFolder && source.IsOpen)
+                await source.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);
+
+            return resultUid;
         }
 
         // Let the Garbage Collector dispose of the injected MemoryCache.
