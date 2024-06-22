@@ -29,6 +29,7 @@ public class Worker : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
         using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        await ReceiveAsync(cancellationToken);
         //await TemplateSendAsync(1, cancellationToken);
         //await SendAttachmentAsync(500);
         //await ReceiveAsync(cancellationToken);
@@ -43,7 +44,8 @@ public class Worker : BackgroundService
         //await GetMessageSummaryRepliesAsync(cancellationToken);
         //await GetMimeMessageRepliesAsync(cancellationToken);
         //await AddFlagsToNewestMessageSummaryAsync(cancellationToken);
-        await GetMailFolderCacheAsync();
+        //await GetMailFolderCacheAsync();
+        //await CreateFolderAndMoveTopOneAsync();
     }
 
     private static ImapReceiver CreateExchangeOAuth2ImapClientExample(SaslMechanismOAuth2 oauth2)
@@ -132,11 +134,12 @@ public class Worker : BackgroundService
         _logger.LogInformation($"Added mime message to {_imapReceiver} {destinationFolderFullName} folder as #{uniqueId}.");
     }
 
-    private async Task CreateFolderAndMoveTopOneAsync(string destinationFolderFullName = "INBOX/Processed", CancellationToken cancellationToken = default)
+    private async Task CreateFolderAndMoveTopOneAsync(string mailFolderFullName = "Processed", CancellationToken cancellationToken = default)
     {
+        //var mailFolderNames = await _imapReceiver.GetMailFolderNamesAsync(cancellationToken);
         using var mailFolderClient = _serviceScope.ServiceProvider.GetRequiredService<IMailFolderClient>();
-        var folder = await mailFolderClient.GetOrCreateFolderAsync(destinationFolderFullName, cancellationToken);
-        await MoveTopOneToFolderAsync(mailFolderClient, destinationFolderFullName, cancellationToken);
+        var mailFolder = await mailFolderClient.GetOrCreateFolderAsync(mailFolderFullName, cancellationToken);
+        await MoveTopOneToFolderAsync(mailFolderClient, mailFolderFullName, cancellationToken);
     }
 
     private async Task GetMailFolderCacheAsync(string destinationFolderFullName = "INBOX", CancellationToken cancellationToken = default)

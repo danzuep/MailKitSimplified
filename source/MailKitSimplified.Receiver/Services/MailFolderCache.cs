@@ -9,7 +9,6 @@ using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
-using Org.BouncyCastle.Asn1.X509;
 
 namespace MailKitSimplified.Receiver.Services
 {
@@ -92,10 +91,10 @@ namespace MailKitSimplified.Receiver.Services
         }
 
 #if NET5_0_OR_GREATER
-        private async Task<int> CacheAllMailFoldersAsync(IImapReceiver imapReceiver, IImapClient imapClient)
+        private async Task<int> AsyncCacheAllMailFoldersAsync(IImapReceiver imapReceiver, IImapClient imapClient)
         {
             int folderCount = 0;
-            await foreach (var mailFolder in imapClient.GetAllSubfoldersAsync(_cancellationTokenSource.Token).ConfigureAwait(false))
+            await foreach (var mailFolder in imapClient.AsyncGetAllSubfolders(_cancellationTokenSource.Token).ConfigureAwait(false))
             {
                 var key = GetKey(imapReceiver, mailFolder.FullName);
                 CacheMailFolder(key, mailFolder);
@@ -103,7 +102,7 @@ namespace MailKitSimplified.Receiver.Services
             }
             return folderCount;
         }
-#else
+#endif
         private async Task<int> CacheAllMailFoldersAsync(IImapReceiver imapReceiver, IImapClient imapClient)
         {
             int folderCount = 0;
@@ -115,7 +114,6 @@ namespace MailKitSimplified.Receiver.Services
             }
             return folderCount;
         }
-#endif
 
         // Let the Garbage Collector dispose of the injected MemoryCache.
     }

@@ -22,7 +22,7 @@ namespace MailKitSimplified.Receiver.Models
             set => MailFolderNames = new List<string> { value };
         }
 
-        public IList<string> MailFolderNames { get; set; } = new List<string> { _inbox };
+        public IList<string> MailFolderNames { get; set; } = new List<string> { string.Empty };
 
         public FolderAccess MailFolderAccess { get; set; } = FolderAccess.None;
 

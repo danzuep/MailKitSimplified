@@ -41,10 +41,10 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <summary>
         /// Get or create a mail folder in the user namespace.
         /// </summary>
-        /// <param name="folderName">Folder name to search for.</param>
+        /// <param name="mailFolderFullName">Folder name to search for.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Mail folder with a matching name.</returns>
-        Task<IMailFolder> GetOrCreateFolderAsync(string folderName, CancellationToken cancellationToken = default);
+        Task<IMailFolder> GetOrCreateFolderAsync(string mailFolderFullName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Add flags with checks to make sure the folder is open and writeable.

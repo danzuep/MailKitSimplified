@@ -291,12 +291,24 @@ namespace MailKitSimplified.Receiver.Services
         {
             _ = await ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
             _logger.LogTrace($"Connecting to mail folder: '{_receiverOptions.MailFolderName}'.");
-            var mailFolder = string.IsNullOrWhiteSpace(_receiverOptions.MailFolderName) || _receiverOptions.MailFolderName.Equals("INBOX", StringComparison.OrdinalIgnoreCase) ?
-                _imapClient.Inbox : await _imapClient.GetFolderAsync(_receiverOptions.MailFolderName, cancellationToken).ConfigureAwait(false);
+            IMailFolder mailFolder;
+            if (string.IsNullOrWhiteSpace(_receiverOptions.MailFolderName))
+            {
+                var namespaceFolder = _imapClient.PersonalNamespaces.FirstOrDefault()
+                    ?? _imapClient.SharedNamespaces.FirstOrDefault()
+                    ?? _imapClient.OtherNamespaces.FirstOrDefault();
+                mailFolder = !string.IsNullOrWhiteSpace(namespaceFolder?.Path) ? _imapClient.GetFolder(namespaceFolder) : _imapClient.Inbox;
+                _receiverOptions.MailFolderName = mailFolder.FullName;
+            }
+            else if (_receiverOptions.MailFolderName.Equals("INBOX", StringComparison.OrdinalIgnoreCase))
+                mailFolder = _imapClient.Inbox;
+            else
+                mailFolder = await _imapClient.GetFolderAsync(_receiverOptions.MailFolderName, cancellationToken).ConfigureAwait(false);
             if (_receiverOptions.MailFolderAccess != FolderAccess.None)
             {
                 _ = await mailFolder.OpenAsync(_receiverOptions.MailFolderAccess, cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace($"{this} mail folder opened with {_receiverOptions.MailFolderAccess} access.");
+                //_receiverOptions.MailFolderAccess = FolderAccess.None;
             }
             return mailFolder;
         }

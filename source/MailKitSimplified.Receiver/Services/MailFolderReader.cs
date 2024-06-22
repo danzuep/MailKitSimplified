@@ -28,7 +28,7 @@ namespace MailKitSimplified.Receiver.Services
         private static readonly int _queryAmount = 250;
         private SearchQuery _searchQuery = _queryAll;
         private static readonly SearchQuery _queryAll = SearchQuery.All;
-        private MessageSummaryItems _messageSummaryItems = MessageSummaryItems.Envelope;
+        private MessageSummaryItems _messageSummaryItems = MessageSummaryItems.UniqueId | MessageSummaryItems.Envelope;
         private readonly ILogger _logger;
         private readonly IImapReceiver _imapReceiver;
 
@@ -110,7 +110,7 @@ namespace MailKitSimplified.Receiver.Services
 
         public IMailReader Items(MessageSummaryItems messageSummaryItems)
         {
-            _messageSummaryItems = messageSummaryItems | MessageSummaryItems.UniqueId;
+            _messageSummaryItems = MessageSummaryItems.UniqueId | messageSummaryItems;
             return this;
         }
 
