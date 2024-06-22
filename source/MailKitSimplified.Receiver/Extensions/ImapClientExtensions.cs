@@ -71,7 +71,7 @@ namespace MailKitSimplified.Receiver.Extensions
         {
             var results = new List<IMailFolder>();
             var folders = await imapClient.GetFoldersAsync(folderNamespace, subscribedOnly: false, cancellationToken).ConfigureAwait(false);
-            foreach (var folder in folders)
+            foreach (var folder in folders ?? Enumerable.Empty<IMailFolder>())
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var subfolders = await folder.GetSubfoldersAsync(subscribedOnly: false, cancellationToken).ConfigureAwait(false);

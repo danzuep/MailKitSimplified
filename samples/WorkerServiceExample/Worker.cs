@@ -138,7 +138,9 @@ public class Worker : BackgroundService
     {
         //var mailFolderNames = await _imapReceiver.GetMailFolderNamesAsync(cancellationToken);
         using var mailFolderClient = _serviceScope.ServiceProvider.GetRequiredService<IMailFolderClient>();
-        var mailFolder = await mailFolderClient.GetOrCreateFolderAsync(mailFolderFullName, cancellationToken);
+        var baseFolder = await mailFolderClient.GetFolderAsync(["INBOX"]);
+        var mailFolder = await baseFolder.GetOrCreateSubfolderAsync(mailFolderFullName, cancellationToken);
+        //var mailFolder = await mailFolderClient.GetOrCreateFolderAsync(mailFolderFullName, cancellationToken);
         await MoveTopOneToFolderAsync(mailFolderClient, mailFolderFullName, cancellationToken);
     }
 

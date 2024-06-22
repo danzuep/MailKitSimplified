@@ -330,20 +330,17 @@ namespace MailKitSimplified.Receiver.Services
         {
             _ = await ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
             var mailFolderNames = new List<string>();
+            var inboxSubfolders = await _imapClient.Inbox.GetSubfoldersAsync(subscribedOnly: false, cancellationToken).ConfigureAwait(false);
+            if (inboxSubfolders?.Count > 0)
+            {
+                var inboxSubfolderNames = inboxSubfolders.Select(sf => $"\"{sf.FullName}\"");
+                mailFolderNames.AddRange(inboxSubfolderNames);
+                _logger.LogDebug($"{inboxSubfolders.Count} Inbox folders: {inboxSubfolderNames.ToEnumeratedString()}.");
+            }
             if (_imapClient.PersonalNamespaces.Count > 0)
             {
                 var subfolderNames = await GetAllSubfoldersAsync(_imapClient.PersonalNamespaces, "personal", cancellationToken).ConfigureAwait(false);
                 mailFolderNames.AddRange(subfolderNames);
-            }
-            else
-            {
-                var inboxSubfolders = await _imapClient.Inbox.GetSubfoldersAsync(subscribedOnly: false, cancellationToken).ConfigureAwait(false);
-                if (inboxSubfolders.Count > 0)
-                {
-                    var inboxSubfolderNames = inboxSubfolders.Select(sf => $"\"{sf.FullName}\"");
-                    mailFolderNames.AddRange(inboxSubfolderNames);
-                    _logger.LogDebug($"{inboxSubfolders.Count} Inbox folders: {inboxSubfolderNames.ToEnumeratedString()}.");
-                }
             }
             if (_imapClient.SharedNamespaces.Count > 0)
             {

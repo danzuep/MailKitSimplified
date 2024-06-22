@@ -13,6 +13,7 @@ using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Receiver.Extensions;
+using System.Threading;
 
 namespace MailKitSimplified.Receiver.Tests
 {
@@ -21,6 +22,7 @@ namespace MailKitSimplified.Receiver.Tests
         private const string _localhost = "localhost";
         private const int _defaultPort = 143;
         private readonly Mock<IImapClient> _imapClientMock = new();
+        private readonly Mock<IMailFolder> _mailFolderMock = new();
         private readonly ImapReceiver _imapReceiver;
 
         public ImapReceiverUnitTests()
@@ -28,11 +30,15 @@ namespace MailKitSimplified.Receiver.Tests
             // Arrange
             var loggerMock = new Mock<ILogger<ImapReceiver>>();
             var protocolLoggerMock = new Mock<IProtocolLogger>();
+            //_mailFolderMock.SetupGet(_ => _.IsOpen).Returns(false).Verifiable();
+            //_mailFolderMock.SetupGet(_ => _.Access).Returns(FolderAccess.None).Verifiable();
+            //_mailFolderMock.Setup(_ => _.OpenAsync(It.IsAny<FolderAccess>(), It.IsAny<CancellationToken>())).Verifiable();
+            //_mailFolderMock.Setup(_ => _.CloseAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).Verifiable();
             _imapClientMock.Setup(_ => _.ConnectAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<SecureSocketOptions>(), It.IsAny<CancellationToken>())).Verifiable();
             _imapClientMock.Setup(_ => _.AuthenticateAsync(It.IsAny<ICredentials>(), It.IsAny<CancellationToken>())).Verifiable();
             _imapClientMock.SetupGet(_ => _.AuthenticationMechanisms).Returns(new HashSet<string>()).Verifiable();
             _imapClientMock.Setup(_ => _.AuthenticateAsync(It.IsAny<SaslMechanism>(), It.IsAny<CancellationToken>())).Verifiable();
-            _imapClientMock.SetupGet(_ => _.Inbox).Returns(Mock.Of<IMailFolder>()).Verifiable();
+            _imapClientMock.SetupGet(_ => _.Inbox).Returns(_mailFolderMock.Object).Verifiable();
             var imapReceiverOptions = Options.Create(new EmailReceiverOptions(_localhost, new NetworkCredential()));
             _imapReceiver = new ImapReceiver(imapReceiverOptions, loggerMock.Object, protocolLoggerMock.Object, _imapClientMock.Object, NullLoggerFactory.Instance);
         }
@@ -197,12 +203,15 @@ namespace MailKitSimplified.Receiver.Tests
             _imapClientMock.SetupGet(_ => _.OtherNamespaces).Returns(folderNamespaceStub);
             _imapClientMock.Setup(_ => _.GetFoldersAsync(It.IsAny<FolderNamespace>(), It.IsAny<StatusItems>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Array.Empty<IMailFolder>()).Verifiable();
+            _mailFolderMock.Setup(_ => _.GetSubfoldersAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<IMailFolder> { Mock.Of<IMailFolder>() }).Verifiable();
             // Act
             var mailFolderNames = await _imapReceiver.GetMailFolderNamesAsync(It.IsAny<CancellationToken>());
             // Assert
             Assert.NotNull(mailFolderNames);
             Assert.IsAssignableFrom<IList<string>>(mailFolderNames);
-            _imapClientMock.Verify(_ => _.GetFoldersAsync(It.IsAny<FolderNamespace>(), It.IsAny<StatusItems>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+            _imapClientMock.Verify(_ => _.GetFoldersAsync(It.IsAny<FolderNamespace>(), It.IsAny<StatusItems>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Exactly(0));
+            _mailFolderMock.Verify(_ => _.GetSubfoldersAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
         }
 
 
