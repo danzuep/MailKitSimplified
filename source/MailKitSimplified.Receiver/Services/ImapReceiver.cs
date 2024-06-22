@@ -301,33 +301,47 @@ namespace MailKitSimplified.Receiver.Services
             return mailFolder;
         }
 
+        private async Task<IList<string>> GetAllSubfoldersAsync(FolderNamespaceCollection folderNamespaceCollection, string folderGroup, CancellationToken cancellationToken = default)
+        {
+            var mailFolderNames = new List<string>();
+            foreach (var folderNamespace in folderNamespaceCollection)
+            {
+                var subfolders = await _imapClient.GetAllSubfoldersAsync(folderNamespace, cancellationToken).ConfigureAwait(false);
+                var subfolderNames = subfolders.Select(sf => $"\"{sf.FullName}\"");
+                mailFolderNames.AddRange(subfolderNames);
+                _logger.LogDebug($"{subfolders.Count} {folderGroup} folders: {subfolderNames.ToEnumeratedString()}.");
+            }
+            return mailFolderNames;
+        }
+
         public async Task<IList<string>> GetMailFolderNamesAsync(CancellationToken cancellationToken = default)
         {
             _ = await ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
             var mailFolderNames = new List<string>();
             if (_imapClient.PersonalNamespaces.Count > 0)
             {
-                var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.PersonalNamespaces[0], cancellationToken: cancellationToken).ConfigureAwait(false);
-                var subfolders = rootFolder.SelectMany(rf => rf.GetSubfolders().Select(sf => sf.Name));
-                var inboxSubfolders = _imapClient.Inbox.GetSubfolders(cancellationToken: cancellationToken).Select(f => f.FullName);
-                mailFolderNames.AddRange(inboxSubfolders);
-                mailFolderNames.AddRange(subfolders);
-                _logger.LogDebug($"{inboxSubfolders.Count()} Inbox folders: {inboxSubfolders.ToEnumeratedString()}.");
-                _logger.LogDebug($"{subfolders.Count()} personal folders: {subfolders.ToEnumeratedString()}.");
+                var subfolderNames = await GetAllSubfoldersAsync(_imapClient.PersonalNamespaces, "personal", cancellationToken).ConfigureAwait(false);
+                mailFolderNames.AddRange(subfolderNames);
+            }
+            else
+            {
+                var inboxSubfolders = await _imapClient.Inbox.GetSubfoldersAsync(subscribedOnly: false, cancellationToken).ConfigureAwait(false);
+                if (inboxSubfolders.Count > 0)
+                {
+                    var inboxSubfolderNames = inboxSubfolders.Select(sf => $"\"{sf.FullName}\"");
+                    mailFolderNames.AddRange(inboxSubfolderNames);
+                    _logger.LogDebug($"{inboxSubfolders.Count} Inbox folders: {inboxSubfolderNames.ToEnumeratedString()}.");
+                }
             }
             if (_imapClient.SharedNamespaces.Count > 0)
             {
-                var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.SharedNamespaces[0], cancellationToken: cancellationToken).ConfigureAwait(false);
-                var subfolders = rootFolder.SelectMany(rf => rf.GetSubfolders(cancellationToken: cancellationToken).Select(sf => sf.Name));
-                mailFolderNames.AddRange(subfolders);
-                _logger.LogDebug($"{subfolders.Count()} shared folders: {subfolders.ToEnumeratedString()}.");
+                var subfolderNames = await GetAllSubfoldersAsync(_imapClient.SharedNamespaces, "shared", cancellationToken).ConfigureAwait(false);
+                mailFolderNames.AddRange(subfolderNames);
             }
             if (_imapClient.OtherNamespaces.Count > 0)
             {
-                var rootFolder = await _imapClient.GetFoldersAsync(_imapClient.OtherNamespaces[0], cancellationToken: cancellationToken).ConfigureAwait(false);
-                var subfolders = rootFolder.SelectMany(rf => rf.GetSubfolders(cancellationToken: cancellationToken).Select(sf => sf.Name));
-                mailFolderNames.AddRange(subfolders);
-                _logger.LogDebug($"{subfolders.Count()} other folders: {subfolders.ToEnumeratedString()}.");
+                var subfolderNames = await GetAllSubfoldersAsync(_imapClient.OtherNamespaces, "other", cancellationToken).ConfigureAwait(false);
+                mailFolderNames.AddRange(subfolderNames);
             }
             return mailFolderNames;
         }

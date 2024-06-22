@@ -23,7 +23,7 @@ namespace MailKitSimplified.Receiver.Extensions
         }
 
 #if NET5_0_OR_GREATER
-        private static async IAsyncEnumerable<IMailFolder> GetAllSubfoldersAsync(this IImapClient imapClient, FolderNamespace folderNamespace, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        private static async IAsyncEnumerable<IMailFolder> AsyncGetAllSubfolders(this IImapClient imapClient, FolderNamespace folderNamespace, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var folders = await imapClient.GetFoldersAsync(folderNamespace, subscribedOnly: false, cancellationToken).ConfigureAwait(false);
             foreach (var folder in folders)
@@ -38,7 +38,7 @@ namespace MailKitSimplified.Receiver.Extensions
             }
         }
 
-        internal static async IAsyncEnumerable<IMailFolder> GetAllSubfoldersAsync(this IImapClient imapClient, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        internal static async IAsyncEnumerable<IMailFolder> AsyncGetAllSubfolders(this IImapClient imapClient, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             if (imapClient == null)
                 throw new ArgumentNullException(nameof(imapClient));
@@ -46,28 +46,28 @@ namespace MailKitSimplified.Receiver.Extensions
                 throw new ServiceNotConnectedException(nameof(imapClient));
             foreach (var folderNamespace in imapClient.PersonalNamespaces)
             {
-                await foreach (var folder in imapClient.GetAllSubfoldersAsync(folderNamespace).WithCancellation(cancellationToken).ConfigureAwait(false))
+                await foreach (var folder in imapClient.AsyncGetAllSubfolders(folderNamespace).WithCancellation(cancellationToken).ConfigureAwait(false))
                 {
                     yield return folder;
                 }
             }
             foreach (var folderNamespace in imapClient.SharedNamespaces)
             {
-                await foreach (var folder in imapClient.GetAllSubfoldersAsync(folderNamespace).WithCancellation(cancellationToken).ConfigureAwait(false))
+                await foreach (var folder in imapClient.AsyncGetAllSubfolders(folderNamespace).WithCancellation(cancellationToken).ConfigureAwait(false))
                 {
                     yield return folder;
                 }
             }
             foreach (var folderNamespace in imapClient.OtherNamespaces)
             {
-                await foreach (var folder in imapClient.GetAllSubfoldersAsync(folderNamespace).WithCancellation(cancellationToken).ConfigureAwait(false))
+                await foreach (var folder in imapClient.AsyncGetAllSubfolders(folderNamespace).WithCancellation(cancellationToken).ConfigureAwait(false))
                 {
                     yield return folder;
                 }
             }
         }
-#else
-        private static async Task<IList<IMailFolder>> GetAllSubfoldersAsync(this IImapClient imapClient, FolderNamespace folderNamespace, CancellationToken cancellationToken = default)
+#endif
+        internal static async Task<IList<IMailFolder>> GetAllSubfoldersAsync(this IImapClient imapClient, FolderNamespace folderNamespace, CancellationToken cancellationToken = default)
         {
             var results = new List<IMailFolder>();
             var folders = await imapClient.GetFoldersAsync(folderNamespace, subscribedOnly: false, cancellationToken).ConfigureAwait(false);
@@ -104,6 +104,5 @@ namespace MailKitSimplified.Receiver.Extensions
             }
             return results;
         }
-#endif
     }
 }
