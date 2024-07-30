@@ -36,7 +36,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="folderNames">Folder names to search for.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Mail folder with a matching name.</returns>
-        Task<IMailFolder> GetFolderAsync(IEnumerable<string> folderNames, CancellationToken cancellationToken = default);
+        Task<IMailFolder> GetFolderAsync(IEnumerable<string> folderNames = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get or create a mail folder in the user namespace.

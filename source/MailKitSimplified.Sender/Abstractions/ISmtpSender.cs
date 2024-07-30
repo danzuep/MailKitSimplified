@@ -30,6 +30,11 @@ namespace MailKitSimplified.Sender.Abstractions
         IEmailWriter WriteEmail { get; }
 
         /// <summary>
+        /// Enqueue a <see cref="MimeMessage"/> to send later.
+        /// </summary>
+        void Enqueue(MimeMessage mimeMessage);
+
+        /// <summary>
         /// Get the underlying <see cref="ISmtpClient"/>.
         /// </summary>
         ISmtpClient SmtpClient { get; }

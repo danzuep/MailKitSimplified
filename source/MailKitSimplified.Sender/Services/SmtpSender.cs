@@ -459,6 +459,8 @@ namespace MailKitSimplified.Sender.Services
         /// </summary>
         public void Dispose()
         {
+            if (_cts != null)
+                TrySendAllAsync().GetAwaiter().GetResult();
             DisconnectAsync().GetAwaiter().GetResult();
             if (!_isClientInjected)
                 _smtpClient.Dispose();

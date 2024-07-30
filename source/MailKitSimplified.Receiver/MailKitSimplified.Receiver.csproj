@@ -18,12 +18,13 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="8.0.0" />
-    <PackageReference Include="System.Text.Json" Version="8.0.3" />
+    <PackageReference Include="System.Text.Json" Version="8.0.4" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="MailKit" Version="4.6.0" />
-    <PackageReference Update="MimeKit" Version="4.6.0" />
+    <PackageReference Update="MailKit" Version="4.7.1.1" />
+    <PackageReference Update="MimeKit" Version="4.7.1" />
+    <PackageReference Update="System.IO.Abstractions" Version="21.0.29" />
   </ItemGroup>
 
 </Project>
