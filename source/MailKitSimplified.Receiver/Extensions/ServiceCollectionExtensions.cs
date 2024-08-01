@@ -92,7 +92,6 @@ namespace MailKitSimplified.Receiver
             services.AddSingleton<IProtocolLogger, MailKitProtocolLogger>();
             services.AddSingleton<IImapReceiverFactory, ImapReceiverFactory>();
             services.AddSingleton<IMailFolderMonitorFactory, MailFolderMonitorFactory>();
-            services.AddSingleton<IMailFolderCache, MailFolderCache>();
             services.AddLifetimeServices(serviceLifetime);
             return services;
         }

@@ -26,16 +26,14 @@ namespace MailKitSimplified.Receiver.Services
         private ILogger _logger;
         private IMailFolder _mailFolder = null;
         private IList<string> SentFolderNames;
-        private readonly IMailFolderCache _mailFolderCache;
         private readonly IList<string> DraftsFolderNames;
         private readonly IList<string> JunkFolderNames;
         private readonly IList<string> TrashFolderNames;
         private readonly IImapReceiver _imapReceiver;
 
-        public MailFolderClient(IImapReceiver imapReceiver, IOptions<FolderClientOptions> options = null, ILogger<MailFolderClient> logger = null, IMailFolderCache mailFolderCache = null)
+        public MailFolderClient(IImapReceiver imapReceiver, IOptions<FolderClientOptions> options = null, ILogger<MailFolderClient> logger = null)
         {
             _logger = logger ?? NullLogger<MailFolderClient>.Instance;
-            _mailFolderCache = mailFolderCache;
             _imapReceiver = imapReceiver ?? throw new ArgumentNullException(nameof(imapReceiver));
             SentFolderNames = options?.Value?.SentFolderNames ?? FolderClientOptions.CommonSentFolderNames;
             DraftsFolderNames = options?.Value?.DraftsFolderNames ?? FolderClientOptions.CommonDraftsFolderNames;

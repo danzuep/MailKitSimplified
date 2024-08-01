@@ -10,14 +10,16 @@ namespace MailKitSimplified.Receiver.Extensions
         /// <summary>
         /// Get a mail subfolder if it exists, or create it if not.
         /// </summary>
-        /// <param name="mailFolderFullName">Folder name to search for.</param>
         /// <param name="baseFolder">Base folder to search in, Inbox by default</param>
+        /// <param name="mailFolderFullName">Folder name to search for.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Mail folder with a matching name.</returns>
         public static async Task<IMailFolder> GetOrCreateSubfolderAsync(this IMailFolder baseFolder, string mailFolderFullName, CancellationToken cancellationToken = default)
         {
             if (baseFolder == null)
                 throw new ArgumentNullException(nameof(baseFolder));
+            if (string.IsNullOrWhiteSpace(mailFolderFullName))
+                throw new ArgumentNullException(nameof(mailFolderFullName));
             IMailFolder mailFolder;
             try
             {

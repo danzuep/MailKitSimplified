@@ -170,15 +170,13 @@ public class Worker : BackgroundService
         _logger.LogInformation($"Moved {_imapReceiver} mime message #{messageSummary.UniqueId} to {mailFolderFullName} folder as #{uniqueId}.");
     }
 
-    public async Task GetMailFolderAsync(string mailFolderName, CancellationToken cancellationToken = default)
+    public async Task GetMailFolderAsync(string mailFolderFullName, CancellationToken cancellationToken = default)
     {
         var messageSummary = await GetTopMessageSummaryAsync(cancellationToken);
-        var mailFolder1 = await _imapReceiver.MailFolderClient.GetFolderAsync(mailFolderFullName, create: true, cancellationToken);
-        var mailFolder2 = await _imapReceiver.MailFolderClient.GetFolderAsync([mailFolderName], cancellationToken);
-        var mailFolder3 = await _imapReceiver.ImapClient.Inbox.GetOrCreateSubfolderAsync(mailFolderName, cancellationToken);
-        var mailFolder4 = await messageSummary.Folder.GetOrCreateSubfolderAsync(mailFolderName, cancellationToken);
-        //var mimeMessage = await messageSummary.GetMimeMessageAsync(cancellationToken);
-        _logger.LogInformation($"Mail folder: {mailFolderName}");
+        var mailFolder1 = await _imapReceiver.MailFolderClient.GetFolderAsync(mailFolderFullName, createIfNotFound: true, cancellationToken);
+        var mailFolder2 = await _imapReceiver.MailFolderClient.GetFolderAsync([mailFolderFullName], cancellationToken);
+        var mailFolder3 = await messageSummary.Folder.GetOrCreateSubfolderAsync(mailFolderFullName, cancellationToken);
+        _logger.LogInformation($"Mail folder: {mailFolderFullName}");
     }
 
     private async Task DeleteSeenAsync(CancellationTokenSource cancellationTokenSource)
