@@ -15,7 +15,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// </summary>
         /// <param name="count">Number of messages to return.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>
-        IMailReader Top(ushort count);
+        IMailReader Top(int count);
 
         /// <summary>
         /// Mail folder offset to start getting messages from, oldest to newest.
@@ -50,7 +50,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="batchSize">Zero-indexed batch size.</param>
         /// <param name="continuous">Default is to continue in batches.</param>
         /// <returns>Fluent <see cref="IMailReader"/>.</returns>
-        IMailReader Range(UniqueId start, ushort batchSize = 0, bool continuous = true);
+        IMailReader Range(UniqueId start, int batchSize = 0, bool continuous = true);
 
         /// <summary>
         /// Set a query for searching messages in a <see cref="IMailFolder"/>.

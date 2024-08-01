@@ -47,7 +47,8 @@ public class Worker : BackgroundService
         //await GetMailFolderCacheAsync();
         //await CreateFolderAndMoveTopOneAsync();
         //await MonitorAsync(cancellationToken);
-        await MonitorMoveAsync(cancellationToken);
+        //await MonitorMoveAsync(cancellationToken);
+        //await MoveToAsync("Process", 2, cancellationToken);
     }
 
     private static ImapReceiver CreateExchangeOAuth2ImapClientExample(SaslMechanismOAuth2 oauth2)
@@ -86,6 +87,16 @@ public class Worker : BackgroundService
         async Task UniqueIdArrivedAsync(IMessageSummary messageSummary) =>
             await mailFolderClient.MoveToAsync(messageSummary, destinationFolderFullName, cancellationToken);
         await mailFolderMonitorFactory.MonitorAllMailboxesAsync(UniqueIdArrivedAsync, cancellationToken);
+    }
+
+    private async Task MoveToAsync(string destinationFolderFullName = _processed, int howMany = 2, CancellationToken cancellationToken = default)
+    {
+        using var mailFolderClient = _serviceScope.ServiceProvider.GetRequiredService<IMailFolderClient>();
+        var messageSummaries = await _imapReceiver.ReadMail.Top(howMany).GetMessageSummariesAsync(cancellationToken);
+        _logger.LogInformation($"{_imapReceiver} folder query returned {messageSummaries.Count} messages.");
+        var uniqueIds = messageSummaries.Select(m => m.UniqueId);
+        var movedUids = await mailFolderClient.MoveToAsync(uniqueIds, destinationFolderFullName, cancellationToken);
+        _logger.LogInformation($"Moved {movedUids.Count} {_imapReceiver} messages to {destinationFolderFullName}.");
     }
 
     private async Task DownloadEmailAsync(string filePath = "download.eml", CancellationToken cancellationToken = default)
@@ -485,6 +496,7 @@ public class Worker : BackgroundService
             var sendTask = DelayedSendAsync(waitCount * delayMs, smtpSender, cancellationToken);
             sendTasks.Add(sendTask);
         }
+        var destinationFolder = await mailFolderClient.GetOrCreateFolderAsync(_processed, cancellationToken);
         await _imapReceiver.MonitorFolder
             .SetMessageSummaryItems()
             .SetIgnoreExistingMailOnConnect()
@@ -495,8 +507,7 @@ public class Worker : BackgroundService
 
         async Task ProcessMessageAsync(IMessageSummary messageSummary)
         {
-            var mailFolder = await mailFolderClient.GetOrCreateFolderAsync(_processed, cancellationToken);
-            var uniqueId = await mailFolderClient.MoveToAsync(messageSummary.UniqueId, mailFolder, cancellationToken);
+            var uniqueId = await mailFolderClient.MoveToAsync(messageSummary.UniqueId, destinationFolder, cancellationToken);
             if (uniqueId == null)
                 _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} not moved to [{_processed}], UniqueId is null.");
             else

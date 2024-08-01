@@ -73,11 +73,13 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
-        public IMailReader Top(ushort count)
+        public IMailReader Top(int count)
         {
-            if (count == 0)
-                throw new ArgumentOutOfRangeException(nameof(count));
-            _top = count;
+            if (count <= ushort.MinValue)
+                throw new ArgumentOutOfRangeException(nameof(count), $"<= {ushort.MinValue}");
+            if (count > ushort.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(count), $"> {ushort.MaxValue}");
+            _top = (ushort)count;
             return this;
         }
 
@@ -88,11 +90,15 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
-        public IMailReader Range(UniqueId start, ushort batchSize = 0, bool continuous = true)
+        public IMailReader Range(UniqueId start, int batchSize = 0, bool continuous = true)
         {
+            if (batchSize < ushort.MinValue)
+                throw new ArgumentOutOfRangeException(nameof(batchSize), $"< {ushort.MinValue}");
+            if (batchSize > ushort.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(batchSize), $"> {ushort.MaxValue}");
             unchecked
             {
-                var endId = start.Id + batchSize;
+                var endId = start.Id + (ushort)batchSize;
                 var end = endId < start.Id ? UniqueId.MaxValue : new UniqueId(endId);
                 _uniqueIds = new UniqueIdRange(start, end);
             }
