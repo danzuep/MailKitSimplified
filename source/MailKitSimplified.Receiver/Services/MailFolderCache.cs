@@ -42,7 +42,7 @@ namespace MailKitSimplified.Receiver.Services
                     int folderCount = await CacheAllMailFoldersAsync(imapReceiver, imapClient).ConfigureAwait(false);
                     if (createIfMissing && !_memoryCache.TryGetValue(key, out mailFolder))
                     {
-                        mailFolder = await imapReceiver.MailFolderClient.GetOrCreateFolderAsync(mailFolderFullName, cancellationToken).ConfigureAwait(false);
+                        mailFolder = await imapReceiver.MailFolderClient.GetFolderAsync(mailFolderFullName, createIfNotFound: true, cancellationToken).ConfigureAwait(false);
                         if (mailFolder != null)
                         {
                             var createdKey = GetKey(imapReceiver, mailFolder.FullName);

@@ -180,7 +180,7 @@ namespace MailKitSimplified.Receiver.Services
             return folder;
         });
 
-        private async Task<IMailFolder> GetFolderAsync(string mailFolderFullName, bool create = false, CancellationToken cancellationToken = default)
+        public async Task<IMailFolder> GetFolderAsync(string mailFolderFullName, bool createIfNotFound = false, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(mailFolderFullName))
                 return null;
@@ -192,7 +192,7 @@ namespace MailKitSimplified.Receiver.Services
             }
             catch (FolderNotFoundException ex)
             {
-                if (create)
+                if (createIfNotFound)
                 {
                     _logger.LogDebug("{ImapReceiver} {MailFolder} folder not found, creating it now.", _imapReceiver, mailFolderFullName);
                     var namespaceFolder = imapClient.PersonalNamespaces.FirstOrDefault()
@@ -209,12 +209,13 @@ namespace MailKitSimplified.Receiver.Services
             return mailFolder;
         }
 
-        public async Task<IMailFolder> GetOrCreateFolderAsync(string mailFolderFullName, CancellationToken cancellationToken = default) =>
-            await GetFolderAsync(mailFolderFullName, create: true, cancellationToken).ConfigureAwait(false);
-
         /// <inheritdoc />
         public async Task<IMailFolder> GetFolderAsync(IEnumerable<string> folderNames = null, CancellationToken cancellationToken = default)
         {
+            if (folderNames == null && _mailFolder != null)
+            {
+                return _mailFolder;
+            }
             IMailFolder mailFolder = null;
             _semaphoreSlim.Wait();
             try

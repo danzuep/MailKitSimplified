@@ -31,20 +31,21 @@ namespace MailKitSimplified.Receiver.Abstractions
         ValueTask<IMailFolder> ConnectAsync(bool enableWrite = false, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Get or create a mail folder in the user namespace.
+        /// </summary>
+        /// <param name="mailFolderFullName">Folder name to search for.</param>
+        /// <param name="createIfNotFound">Option to create a new folder if no existing folder is found.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Mail folder with a matching name.</returns>
+        Task<IMailFolder> GetFolderAsync(string mailFolderFullName, bool createIfNotFound = false, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Get a mail folder from a list of possible names.
         /// </summary>
         /// <param name="folderNames">Folder names to search for.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Mail folder with a matching name.</returns>
         Task<IMailFolder> GetFolderAsync(IEnumerable<string> folderNames = null, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Get or create a mail folder in the user namespace.
-        /// </summary>
-        /// <param name="mailFolderFullName">Folder name to search for.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>Mail folder with a matching name.</returns>
-        Task<IMailFolder> GetOrCreateFolderAsync(string mailFolderFullName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Add flags with checks to make sure the folder is open and writeable.

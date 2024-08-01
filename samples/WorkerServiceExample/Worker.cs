@@ -173,7 +173,7 @@ public class Worker : BackgroundService
     public async Task GetMailFolderAsync(string mailFolderName, CancellationToken cancellationToken = default)
     {
         var messageSummary = await GetTopMessageSummaryAsync(cancellationToken);
-        var mailFolder1 = await _imapReceiver.MailFolderClient.GetOrCreateFolderAsync(mailFolderName, cancellationToken);
+        var mailFolder1 = await _imapReceiver.MailFolderClient.GetFolderAsync(mailFolderFullName, create: true, cancellationToken);
         var mailFolder2 = await _imapReceiver.MailFolderClient.GetFolderAsync([mailFolderName], cancellationToken);
         var mailFolder3 = await _imapReceiver.ImapClient.Inbox.GetOrCreateSubfolderAsync(mailFolderName, cancellationToken);
         var mailFolder4 = await messageSummary.Folder.GetOrCreateSubfolderAsync(mailFolderName, cancellationToken);
@@ -496,7 +496,7 @@ public class Worker : BackgroundService
             var sendTask = DelayedSendAsync(waitCount * delayMs, smtpSender, cancellationToken);
             sendTasks.Add(sendTask);
         }
-        var destinationFolder = await mailFolderClient.GetOrCreateFolderAsync(_processed, cancellationToken);
+        var destinationFolder = await mailFolderClient.GetFolderAsync(_processed, createIfNotFound: true, cancellationToken);
         await _imapReceiver.MonitorFolder
             .SetMessageSummaryItems()
             .SetIgnoreExistingMailOnConnect()
