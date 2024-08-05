@@ -68,6 +68,16 @@ namespace MailKitSimplified.Receiver.Abstractions
         Task<int> AddFlagsAsync(SearchQuery searchQuery, MessageFlags messageFlags, bool silent = true, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Asynchronously append the specified message to the folder and return the UniqueId assigned to the message.
+        /// </summary>
+        /// <param name="message"><see cref="MimeMessage"/> to append</param>
+        /// <param name="messageFlags"><see cref="MessageFlags"/> to add.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <param name="transferProgress">Current email appending progress</param>
+        /// <returns><see cref="UniqueId"/> of the message.</returns>
+        Task<UniqueId?> AppendSentMessageAsync(MimeMessage message, MessageFlags messageFlags = MessageFlags.Seen, CancellationToken cancellationToken = default, ITransferProgress transferProgress = null);
+
+        /// <summary>
         /// Add flags with checks to make sure the folder is open and writeable.
         /// If there's a delete flag then it calls the Expunge method.
         /// </summary>
@@ -83,6 +93,15 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="filter">Optional additional filter, e.g. SearchQuery.Seen</param>
         /// <param name="cancellationToken">Cancellation token</param>
         Task<int> DeleteMessagesAsync(TimeSpan relativeOffset, SearchQuery filter = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Asynchronously copy the specified message to the specified folder.
+        /// </summary>
+        /// <param name="messageSummary">Source <see cref="IMailFolder"/> and <see cref="UniqueId"/>.</param>
+        /// <param name="mailFolder">Destination <see cref="IMailFolder"/></param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns><see cref="UniqueId"/> of the moved message.</returns>
+        Task<UniqueId?> CopyToAsync(IMessageSummary messageSummary, SpecialFolder mailFolder = SpecialFolder.Drafts, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously move the specified message to the destination folder.
@@ -103,6 +122,33 @@ namespace MailKitSimplified.Receiver.Abstractions
         Task<UniqueId?> MoveToAsync(UniqueId messageUid, string destinationFolder, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Asynchronously move the specified message to the specified folder.
+        /// </summary>
+        /// <param name="messageSummary">Source <see cref="IMailFolder"/> and <see cref="UniqueId"/>.</param>
+        /// <param name="destination">Destination mail folder.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns><see cref="UniqueId"/> of the moved message.</returns>
+        Task<UniqueId?> MoveToAsync(IMessageSummary messageSummary, IMailFolder destination, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Asynchronously move the specified message to the specified folder.
+        /// </summary>
+        /// <param name="messageSummary">Source <see cref="IMailFolder"/> and <see cref="UniqueId"/>.</param>
+        /// <param name="destinationFolder">Name of the destination mail folder.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns><see cref="UniqueId"/> of the moved message.</returns>
+        Task<UniqueId?> MoveToAsync(IMessageSummary messageSummary, string destinationFolder, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Asynchronously move the specified message to the specified folder.
+        /// </summary>
+        /// <param name="messageSummary">Source <see cref="IMailFolder"/> and <see cref="UniqueId"/>.</param>
+        /// <param name="mailFolder">Destination <see cref="IMailFolder"/></param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns><see cref="UniqueId"/> of the moved message.</returns>
+        Task<UniqueId?> MoveToAsync(IMessageSummary messageSummary, SpecialFolder mailFolder = SpecialFolder.Sent, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Asynchronously move the specified messages to the destination folder.
         /// </summary>
         /// <param name="uniqueIds"><see cref="UniqueId"/>s to move.</param>
@@ -119,43 +165,6 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns><see cref="UniqueIdMap"/> of the messages moved to the <see cref="IMailFolder"/> destination.</returns>
         Task<UniqueIdMap> MoveToAsync(IEnumerable<UniqueId> uniqueIds, string destinationFolder, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Asynchronously move the specified message to the specified folder.
-        /// </summary>
-        /// <param name="messageSummary">Source <see cref="IMailFolder"/> and <see cref="UniqueId"/>.</param>
-        /// <param name="mailFolder">Destination <see cref="IMailFolder"/></param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns><see cref="UniqueId"/> of the moved message.</returns>
-        Task<UniqueId?> MoveToAsync(IMessageSummary messageSummary, SpecialFolder mailFolder = SpecialFolder.Sent, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Asynchronously move the specified message to the specified folder.
-        /// </summary>
-        /// <param name="messageSummary">Source <see cref="IMailFolder"/> and <see cref="UniqueId"/>.</param>
-        /// <param name="destinationFolder">Name of the destination mail folder.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns><see cref="UniqueId"/> of the moved message.</returns>
-        Task<UniqueId?> MoveToAsync(IMessageSummary messageSummary, string destinationFolder, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Asynchronously copy the specified message to the specified folder.
-        /// </summary>
-        /// <param name="messageSummary">Source <see cref="IMailFolder"/> and <see cref="UniqueId"/>.</param>
-        /// <param name="mailFolder">Destination <see cref="IMailFolder"/></param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns><see cref="UniqueId"/> of the moved message.</returns>
-        Task<UniqueId?> CopyToAsync(IMessageSummary messageSummary, SpecialFolder mailFolder = SpecialFolder.Drafts, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Asynchronously append the specified message to the folder and return the UniqueId assigned to the message.
-        /// </summary>
-        /// <param name="message"><see cref="MimeMessage"/> to append</param>
-        /// <param name="messageFlags"><see cref="MessageFlags"/> to add.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <param name="transferProgress">Current email appending progress</param>
-        /// <returns><see cref="UniqueId"/> of the message.</returns>
-        Task<UniqueId?> AppendSentMessageAsync(MimeMessage message, MessageFlags messageFlags = MessageFlags.Seen, CancellationToken cancellationToken = default, ITransferProgress transferProgress = null);
 
         /// <summary>
         /// Mail folder summary.

@@ -8,6 +8,8 @@ using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Sender.Abstractions;
+using MailKitSimplified.Sender.Models;
+using Microsoft.Extensions.Options;
 
 namespace ExampleNamespace;
 
@@ -47,8 +49,8 @@ public class Worker : BackgroundService
         //await GetMailFolderCacheAsync();
         //await CreateFolderAndMoveTopOneAsync();
         //await MonitorAsync(cancellationToken);
-        //await MonitorMoveAsync(cancellationToken);
-        //await MoveToAsync("Process", 2, cancellationToken);
+        //await MoveToAsync(_processed, 1, cancellationToken);
+        await MonitorMoveAsync(cancellationToken);
     }
 
     private static ImapReceiver CreateExchangeOAuth2ImapClientExample(SaslMechanismOAuth2 oauth2)
@@ -84,8 +86,9 @@ public class Worker : BackgroundService
     {
         using var mailFolderClient = _serviceScope.ServiceProvider.GetRequiredService<IMailFolderClient>();
         var mailFolderMonitorFactory = _serviceScope.ServiceProvider.GetRequiredService<IMailFolderMonitorFactory>();
+        var destinationFolder = await mailFolderClient.GetFolderAsync(_processed, createIfNotFound: true, cancellationToken);
         async Task UniqueIdArrivedAsync(IMessageSummary messageSummary) =>
-            await mailFolderClient.MoveToAsync(messageSummary, destinationFolderFullName, cancellationToken);
+            await mailFolderClient.MoveToAsync(messageSummary, destinationFolder, cancellationToken);
         await mailFolderMonitorFactory.MonitorAllMailboxesAsync(UniqueIdArrivedAsync, cancellationToken);
     }
 
@@ -132,7 +135,8 @@ public class Worker : BackgroundService
     private async Task AddToDraftFolderAsync()
     {
         using var smtpSender = _serviceScope.ServiceProvider.GetRequiredService<ISmtpSender>();
-        var mimeMessage = CreateTemplate(smtpSender).MimeMessage;
+        var options = _serviceScope.ServiceProvider.GetRequiredService<IOptions<EmailWorkerOptions>>().Value;
+        var mimeMessage = CreateTemplate(smtpSender, options.DefaultFromAddress, options.DefaultToAddress).MimeMessage;
         var draftsFolder = _imapReceiver.MailFolderClient.DraftsFolder;
         var uniqueId = await draftsFolder.AppendAsync(mimeMessage);
         _logger.LogInformation($"Added mime message to {_imapReceiver} {draftsFolder.FullName} folder as #{uniqueId}.");
@@ -144,7 +148,7 @@ public class Worker : BackgroundService
         var uniqueId = await mailFolderClient.MoveToAsync(messageSummary, destinationFolderFullName, cancellationToken);
         //var destinationFolder = await mailFolderClient.GetFolderAsync([destinationFolderFullName], cancellationToken);
         //var uniqueId = await messageSummary.MoveToAsync(destinationFolder, cancellationToken);
-        _logger.LogInformation($"Moved {_imapReceiver} mime message {messageSummary.UniqueId} to {destinationFolderFullName} folder as #{uniqueId}.");
+        _logger.LogInformation($"Moved {_imapReceiver} mime message #{messageSummary.UniqueId} to {destinationFolderFullName} folder as #{uniqueId}.");
     }
 
     private async Task CreateFolderAndMoveTopOneAsync(string mailFolderFullName = _processed, CancellationToken cancellationToken = default)
@@ -155,19 +159,6 @@ public class Worker : BackgroundService
         var mailFolder = await baseFolder.GetOrCreateSubfolderAsync(mailFolderFullName, cancellationToken);
         //var mailFolder = await mailFolderClient.GetOrCreateFolderAsync(mailFolderFullName, cancellationToken);
         await MoveTopOneToFolderAsync(mailFolderClient, mailFolderFullName, cancellationToken);
-    }
-
-    private async Task GetMailFolderCacheAsync(string mailFolderFullName = _processed, CancellationToken cancellationToken = default)
-    {
-        using var mailFolderClient = _serviceScope.ServiceProvider.GetRequiredService<IMailFolderClient>();
-        var mailFolderCache = _serviceScope.ServiceProvider.GetRequiredService<IMailFolderCache>();
-        var folder = await mailFolderCache.GetMailFolderAsync(_imapReceiver, mailFolderFullName, createIfMissing: true, cancellationToken);
-        _logger.LogInformation(folder.FullName);
-        var messageSummary = await GetTopMessageSummaryAsync(cancellationToken);
-        var uniqueId = await mailFolderCache.MoveToAsync(_imapReceiver, messageSummary, mailFolderFullName, cancellationToken);
-        //var destinationFolder = await mailFolderClient.GetFolderAsync([destinationFolderFullName], cancellationToken);
-        //var uniqueId = await messageSummary.MoveToAsync(destinationFolder, cancellationToken);
-        _logger.LogInformation($"Moved {_imapReceiver} mime message #{messageSummary.UniqueId} to {mailFolderFullName} folder as #{uniqueId}.");
     }
 
     public async Task GetMailFolderAsync(string mailFolderFullName, CancellationToken cancellationToken = default)
@@ -394,14 +385,15 @@ public class Worker : BackgroundService
         _logger.LogInformation($"{_imapReceiver} received {messageSummaries.Count} email(s) in {stopwatch.Elapsed.TotalSeconds:n1}s: {messageSummaries.Select(m => m.UniqueId).ToEnumeratedString()}.");
     }
 
-    private IEmailWriter CreateTemplate(ISmtpSender smtpSender, string from = "me@example.com")
+    private IEmailWriter CreateTemplate(ISmtpSender smtpSender, string from = "me@example.com", string? to = null)
     {
         if (!from.IsEmail())
             _logger.LogWarning($"{from} is not a valid email.");
         var id = $"{Guid.NewGuid():N}"[..8];
+        to ??= $"{id}@localhost";
         var template = smtpSender.WriteEmail
             .From(from)
-            .To($"{id}@localhost")
+            .To(to)
             .Subject(id)
             .BodyText("text/plain.")
             .BodyHtml("text/html.")
@@ -412,9 +404,10 @@ public class Worker : BackgroundService
     private async Task TemplateSendAsync(byte numberToSend = 1, CancellationToken cancellationToken = default)
     {
         using var smtpSender = _serviceScope.ServiceProvider.GetRequiredService<ISmtpSender>();
+        var options = _serviceScope.ServiceProvider.GetRequiredService<IOptions<EmailWorkerOptions>>().Value;
         //var template = await GetTemplate().SaveTemplateAsync();
         //var template = await smtpSender.WithTemplateAsync();
-        var template = CreateTemplate(smtpSender);
+        var template = CreateTemplate(smtpSender, options.DefaultFromAddress, options.DefaultToAddress);
         int count = 0;
         do
         {
@@ -428,19 +421,21 @@ public class Worker : BackgroundService
     private async Task SendAttachmentAsync(int millisecondsDelay, string filePath = "..\\..\\README.md", CancellationToken cancellationToken = default)
     {
         using var smtpSender = _serviceScope.ServiceProvider.GetRequiredService<ISmtpSender>();
-        bool isSent = await CreateTemplate(smtpSender)
+        var options = _serviceScope.ServiceProvider.GetRequiredService<IOptions<EmailWorkerOptions>>().Value;
+        bool isSent = await CreateTemplate(smtpSender, options.DefaultFromAddress, options.DefaultToAddress)
             .TryAttach(filePath)
             .TrySendAsync(cancellationToken);
         _logger.LogInformation($"Email {(isSent ? "sent" : "failed to send")}.");
         await Task.Delay(millisecondsDelay, cancellationToken);
     }
 
-    private async Task DelayedSendAsync(int millisecondsDelay, ISmtpSender? smtpSender = null, CancellationToken cancellationToken = default)
+    private async Task DelayedSendAsync(TimeSpan delay, ISmtpSender? smtpSender = null, CancellationToken cancellationToken = default)
     {
         var temporarySender = smtpSender == null;
         smtpSender ??= _serviceScope.ServiceProvider.GetRequiredService<ISmtpSender>();
-        await Task.Delay(millisecondsDelay, cancellationToken);
-        smtpSender.Enqueue(CreateTemplate(smtpSender).MimeMessage);
+        var options = _serviceScope.ServiceProvider.GetRequiredService<IOptions<EmailWorkerOptions>>().Value;
+        await Task.Delay(delay, cancellationToken);
+        smtpSender.Enqueue(CreateTemplate(smtpSender, options.DefaultFromAddress, options.DefaultToAddress).MimeMessage);
         //bool isSent = await CreateTemplate(smtpSender).TrySendAsync(cancellationToken);
         //_logger.LogInformation($"Email {(isSent ? "sent" : "failed to send")}.");
         if (temporarySender) smtpSender.Dispose();
@@ -450,7 +445,7 @@ public class Worker : BackgroundService
     {
         using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         using var smtpSender = _serviceScope.ServiceProvider.GetRequiredService<ISmtpSender>();
-        var sendTask = DelayedSendAsync(500, smtpSender, cancellationToken);
+        var sendTask = DelayedSendAsync(TimeSpan.FromMilliseconds(500), smtpSender, cancellationToken);
         var newestEmail = await GetNewestMessageSummaryAsync();
         await _imapReceiver.MonitorFolder.SetMessageSummaryItems()
             .SetIgnoreExistingMailOnConnect()
@@ -487,11 +482,10 @@ public class Worker : BackgroundService
         using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         using var smtpSender = _serviceScope.ServiceProvider.GetRequiredService<ISmtpSender>();
         using var mailFolderClient = _serviceScope.ServiceProvider.GetRequiredService<IMailFolderClient>();
-        int delayMs = 1000;
         var sendTasks = new List<Task>();
         for (int waitCount = 1; waitCount <= 2; waitCount++)
         {
-            var sendTask = DelayedSendAsync(waitCount * delayMs, smtpSender, cancellationToken);
+            var sendTask = DelayedSendAsync(TimeSpan.FromSeconds(waitCount+4), smtpSender, cancellationToken);
             sendTasks.Add(sendTask);
         }
         var destinationFolder = await mailFolderClient.GetFolderAsync(_processed, createIfNotFound: true, cancellationToken);
@@ -505,18 +499,18 @@ public class Worker : BackgroundService
 
         async Task ProcessMessageAsync(IMessageSummary messageSummary)
         {
-            var uniqueId = await mailFolderClient.MoveToAsync(messageSummary.UniqueId, destinationFolder, cancellationToken);
+            var uniqueId = await mailFolderClient.MoveToAsync(messageSummary, destinationFolder, cancellationToken);
             if (uniqueId == null)
                 _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} not moved to [{_processed}], UniqueId is null.");
             else
-                _logger.LogDebug($"{_imapReceiver} message #{messageSummary.UniqueId} moved to [{_processed}] {uniqueId}.");
+                _logger.LogDebug($"{_imapReceiver} message #{messageSummary.UniqueId} moved to [{_processed}] #{uniqueId}.");
         }
     }
 
     private async Task MonitorAsync(CancellationToken cancellationToken = default)
     {
         using var smtpSender = _serviceScope.ServiceProvider.GetRequiredService<ISmtpSender>();
-        var sendTask = DelayedSendAsync(500, smtpSender, cancellationToken);
+        var sendTask = DelayedSendAsync(TimeSpan.FromMilliseconds(500), smtpSender, cancellationToken);
         void ProcessMessage(IMessageSummary messageSummary) =>
             _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} processed.");
         await _imapReceiver.MonitorFolder

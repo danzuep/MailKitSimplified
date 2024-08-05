@@ -355,6 +355,7 @@ namespace MailKitSimplified.Receiver.Services
             return mailFolderNames;
         }
 
+        [Obsolete("Use MailFolderClient.MoveToAsync method instead")]
         public async Task<UniqueId?> MoveToSentAsync(IMessageSummary messageSummary, CancellationToken cancellationToken = default)
         {
             using (var mailFolderClient = _mailFolderClient.Value)

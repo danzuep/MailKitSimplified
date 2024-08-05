@@ -413,7 +413,7 @@ namespace MailKitSimplified.Receiver.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error occurred processing arrival queue item #{messageSummary}.");
+                _logger.LogError(ex, $"Error occurred processing arrival queue item. {_imapReceiver} #{messageSummary.UniqueId}.");
                 if (messageSummary != null)
                     _arrivalQueue.Enqueue(messageSummary);
             }
@@ -442,7 +442,7 @@ namespace MailKitSimplified.Receiver.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error occurred processing departure queue item #{messageSummary}.");
+                _logger.LogError(ex, $"Error occurred processing departure queue item. {_imapReceiver} #{messageSummary.UniqueId}.");
                 if (messageSummary != null)
                     _departureQueue.Enqueue(messageSummary);
             }
