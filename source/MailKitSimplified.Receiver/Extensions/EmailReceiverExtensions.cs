@@ -1,10 +1,11 @@
-﻿using MailKit;
-using MailKit.Search;
-using System;
-using System.Linq;
-using System.Threading;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Text.Json;
+using System.Threading;
+using MailKit;
+using MailKit.Search;
 
 namespace MailKitSimplified.Receiver.Extensions
 {
@@ -12,8 +13,11 @@ namespace MailKitSimplified.Receiver.Extensions
     public static class EmailReceiverExtensions
     {
         /// <inheritdoc cref="string.Join"/>
-        public static string ToEnumeratedString<T>(this IEnumerable<T> data, string div = ", ") =>
-            data is null ? "" : string.Join(div, data.Select(o => o?.ToString() ?? ""));
+        public static string ToEnumeratedString<T>(this IEnumerable<T> data, string delimiter = ", ") =>
+            data is null ? string.Empty : string.Join(delimiter, data.Select(o => o?.ToString() ?? string.Empty));
+
+        public static string ToSerializedString(this object obj) =>
+            obj != null ? JsonSerializer.Serialize(obj) : string.Empty;
 
         /// <inheritdoc cref="List{T}.AddRange(IEnumerable{T})"/>
         public static IList<T> TryAddUniqueRange<T>(this IList<T> list, IEnumerable<T> items) where T : IMessageSummary        {

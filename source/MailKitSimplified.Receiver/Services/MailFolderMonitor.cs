@@ -318,10 +318,11 @@ namespace MailKitSimplified.Receiver.Services
                 }
                 catch (ImapProtocolException ex)
                 {
+                    var message = $"{ex.Message} Reconnecting and trying again.";
                     if (ex.Message.StartsWith("Idle timeout"))
-                        _logger.LogDebug($"{ex.Message} Trying again.");
+                        _logger.Log<MailFolderMonitor>(message, LogLevel.Debug);
                     else
-                        _logger.LogInformation(ex, "IMAP protocol exception, checking connection.");
+                        _logger.Log<MailFolderMonitor>(message, LogLevel.Information);
                     await ReconnectAsync(cancellationToken).ConfigureAwait(false);
                     if (_folderMonitorOptions.IdleMinutes > FolderMonitorOptions.IdleMinutesGmail)
                         _folderMonitorOptions.IdleMinutes = FolderMonitorOptions.IdleMinutesGmail;
@@ -392,59 +393,69 @@ namespace MailKitSimplified.Receiver.Services
 
         private async Task ProcessArrivalQueueAsync(Func<IMessageSummary, Task> messageArrivalMethod, CancellationToken cancellationToken = default)
         {
-            IMessageSummary messageSummary = null;
-            try
+            int retryCount = 0;
+            if (messageArrivalMethod != null)
             {
-                if (messageArrivalMethod != null)
+                IMessageSummary messageSummary = null;
+                do
                 {
-                    do
+                    retryCount++;
+                    try
                     {
                         if (_arrivalQueue.TryDequeue(out messageSummary))
                             await messageArrivalMethod(messageSummary).ConfigureAwait(false);
                         else if (_arrivalQueue.IsEmpty)
                             await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
+                        retryCount = 0;
                     }
-                    while (!cancellationToken.IsCancellationRequested);
+                    catch (OperationCanceledException)
+                    {
+                        _logger.LogTrace("Arrival queue cancelled.");
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, $"Error occurred processing arrival queue item, backing off for {_folderMonitorOptions.EmptyQueueMaxDelayMs}ms. {_imapReceiver} #{messageSummary.UniqueId}.");
+                        if (messageSummary != null)
+                            _arrivalQueue.Enqueue(messageSummary);
+                        await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
+                    }
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogTrace("Arrival queue cancelled.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, $"Error occurred processing arrival queue item. {_imapReceiver} #{messageSummary.UniqueId}.");
-                if (messageSummary != null)
-                    _arrivalQueue.Enqueue(messageSummary);
+                while (!cancellationToken.IsCancellationRequested && retryCount < _folderMonitorOptions.MaxRetries);
             }
         }
 
         private async Task ProcessDepartureQueueAsync(Func<IMessageSummary, Task> messageDepartureMethod, CancellationToken cancellationToken = default)
         {
-            IMessageSummary messageSummary = null;
-            try
+            int retryCount = 0;
+            if (messageDepartureMethod != null)
             {
-                if (messageDepartureMethod != null)
+                IMessageSummary messageSummary = null;
+                do
                 {
-                    do
+                    retryCount++;
+                    try
                     {
                         if (_departureQueue.TryDequeue(out messageSummary))
                             await messageDepartureMethod(messageSummary).ConfigureAwait(false);
                         else if (_departureQueue.IsEmpty)
                             await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
+                        retryCount = 0;
                     }
-                    while (!cancellationToken.IsCancellationRequested);
+                    catch (OperationCanceledException)
+                    {
+                        _logger.LogTrace("Departure queue cancelled.");
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, $"Error occurred processing departure queue item, backing off for {_folderMonitorOptions.EmptyQueueMaxDelayMs}ms. {_imapReceiver} #{messageSummary.UniqueId}.");
+                        if (messageSummary != null)
+                            _departureQueue.Enqueue(messageSummary);
+                        await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
+                    }
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogTrace("Departure queue cancelled.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error occurred processing departure queue item. {_imapReceiver} #{messageSummary.UniqueId}.");
-                if (messageSummary != null)
-                    _departureQueue.Enqueue(messageSummary);
+                while (!cancellationToken.IsCancellationRequested && retryCount < _folderMonitorOptions.MaxRetries);
             }
         }
 
