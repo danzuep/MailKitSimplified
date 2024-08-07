@@ -1,4 +1,4 @@
-$latestVersion="2.10.0"
+$latestVersion="2.11.9"
 Set-Location -Path $PSScriptRoot/../samples
 $folders = Get-ChildItem -Path . -Directory
 foreach ($folder in $folders) {

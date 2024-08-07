@@ -142,31 +142,15 @@ public class Worker : BackgroundService
         _logger.LogInformation($"Added mime message to {_imapReceiver} {draftsFolder.FullName} folder as #{uniqueId}.");
     }
 
-    private async Task MoveTopOneToFolderAsync(IMailFolderClient mailFolderClient, string destinationFolderFullName, CancellationToken cancellationToken = default)
-    {
-        var messageSummary = await GetTopMessageSummaryAsync(cancellationToken);
-        var uniqueId = await mailFolderClient.MoveToAsync(messageSummary, destinationFolderFullName, cancellationToken);
-        //var destinationFolder = await mailFolderClient.GetFolderAsync([destinationFolderFullName], cancellationToken);
-        //var uniqueId = await messageSummary.MoveToAsync(destinationFolder, cancellationToken);
-        _logger.LogInformation($"Moved {_imapReceiver} mime message #{messageSummary.UniqueId} to {destinationFolderFullName} folder as #{uniqueId}.");
-    }
-
-    private async Task CreateFolderAndMoveTopOneAsync(string mailFolderFullName = _processed, CancellationToken cancellationToken = default)
-    {
-        //var mailFolderNames = await _imapReceiver.GetMailFolderNamesAsync(cancellationToken);
-        using var mailFolderClient = _serviceScope.ServiceProvider.GetRequiredService<IMailFolderClient>();
-        var baseFolder = await mailFolderClient.GetFolderAsync();
-        var mailFolder = await baseFolder.GetOrCreateSubfolderAsync(mailFolderFullName, cancellationToken);
-        //var mailFolder = await mailFolderClient.GetOrCreateFolderAsync(mailFolderFullName, cancellationToken);
-        await MoveTopOneToFolderAsync(mailFolderClient, mailFolderFullName, cancellationToken);
-    }
-
     public async Task GetMailFolderAsync(string mailFolderFullName, CancellationToken cancellationToken = default)
     {
+        using var mailFolderClient = _serviceScope.ServiceProvider.GetRequiredService<IMailFolderClient>();
         var messageSummary = await GetTopMessageSummaryAsync(cancellationToken);
-        var mailFolder1 = await _imapReceiver.MailFolderClient.GetFolderAsync(mailFolderFullName, createIfNotFound: true, cancellationToken);
-        var mailFolder2 = await _imapReceiver.MailFolderClient.GetFolderAsync([mailFolderFullName], cancellationToken);
-        var mailFolder3 = await messageSummary.Folder.GetOrCreateSubfolderAsync(mailFolderFullName, cancellationToken);
+        var destinationFolder = await mailFolderClient.GetFolderAsync(mailFolderFullName, createIfNotFound: true, cancellationToken);
+        var uniqueId = await mailFolderClient.MoveToAsync(messageSummary, destinationFolder, cancellationToken);
+        //var destinationFolder = await mailFolderClient.GetFolderAsync([mailFolderFullName], cancellationToken);
+        //var uniqueId = await messageSummary.MoveToAsync(destinationFolder, cancellationToken);
+        _logger.LogInformation($"Moved {_imapReceiver} mime message #{messageSummary.UniqueId} to {mailFolderFullName} folder as #{uniqueId}.");
         _logger.LogInformation($"Mail folder: {mailFolderFullName}");
     }
 

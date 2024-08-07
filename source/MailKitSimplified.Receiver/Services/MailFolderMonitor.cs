@@ -413,7 +413,7 @@ namespace MailKitSimplified.Receiver.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error occurred processing arrival queue item. {_imapReceiver} #{messageSummary.UniqueId}.");
+                _logger.LogWarning(ex, $"Error occurred processing arrival queue item. {_imapReceiver} #{messageSummary.UniqueId}.");
                 if (messageSummary != null)
                     _arrivalQueue.Enqueue(messageSummary);
             }
