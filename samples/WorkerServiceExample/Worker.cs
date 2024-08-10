@@ -8,7 +8,6 @@ using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Sender.Abstractions;
-using MailKitSimplified.Sender.Models;
 using Microsoft.Extensions.Options;
 
 namespace ExampleNamespace;
@@ -48,9 +47,9 @@ public class Worker : BackgroundService
         //await AddFlagsToNewestMessageSummaryAsync(cancellationToken);
         //await GetMailFolderCacheAsync();
         //await CreateFolderAndMoveTopOneAsync();
-        //await MonitorAsync(cancellationToken);
+        await MonitorAsync(cancellationToken);
         //await MoveToAsync(_processed, 1, cancellationToken);
-        await MonitorMoveAsync(cancellationToken);
+        //await MonitorMoveAsync(cancellationToken);
     }
 
     private static ImapReceiver CreateExchangeOAuth2ImapClientExample(SaslMechanismOAuth2 oauth2)
@@ -494,17 +493,16 @@ public class Worker : BackgroundService
     private async Task MonitorAsync(CancellationToken cancellationToken = default)
     {
         using var smtpSender = _serviceScope.ServiceProvider.GetRequiredService<ISmtpSender>();
-        var sendTask = DelayedSendAsync(TimeSpan.FromMilliseconds(500), smtpSender, cancellationToken);
         void ProcessMessage(IMessageSummary messageSummary) =>
             _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} processed.");
+        var sendTask = DelayedSendAsync(TimeSpan.FromSeconds(3), smtpSender, cancellationToken);
         await _imapReceiver.MonitorFolder
             .SetMessageSummaryItems()
-            .SetIgnoreExistingMailOnConnect()
+            .SetIgnoreExistingMailOnConnect()   
             .OnMessageArrival(ProcessMessage)
             .OnMessageDeparture(ProcessMessage)
             .IdleAsync(cancellationToken);
         await sendTask;
-        _logger.LogInformation($"{_imapReceiver} Monitoring complete.");
     }
 
     public override void Dispose()

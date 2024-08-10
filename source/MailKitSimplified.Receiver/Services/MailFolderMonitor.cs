@@ -48,12 +48,12 @@ namespace MailKitSimplified.Receiver.Services
             _folderMonitorOptions = folderMonitorOptions?.Value ?? new FolderMonitorOptions();
             _messageArrivalMethod = (m) =>
             {
-                _logger.LogInformation($"{_imapReceiver} message #{m.UniqueId} arrival processed.");
+                _logger.Log<MailFolderMonitor>($"{_imapReceiver} message #{m.UniqueId} arrival processed.");
                 return _completedTask;
             };
             _messageDepartureMethod = (m) =>
             {
-                _logger.LogInformation($"{_imapReceiver} message #{m.UniqueId} departure processed.");
+                _logger.Log<MailFolderMonitor>($"{_imapReceiver} message #{m.UniqueId} departure processed.");
                 return _completedTask;
             };
         }
@@ -181,30 +181,32 @@ namespace MailKitSimplified.Receiver.Services
 
         public async Task IdleAsync(CancellationToken cancellationToken = default)
         {
+            _logger.Log<MailFolderMonitor>($"{_imapReceiver} monitoring requested.", LogLevel.Trace);
             _cancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             try
             {
                 var tasks = new Task[]
                 {
                     IdleStartAsync(_cancel.Token).ContinueWith(t =>
-                        _logger.LogError(t.Exception?.InnerException ?? t.Exception,
+                        _logger.Log<MailFolderMonitor>(t.Exception?.InnerException ?? t.Exception,
                             "Idle client failed."), TaskContinuationOptions.OnlyOnFaulted),
                     ProcessArrivalQueueAsync(_messageArrivalMethod, _cancel.Token).ContinueWith(t =>
-                        _logger.LogError(t.Exception?.InnerException ?? t.Exception,
+                        _logger.Log<MailFolderMonitor>(t.Exception?.InnerException ?? t.Exception,
                             "Arrival queue processing failed."), TaskContinuationOptions.OnlyOnFaulted),
                     ProcessDepartureQueueAsync(_messageDepartureMethod, _cancel.Token).ContinueWith(t =>
-                        _logger.LogError(t.Exception?.InnerException ?? t.Exception,
+                        _logger.Log<MailFolderMonitor>(t.Exception?.InnerException ?? t.Exception,
                             "Departure queue processing failed."), TaskContinuationOptions.OnlyOnFaulted)
                 };
                 await Task.WhenAll(tasks).ConfigureAwait(false);
+                _logger.Log<MailFolderMonitor>($"{_imapReceiver} monitoring complete.", LogLevel.Information);
             }
             catch (OperationCanceledException)
             {
-                _logger.LogTrace($"{_imapReceiver} email monitoring cancelled.");
+                _logger.Log<MailFolderMonitor>($"{_imapReceiver} email monitoring cancelled.", LogLevel.Trace);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"{_imapReceiver} email monitoring failed.");
+                _logger.Log<MailFolderMonitor>(ex, $"{_imapReceiver} email monitoring failed.");
             }
         }
 
@@ -222,7 +224,7 @@ namespace MailKitSimplified.Receiver.Services
                     _mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
                     _ = await _mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
                     var connectOption = _folderMonitorOptions.IgnoreExistingMailOnConnect ? "ignoring" : "fetching";
-                    _logger.LogInformation($"{_imapReceiver} ({_mailFolder.Count}) idle monitor started, {connectOption} existing emails.");
+                    _logger.Log<MailFolderMonitor>($"{_imapReceiver} ({_mailFolder.Count}) idle monitor started, {connectOption} existing emails.");
 
                     _mailFolder.CountChanged += OnCountChanged;
                     _mailFolder.MessageExpunged += OnMessageExpunged;
@@ -233,15 +235,15 @@ namespace MailKitSimplified.Receiver.Services
                 }
                 catch (OperationCanceledException)
                 {
-                    _logger.LogDebug("Initial fetch or idle task in mail folder monitor was cancelled.");
+                    _logger.Log<MailFolderMonitor>("Initial fetch or idle task in mail folder monitor was cancelled.", LogLevel.Debug);
                 }
                 catch (AuthenticationException ex)
                 {
-                    _logger.LogWarning(ex, "Stopping mail folder monitor service.");
+                    _logger.Log<MailFolderMonitor>(ex, "Stopping mail folder monitor service.", LogLevel.Warning);
                 }
                 catch (InvalidOperationException ex)
                 {
-                    _logger.LogError(ex, "IMAP client not available.");
+                    _logger.Log<MailFolderMonitor>(ex, "IMAP client not available.", LogLevel.Error);
                 }
                 finally
                 {
@@ -252,7 +254,7 @@ namespace MailKitSimplified.Receiver.Services
 
         private void Disconnect(bool throwOnFirstException)
         {
-            _logger.LogTrace("Disconnecting IMAP idle client...");
+            _logger.Log<MailFolderMonitor>("Disconnecting IMAP idle client...", LogLevel.Trace);
             if (_mailFolder != null)
             {
                 _mailFolder.MessageExpunged -= OnMessageExpunged;
@@ -269,21 +271,45 @@ namespace MailKitSimplified.Receiver.Services
             _cancel?.Dispose();
         }
 
+        /// <exception cref="AuthenticationException">Failed to authenticate</exception>
         private async ValueTask ReconnectAsync(CancellationToken cancellationToken = default)
         {
-            if (!cancellationToken.IsCancellationRequested)
+            int attemptCount = 0;
+            while (!cancellationToken.IsCancellationRequested && attemptCount < _folderMonitorOptions.MaxRetries)
             {
-                _ = await _imapReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
-                if (!_mailFolder.IsOpen)
+                try
                 {
-                    _ = await _mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
-                    _logger.LogTrace($"{_mailFolder.FullName} mail folder re-opened with ReadOnly access.");
+                    _ = await _imapReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
+                    if (!_mailFolder.IsOpen)
+                    {
+                        _ = await _mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
+                        _logger.Log<MailFolderMonitor>($"{_mailFolder.FullName} mail folder re-opened with ReadOnly access.", LogLevel.Trace);
+                    }
+                    _ = await _fetchReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
+                    if (!_fetchFolder.IsOpen)
+                    {
+                        _ = await _fetchFolder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
+                        _logger.Log<MailFolderMonitor>($"{_fetchFolder.FullName} mail folder re-opened with ReadWrite access.", LogLevel.Trace);
+                    }
+                    break;
                 }
-                _ = await _fetchReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
-                if (!_fetchFolder.IsOpen)
+                catch (ImapProtocolException ex)
                 {
-                    _ = await _fetchFolder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
-                    _logger.LogTrace($"{_fetchFolder.FullName} mail folder re-opened with ReadWrite access.");
+                    await LogDelayAsync(ex, "IMAP protocol exception").ConfigureAwait(false);
+                }
+                catch (SocketException ex)
+                {
+                    await LogDelayAsync(ex, "IMAP socket exception").ConfigureAwait(false);
+                }
+                
+                async Task LogDelayAsync(Exception exception, string exceptionType)
+                {
+                    var message = $"{exceptionType} during connection attempt #{++attemptCount}, backing off for {_folderMonitorOptions.EmptyQueueMaxDelayMs}ms. {_imapReceiver}.";
+                    if (attemptCount < _folderMonitorOptions.MaxRetries)
+                        _logger.Log<MailFolderMonitor>(exceptionType, LogLevel.Warning);
+                    else
+                        _logger.Log<MailFolderMonitor>(exception, exceptionType, LogLevel.Error);
+                    await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -313,8 +339,9 @@ namespace MailKitSimplified.Receiver.Services
                 }
                 catch (OperationCanceledException) // includes TaskCanceledException
                 {
-                    _logger.LogTrace($"{_imapReceiver} mail folder idle wait task cancelled.");
+                    _logger.Log<MailFolderMonitor>($"Mail folder idle wait task cancelled. {_imapReceiver}.", LogLevel.Trace);
                     _cancel.Cancel(false);
+                    break;
                 }
                 catch (ImapProtocolException ex)
                 {
@@ -323,41 +350,41 @@ namespace MailKitSimplified.Receiver.Services
                         _logger.Log<MailFolderMonitor>(message, LogLevel.Debug);
                     else
                         _logger.Log<MailFolderMonitor>(message, LogLevel.Information);
-                    await ReconnectAsync(cancellationToken).ConfigureAwait(false);
                     if (_folderMonitorOptions.IdleMinutes > FolderMonitorOptions.IdleMinutesGmail)
                         _folderMonitorOptions.IdleMinutes = FolderMonitorOptions.IdleMinutesGmail;
                     else if (_folderMonitorOptions.IdleMinutes == FolderMonitorOptions.IdleMinutesGmail)
                         _folderMonitorOptions.IdleMinutes = 1;
                 }
-                catch (ImapCommandException ex)
+                catch (ImapCommandException)
                 {
-                    _logger.LogInformation(ex, "IMAP command exception, rechecking server connection.");
-                    await ReconnectAsync(cancellationToken).ConfigureAwait(false);
+                    _logger.Log<MailFolderMonitor>("IMAP command exception, rechecking server connection.");
                 }
                 catch (IOException)
                 {
-                    _logger.LogInformation("IMAP I/O exception, reconnecting.");
-                    await ReconnectAsync(cancellationToken).ConfigureAwait(false);
+                    _logger.Log<MailFolderMonitor>("IMAP I/O exception, reconnecting.");
                 }
-                catch (SocketException ex)
+                catch (SocketException)
                 {
-                    _logger.LogInformation(ex, "IMAP socket exception.");
-                    await ReconnectAsync(cancellationToken).ConfigureAwait(false);
+                    _logger.Log<MailFolderMonitor>("IMAP socket exception, reconnecting.");
                 }
                 catch (ServiceNotConnectedException)
                 {
-                    _logger.LogInformation("IMAP service not connected, reconnecting.");
-                    await ReconnectAsync(cancellationToken).ConfigureAwait(false);
+                    _logger.Log<MailFolderMonitor>("IMAP service not connected, reconnecting.");
                 }
                 catch (ServiceNotAuthenticatedException)
                 {
-                    _logger.LogInformation("IMAP service not authenticated, authenticating.");
-                    await ReconnectAsync(cancellationToken).ConfigureAwait(false);
+                    _logger.Log<MailFolderMonitor>("IMAP service not authenticated, authenticating.");
                 }
                 catch (InvalidOperationException ex)
                 {
-                    _logger.LogError(ex, "IMAP client is being accessed by multiple threads.");
+                    _logger.Log<MailFolderMonitor>(ex, $"IMAP client is being accessed by multiple threads. {_imapReceiver}.");
                     _cancel.Cancel(false);
+                    break;
+                }
+                finally
+                {
+                    if (!_cancel.IsCancellationRequested)
+                        await ReconnectAsync(cancellationToken).ConfigureAwait(false);
                 }
             } while (!cancellationToken.IsCancellationRequested && retryCount < _folderMonitorOptions.MaxRetries);
         }
@@ -366,10 +393,10 @@ namespace MailKitSimplified.Receiver.Services
         {
             int startIndex = _messageCache.Count;
             await _fetchClient.NoOpAsync(cancellationToken).ConfigureAwait(false);
-            _logger.LogTrace($"{_fetchReceiver} ({_fetchFolder.Count}) fetching new message arrivals, starting from {startIndex}.");
+            _logger.Log<MailFolderMonitor>($"{_fetchReceiver} ({_fetchFolder.Count}) fetching new message arrivals, starting from {startIndex}.", LogLevel.Trace);
             if (startIndex > _fetchFolder.Count)
             {
-                _logger.LogTrace($"{_fetchReceiver} start index {startIndex} is higher than fetched folder count of {_fetchFolder.Count}, monitored count is {_mailFolder.Count}.");
+                _logger.Log<MailFolderMonitor>($"{_fetchReceiver} start index {startIndex} is higher than fetched folder count of {_fetchFolder.Count}, monitored count is {_mailFolder.Count}.", LogLevel.Trace);
                 startIndex = _fetchFolder.Count;
             }
             var filter = _folderMonitorOptions.MessageSummaryItems | MessageSummaryItems.UniqueId;
@@ -384,7 +411,7 @@ namespace MailKitSimplified.Receiver.Services
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;
-                    _logger.LogDebug($"{_imapReceiver} message #{mailItem.UniqueId} arrived.");
+                    _logger.Log<MailFolderMonitor>($"{_imapReceiver} message #{mailItem.UniqueId} arrived.", LogLevel.Debug);
                     _arrivalQueue.Enqueue(mailItem);
                 }
             }
@@ -410,12 +437,12 @@ namespace MailKitSimplified.Receiver.Services
                     }
                     catch (OperationCanceledException)
                     {
-                        _logger.LogTrace("Arrival queue cancelled.");
+                        _logger.Log<MailFolderMonitor>("Arrival queue cancelled.", LogLevel.Trace);
                         break;
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, $"Error occurred processing arrival queue item, backing off for {_folderMonitorOptions.EmptyQueueMaxDelayMs}ms. {_imapReceiver} #{messageSummary.UniqueId}.");
+                        _logger.Log<MailFolderMonitor>(ex, $"Error occurred processing arrival queue item during attempt #{retryCount}, backing off for {_folderMonitorOptions.EmptyQueueMaxDelayMs}ms. {_imapReceiver} #{messageSummary.UniqueId}.", LogLevel.Warning);
                         if (messageSummary != null)
                             _arrivalQueue.Enqueue(messageSummary);
                         await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
@@ -444,12 +471,12 @@ namespace MailKitSimplified.Receiver.Services
                     }
                     catch (OperationCanceledException)
                     {
-                        _logger.LogTrace("Departure queue cancelled.");
+                        _logger.Log<MailFolderMonitor>("Departure queue cancelled.", LogLevel.Trace);
                         break;
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, $"Error occurred processing departure queue item, backing off for {_folderMonitorOptions.EmptyQueueMaxDelayMs}ms. {_imapReceiver} #{messageSummary.UniqueId}.");
+                        _logger.Log<MailFolderMonitor>(ex, $"Error occurred processing departure queue item during attempt #{retryCount}, backing off for {_folderMonitorOptions.EmptyQueueMaxDelayMs}ms. {_imapReceiver} #{messageSummary.UniqueId}.", LogLevel.Warning);
                         if (messageSummary != null)
                             _departureQueue.Enqueue(messageSummary);
                         await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
@@ -474,16 +501,16 @@ namespace MailKitSimplified.Receiver.Services
                     if (changeCount > 0)
                     {
                         _arrival?.Cancel(true);
-                        _logger.LogTrace($"{_imapReceiver} message count increased by {changeCount} ({previousCount} to {presentCount}).");
+                        _logger.Log<MailFolderMonitor>($"{_imapReceiver} message count increased by {changeCount} ({previousCount} to {presentCount}).", LogLevel.Trace);
                     }
                     else if (changeCount < 0)
                     {
-                        _logger.LogTrace($"{_imapReceiver} message count decreased by {changeCount} ({previousCount} to {presentCount}).");
+                        _logger.Log<MailFolderMonitor>($"{_imapReceiver} message count decreased by {changeCount} ({previousCount} to {presentCount}).", LogLevel.Trace);
                     }
                 }
                 else
                 {
-                    _logger.LogWarning($"{_imapReceiver} message count changed ({_messageCache.Count} to {_mailFolder.Count}), folder unknown.");
+                    _logger.Log<MailFolderMonitor>($"{_imapReceiver} message count changed ({_messageCache.Count} to {_mailFolder.Count}), folder unknown.", LogLevel.Warning);
                 }
             }
         }
@@ -507,10 +534,10 @@ namespace MailKitSimplified.Receiver.Services
                         _messageCache.RemoveAt(index);
                     }
                     _departureQueue.Enqueue(messageSummary);
-                    _logger.LogTrace($"{_imapReceiver}[{index}] (count={cachedCount}) expunged, item #{messageSummary.UniqueId}.");
+                    _logger.Log<MailFolderMonitor>($"{_imapReceiver}[{index}] (count={cachedCount}) expunged, item #{messageSummary.UniqueId}.", LogLevel.Trace);
                 }
                 else
-                    _logger.LogWarning($"{_imapReceiver}[{index}] (count={cachedCount}) was out of range.");
+                    _logger.Log<MailFolderMonitor>($"{_imapReceiver}[{index}] (count={cachedCount}) was out of range.", LogLevel.Warning);
             }
         }
 

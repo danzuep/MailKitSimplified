@@ -1,11 +1,11 @@
 using MailKitSimplified.Sender;
 using MailKitSimplified.Receiver;
-using MailKitSimplified.Sender.Models;
+using ExampleNamespace;
 
-IHost host = Host.CreateDefaultBuilder(args)
+using var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
-        services.AddHostedService<ExampleNamespace.Worker>();
+        services.AddHostedService<Worker>();
         //services.AddMailKitSimplifiedEmail(context.Configuration);
         services.AddScopedMailKitSimplifiedEmailSender(context.Configuration);
         services.AddScopedMailKitSimplifiedEmailReceiver(context.Configuration);
