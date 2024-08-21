@@ -48,12 +48,12 @@ namespace MailKitSimplified.Receiver.Services
             _folderMonitorOptions = folderMonitorOptions?.Value ?? new FolderMonitorOptions();
             _messageArrivalMethod = (m) =>
             {
-                _logger.Log<MailFolderMonitor>($"{_imapReceiver} message #{m.UniqueId} arrival processed.");
+                _logger.Log<MailFolderMonitor>($"{_imapReceiver} message #{m.UniqueId} arrival processed.", LogLevel.Debug);
                 return _completedTask;
             };
             _messageDepartureMethod = (m) =>
             {
-                _logger.Log<MailFolderMonitor>($"{_imapReceiver} message #{m.UniqueId} departure processed.");
+                _logger.Log<MailFolderMonitor>($"{_imapReceiver} message #{m.UniqueId} departure processed.", LogLevel.Debug);
                 return _completedTask;
             };
         }
@@ -224,7 +224,7 @@ namespace MailKitSimplified.Receiver.Services
                     _mailFolder = await _imapReceiver.ConnectMailFolderAsync(cancellationToken).ConfigureAwait(false);
                     _ = await _mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
                     var connectOption = _folderMonitorOptions.IgnoreExistingMailOnConnect ? "ignoring" : "fetching";
-                    _logger.Log<MailFolderMonitor>($"{_imapReceiver} ({_mailFolder.Count}) idle monitor started, {connectOption} existing emails.");
+                    _logger.Log<MailFolderMonitor>($"{_imapReceiver} ({_mailFolder.Count}) idle monitor started, {connectOption} existing emails.", LogLevel.Information);
 
                     _mailFolder.CountChanged += OnCountChanged;
                     _mailFolder.MessageExpunged += OnMessageExpunged;
@@ -297,19 +297,30 @@ namespace MailKitSimplified.Receiver.Services
                 {
                     await LogDelayAsync(ex, "IMAP protocol exception").ConfigureAwait(false);
                 }
+                catch (ImapCommandException ex)
+                {
+                    await LogDelayAsync(ex, "IMAP command exception").ConfigureAwait(false);
+                }
                 catch (SocketException ex)
                 {
                     await LogDelayAsync(ex, "IMAP socket exception").ConfigureAwait(false);
                 }
-                
-                async Task LogDelayAsync(Exception exception, string exceptionType)
+                catch (IOException ex)
                 {
-                    var message = $"{exceptionType} during connection attempt #{++attemptCount}, backing off for {_folderMonitorOptions.EmptyQueueMaxDelayMs}ms. {_imapReceiver}.";
+                    await LogDelayAsync(ex, "IMAP I/O exception").ConfigureAwait(false);
+                }
+
+                async ValueTask LogDelayAsync(Exception exception, string exceptionType)
+                {
+                    bool isBackoff = attemptCount > 0;
+                    var backoff = isBackoff ? $", backing off for {_folderMonitorOptions.EmptyQueueMaxDelayMs}ms" : string.Empty;
+                    var message = $"{exceptionType} during connection attempt #{++attemptCount}{backoff}. {_imapReceiver}.";
                     if (attemptCount < _folderMonitorOptions.MaxRetries)
-                        _logger.Log<MailFolderMonitor>(exceptionType, LogLevel.Warning);
+                        _logger.Log<MailFolderMonitor>(message, LogLevel.Information);
                     else
-                        _logger.Log<MailFolderMonitor>(exception, exceptionType, LogLevel.Error);
-                    await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
+                        _logger.Log<MailFolderMonitor>(exception, message, LogLevel.Error);
+                    if (isBackoff)
+                        await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -345,7 +356,8 @@ namespace MailKitSimplified.Receiver.Services
                 }
                 catch (ImapProtocolException ex)
                 {
-                    var message = $"{ex.Message} Reconnecting and trying again.";
+                    string error = ex.Message.TrimEnd(new char[] { ' ', '.' });
+                    var message = $"{error}. IMAP protocol exception, reconnecting and trying again.";
                     if (ex.Message.StartsWith("Idle timeout"))
                         _logger.Log<MailFolderMonitor>(message, LogLevel.Debug);
                     else

@@ -324,7 +324,7 @@ namespace MailKitSimplified.Receiver.Services
                 bool peekSourceFolder = !source.IsOpen;
                 // Beware, source must be opened after destination to keep it open
                 _ = await OpenAsync(source, enableWrite: move, cancellationToken).ConfigureAwait(false);
-                resultUid = await source.MoveToAsync(messageUid, destination, cancellationToken).ConfigureAwait(false);
+                resultUid = await source.MoveToAsync(messageUid, destination, CancellationToken.None).ConfigureAwait(false);
                 _logger.LogTrace("{0} {1} {2} to {3} in {4}.", _imapReceiver, messageUid, verb, resultUid, destination.FullName);
                 if (peekSourceFolder && source.IsOpen)
                     await source.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);

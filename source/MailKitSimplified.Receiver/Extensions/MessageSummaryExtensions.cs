@@ -408,7 +408,7 @@ namespace MailKitSimplified.Receiver.Extensions
                 bool peekSourceFolder = !messageSummary.Folder.IsOpen;
                 if (peekSourceFolder || messageSummary.Folder.Access != FolderAccess.ReadWrite)
                     _ = await messageSummary.Folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
-                resultUid = await messageSummary.Folder.MoveToAsync(messageSummary.UniqueId, destination, cancellationToken).ConfigureAwait(false);
+                resultUid = await messageSummary.Folder.MoveToAsync(messageSummary.UniqueId, destination, CancellationToken.None).ConfigureAwait(false);
                 if (peekSourceFolder)
                     await messageSummary.Folder.CloseAsync(expunge: false, cancellationToken).ConfigureAwait(false);
             }
