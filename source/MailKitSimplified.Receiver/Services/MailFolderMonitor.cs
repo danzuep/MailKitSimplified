@@ -21,12 +21,14 @@ namespace MailKitSimplified.Receiver.Services
     {
         private Func<IMessageSummary, Task> _messageArrivalMethod;
         private Func<IMessageSummary, Task> _messageDepartureMethod;
+        private Func<IMessageSummary, Task> _messageFlagsChangedMethod;
 
         private static readonly Task _completedTask = Task.CompletedTask;
         private readonly object _cacheLock = new object();
         private readonly IList<IMessageSummary> _messageCache = new List<IMessageSummary>();
         private readonly ConcurrentQueue<IMessageSummary> _arrivalQueue = new ConcurrentQueue<IMessageSummary>();
         private readonly ConcurrentQueue<IMessageSummary> _departureQueue = new ConcurrentQueue<IMessageSummary>();
+        private readonly ConcurrentQueue<IMessageSummary> _flagChangeQueue = new ConcurrentQueue<IMessageSummary>();
         private CancellationTokenSource _arrival = new CancellationTokenSource();
         private CancellationTokenSource _cancel;
         private IImapClient _imapClient;
@@ -54,6 +56,11 @@ namespace MailKitSimplified.Receiver.Services
             _messageDepartureMethod = (m) =>
             {
                 _logger.Log<MailFolderMonitor>($"{_imapReceiver} message #{m.UniqueId} departure processed.", LogLevel.Debug);
+                return _completedTask;
+            };
+            _messageFlagsChangedMethod = (m) =>
+            {
+                _logger.Log<MailFolderMonitor>($"{_imapReceiver} message #{m.UniqueId} flag change processed.", LogLevel.Debug);
                 return _completedTask;
             };
         }
@@ -165,6 +172,12 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
+        public IMailFolderMonitor OnMessageFlagsChanged(Func<IMessageSummary, Task> messageFlagsChangedMethod)
+        {
+            _messageFlagsChangedMethod = messageFlagsChangedMethod;
+            return this;
+        }
+
         public IMailFolderMonitor OnMessageArrival(Action<IMessageSummary> messageArrivalMethod) =>
             OnMessageArrival((messageSummary) =>
             {
@@ -179,6 +192,13 @@ namespace MailKitSimplified.Receiver.Services
                 return _completedTask;
             });
 
+        public IMailFolderMonitor OnMessageFlagsChanged(Action<IMessageSummary> messageFlagsChangedMethod) =>
+            OnMessageFlagsChanged((messageSummary) =>
+            {
+                messageFlagsChangedMethod(messageSummary);
+                return _completedTask;
+            });
+
         public async Task IdleAsync(CancellationToken cancellationToken = default)
         {
             _logger.Log<MailFolderMonitor>($"{_imapReceiver} monitoring requested.", LogLevel.Trace);
@@ -188,14 +208,17 @@ namespace MailKitSimplified.Receiver.Services
                 var tasks = new Task[]
                 {
                     IdleStartAsync(_cancel.Token).ContinueWith(t =>
-                        _logger.Log<MailFolderMonitor>(t.Exception?.InnerException ?? t.Exception,
+                        _logger.Log<MailFolderMonitor>(t.Exception?.GetBaseException(),
                             "Idle client failed."), TaskContinuationOptions.OnlyOnFaulted),
                     ProcessArrivalQueueAsync(_messageArrivalMethod, _cancel.Token).ContinueWith(t =>
-                        _logger.Log<MailFolderMonitor>(t.Exception?.InnerException ?? t.Exception,
+                        _logger.Log<MailFolderMonitor>(t.Exception?.GetBaseException(),
                             "Arrival queue processing failed."), TaskContinuationOptions.OnlyOnFaulted),
                     ProcessDepartureQueueAsync(_messageDepartureMethod, _cancel.Token).ContinueWith(t =>
-                        _logger.Log<MailFolderMonitor>(t.Exception?.InnerException ?? t.Exception,
-                            "Departure queue processing failed."), TaskContinuationOptions.OnlyOnFaulted)
+                        _logger.Log<MailFolderMonitor>(t.Exception?.GetBaseException(),
+                            "Departure queue processing failed."), TaskContinuationOptions.OnlyOnFaulted),
+                    ProcessFlagChangeQueueAsync(_messageFlagsChangedMethod, _cancel.Token).ContinueWith(t =>
+                        _logger.Log<MailFolderMonitor>(t.Exception?.GetBaseException(),
+                            "Flag change queue processing failed."), TaskContinuationOptions.OnlyOnFaulted)
                 };
                 await Task.WhenAll(tasks).ConfigureAwait(false);
                 _logger.Log<MailFolderMonitor>($"{_imapReceiver} monitoring complete.", LogLevel.Information);
@@ -228,6 +251,7 @@ namespace MailKitSimplified.Receiver.Services
 
                     _mailFolder.CountChanged += OnCountChanged;
                     _mailFolder.MessageExpunged += OnMessageExpunged;
+                    _mailFolder.MessageFlagsChanged += OnFlagsChanged;
 
                     if (_mailFolder.Count > 0)
                         await ProcessMessagesArrivedAsync(true, cancellationToken).ConfigureAwait(false);
@@ -257,6 +281,7 @@ namespace MailKitSimplified.Receiver.Services
             _logger.Log<MailFolderMonitor>("Disconnecting IMAP idle client...", LogLevel.Trace);
             if (_mailFolder != null)
             {
+                _mailFolder.MessageFlagsChanged += OnFlagsChanged;
                 _mailFolder.MessageExpunged -= OnMessageExpunged;
                 _mailFolder.CountChanged -= OnCountChanged;
             }
@@ -266,6 +291,7 @@ namespace MailKitSimplified.Receiver.Services
 #if NET6_0_OR_GREATER
             _arrivalQueue?.Clear();
             _departureQueue?.Clear();
+            _flagChangeQueue?.Clear();
 #endif
             _arrival?.Dispose();
             _cancel?.Dispose();
@@ -454,9 +480,9 @@ namespace MailKitSimplified.Receiver.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger.Log<MailFolderMonitor>(ex, $"Error occurred processing arrival queue item during attempt #{retryCount}, backing off for {_folderMonitorOptions.EmptyQueueMaxDelayMs}ms. {_imapReceiver} #{messageSummary.UniqueId}.", LogLevel.Warning);
                         if (messageSummary != null)
                             _arrivalQueue.Enqueue(messageSummary);
+                        _logger.Log<MailFolderMonitor>(ex, $"Error occurred processing arrival queue item during attempt #{retryCount}, backing off for {_folderMonitorOptions.EmptyQueueMaxDelayMs}ms. {_imapReceiver} #{messageSummary?.UniqueId}.", LogLevel.Warning);
                         await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
                     }
                 }
@@ -488,9 +514,43 @@ namespace MailKitSimplified.Receiver.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger.Log<MailFolderMonitor>(ex, $"Error occurred processing departure queue item during attempt #{retryCount}, backing off for {_folderMonitorOptions.EmptyQueueMaxDelayMs}ms. {_imapReceiver} #{messageSummary.UniqueId}.", LogLevel.Warning);
                         if (messageSummary != null)
                             _departureQueue.Enqueue(messageSummary);
+                        _logger.Log<MailFolderMonitor>(ex, $"Error occurred processing departure queue item during attempt #{retryCount}, backing off for {_folderMonitorOptions.EmptyQueueMaxDelayMs}ms. {_imapReceiver} #{messageSummary?.UniqueId}.", LogLevel.Warning);
+                        await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
+                    }
+                }
+                while (!cancellationToken.IsCancellationRequested && retryCount < _folderMonitorOptions.MaxRetries);
+            }
+        }
+
+        private async Task ProcessFlagChangeQueueAsync(Func<IMessageSummary, Task> messageFlagChangedMethod, CancellationToken cancellationToken = default)
+        {
+            int retryCount = 0;
+            if (messageFlagChangedMethod != null)
+            {
+                IMessageSummary messageSummary = null;
+                do
+                {
+                    retryCount++;
+                    try
+                    {
+                        if (_flagChangeQueue.TryDequeue(out messageSummary))
+                            await messageFlagChangedMethod(messageSummary).ConfigureAwait(false);
+                        else if (_flagChangeQueue.IsEmpty)
+                            await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
+                        retryCount = 0;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        _logger.Log<MailFolderMonitor>("Flag change queue cancelled.", LogLevel.Trace);
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (messageSummary != null)
+                            _flagChangeQueue.Enqueue(messageSummary);
+                        _logger.Log<MailFolderMonitor>(ex, $"Error occurred processing flag change queue item during attempt #{retryCount}, backing off for {_folderMonitorOptions.EmptyQueueMaxDelayMs}ms. {_imapReceiver} #{messageSummary?.UniqueId}.", LogLevel.Warning);
                         await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
                     }
                 }
@@ -528,26 +588,56 @@ namespace MailKitSimplified.Receiver.Services
         }
 
         /// <summary>
+        /// Keep the message cache in sync with the <see cref="ImapFolder">mail folder</see> by adding items.
+        /// </summary>
+        private void OnFlagsChanged(object sender, MessageFlagsChangedEventArgs e)
+        {
+            int index;
+            int cachedCount;
+            IMessageSummary messageSummary = null;
+            lock (_cacheLock)
+            {
+                index = e.Index;
+                cachedCount = _messageCache.Count;
+                if (index < cachedCount)
+                {
+                     messageSummary = _messageCache[index];
+                    _flagChangeQueue.Enqueue(messageSummary);
+                }
+            }
+            using (_logger.BeginScope("OnFlagsChanged"))
+            {
+                if (messageSummary != null)
+                    _logger.Log<MailFolderMonitor>($"{_imapReceiver}[{index}] flags have changed ({e.Flags}), item #{messageSummary.UniqueId}.", LogLevel.Trace);
+                else
+                    _logger.Log<MailFolderMonitor>($"{_imapReceiver}[{index}] message flag change (count={cachedCount}) was out of range.", LogLevel.Warning);
+            }
+        }
+
+        /// <summary>
         /// Keep the message cache in sync with the <see cref="ImapFolder">mail folder</see> by removing items.
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException">Collection index is invalid.</exception>
         private void OnMessageExpunged(object sender, MessageEventArgs e)
         {
-            using (_logger.BeginScope("OnMessageExpunged"))
+            int index;
+            int cachedCount;
+            IMessageSummary messageSummary = null;
+            lock (_cacheLock)
             {
-                int index = e.Index;
-                var cachedCount = _messageCache.Count;
+                index = e.Index;
+                cachedCount = _messageCache.Count;
                 if (index < cachedCount)
                 {
-                    IMessageSummary messageSummary;
-                    lock (_cacheLock)
-                    {
-                        messageSummary = _messageCache[index];
-                        _messageCache.RemoveAt(index);
-                    }
+                    messageSummary = _messageCache[index];
+                    _messageCache.RemoveAt(index);
                     _departureQueue.Enqueue(messageSummary);
-                    _logger.Log<MailFolderMonitor>($"{_imapReceiver}[{index}] (count={cachedCount}) expunged, item #{messageSummary.UniqueId}.", LogLevel.Trace);
                 }
+            }
+            using (_logger.BeginScope("OnMessageExpunged"))
+            {
+                if (messageSummary != null)
+                    _logger.Log<MailFolderMonitor>($"{_imapReceiver}[{index}] (count={cachedCount}) expunged, item #{messageSummary.UniqueId}.", LogLevel.Trace);
                 else
                     _logger.Log<MailFolderMonitor>($"{_imapReceiver}[{index}] (count={cachedCount}) was out of range.", LogLevel.Warning);
             }

@@ -27,6 +27,11 @@ namespace MailKitSimplified.Receiver.Abstractions
         IMailFolderMonitor OnMessageArrival(Func<IMessageSummary, Task> messageArrivalMethod);
 
         /// <summary>
+        /// Asynchronous function for processing messages as flags change.
+        /// </summary>
+        IMailFolderMonitor OnMessageFlagsChanged(Func<IMessageSummary, Task> messageFlagsChangedMethod);
+
+        /// <summary>
         /// Asynchronous function for processing messages as they are removed from the mail folder.
         /// </summary>
         IMailFolderMonitor OnMessageDeparture(Func<IMessageSummary, Task> messageDepartureMethod);
@@ -35,6 +40,11 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// Synchronous action for processing messages as they are added to the mail folder.
         /// </summary>
         IMailFolderMonitor OnMessageArrival(Action<IMessageSummary> messageArrivalMethod);
+
+        /// <summary>
+        /// Synchronous action for processing messages as flags change.
+        /// </summary>
+        IMailFolderMonitor OnMessageFlagsChanged(Action<IMessageSummary> messageFlagsChangedMethod);
 
         /// <summary>
         /// Synchronous action for processing messages as they are removed from the mail folder.
