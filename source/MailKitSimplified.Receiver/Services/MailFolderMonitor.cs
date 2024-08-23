@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Receiver.Extensions;
 using MailKitSimplified.Receiver.Models;
+using System.Linq;
 
 namespace MailKitSimplified.Receiver.Services
 {
@@ -536,7 +537,14 @@ namespace MailKitSimplified.Receiver.Services
                     try
                     {
                         if (_flagChangeQueue.TryDequeue(out messageSummary))
-                            await messageFlagChangedMethod(messageSummary).ConfigureAwait(false);
+                        {
+                            var filter = _folderMonitorOptions.MessageSummaryItems | MessageSummaryItems.UniqueId;
+                            var uniqueIds = new UniqueId[] { messageSummary.UniqueId };
+                            var fetched = await _fetchFolder.FetchAsync(uniqueIds, filter, cancellationToken).ConfigureAwait(false);
+                            messageSummary = fetched.FirstOrDefault();
+                            if (messageSummary != null)
+                                await messageFlagChangedMethod(messageSummary).ConfigureAwait(false);
+                        }
                         else if (_flagChangeQueue.IsEmpty)
                             await Task.Delay(_folderMonitorOptions.EmptyQueueMaxDelayMs, cancellationToken).ConfigureAwait(false);
                         retryCount = 0;
@@ -602,15 +610,19 @@ namespace MailKitSimplified.Receiver.Services
                 if (index < cachedCount)
                 {
                      messageSummary = _messageCache[index];
-                    _flagChangeQueue.Enqueue(messageSummary);
                 }
             }
             using (_logger.BeginScope("OnFlagsChanged"))
             {
                 if (messageSummary != null)
+                {
+                    _flagChangeQueue.Enqueue(messageSummary);
                     _logger.Log<MailFolderMonitor>($"{_imapReceiver}[{index}] flags have changed ({e.Flags}), item #{messageSummary.UniqueId}.", LogLevel.Trace);
+                }
                 else
+                {
                     _logger.Log<MailFolderMonitor>($"{_imapReceiver}[{index}] message flag change (count={cachedCount}) was out of range.", LogLevel.Warning);
+                }
             }
         }
 
@@ -631,15 +643,19 @@ namespace MailKitSimplified.Receiver.Services
                 {
                     messageSummary = _messageCache[index];
                     _messageCache.RemoveAt(index);
-                    _departureQueue.Enqueue(messageSummary);
                 }
             }
             using (_logger.BeginScope("OnMessageExpunged"))
             {
                 if (messageSummary != null)
+                {
+                    _departureQueue.Enqueue(messageSummary);
                     _logger.Log<MailFolderMonitor>($"{_imapReceiver}[{index}] (count={cachedCount}) expunged, item #{messageSummary.UniqueId}.", LogLevel.Trace);
+                }
                 else
+                {
                     _logger.Log<MailFolderMonitor>($"{_imapReceiver}[{index}] (count={cachedCount}) was out of range.", LogLevel.Warning);
+                }
             }
         }
 
