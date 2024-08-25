@@ -39,9 +39,9 @@ namespace MailKitSimplified.Receiver.Models
         public byte MaxRetries { get; set; } = 3;
 
         /// <summary>
-        /// The length of time the message queues will idle for when empty.
+        /// The length of time the message queues will idle for when empty and retry time between attempts after an exception.
         /// </summary>
-        public ushort EmptyQueueMaxDelayMs { get; set; } = 100;
+        public ushort EmptyQueueMaxDelayMs { get; set; } = 500;
 
         public override string ToString() => $"MessageSummaryItems={MessageSummaryItems}, IgnoreExisting={IgnoreExistingMailOnConnect}, IdleMinutes={IdleMinutes}, MaxRetries={MaxRetries}.";
     }

@@ -55,6 +55,7 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// Idle client that monitors a mail folder for incoming messages.
         /// </summary>
         /// <param name="cancellationToken">Request cancellation token.</param>
-        Task IdleAsync(CancellationToken cancellationToken = default);
+        /// <param name="handleExceptions">Option to disable exception handling.</param>
+        Task IdleAsync(CancellationToken cancellationToken = default, bool handleExceptions = true);
     }
 }
