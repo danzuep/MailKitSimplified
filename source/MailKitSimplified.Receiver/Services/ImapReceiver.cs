@@ -21,7 +21,7 @@ namespace MailKitSimplified.Receiver.Services
     {
         private Lazy<MailFolderClient> _mailFolderClient;
         private Lazy<MailFolderReader> _mailFolderReader;
-        private Lazy<MailFolderMonitor> _mailFolderMonitor;
+        private Lazy<IMailFolderMonitor> _mailFolderMonitor;
         private bool _isClientInjected;
         private IImapClient _imapClient;
         private IProtocolLogger _imapLogger;
@@ -86,7 +86,7 @@ namespace MailKitSimplified.Receiver.Services
                 _imapClient, _receiverOptions, _loggerFactory.CreateLogger<MailFolderClient>(), _loggerFactory.CreateLogger<ImapReceiver>()));
             _mailFolderReader = new Lazy<MailFolderReader>(() => MailFolderReader.Create(
                 _imapClient, _receiverOptions, _loggerFactory.CreateLogger<MailFolderReader>(), _loggerFactory.CreateLogger<ImapReceiver>()));
-            _mailFolderMonitor = new Lazy<MailFolderMonitor>(() => MailFolderMonitor.Create(
+            _mailFolderMonitor = new Lazy<IMailFolderMonitor>(() => MailFolderMonitor.Create(
                 _receiverOptions, _loggerFactory.CreateLogger<MailFolderMonitor>(), _loggerFactory.CreateLogger<ImapReceiver>(), _imapLogger));
             return this;
         }
@@ -123,7 +123,7 @@ namespace MailKitSimplified.Receiver.Services
                 new LogFileWriter(_loggerFactory.CreateLogger<LogFileWriter>()),
                 Options.Create(_receiverOptions.ProtocolLogger),
                 _loggerFactory.CreateLogger<MailKitProtocolLogger>());
-            _mailFolderMonitor = new Lazy<MailFolderMonitor>(() => MailFolderMonitor.Create(
+            _mailFolderMonitor = new Lazy<IMailFolderMonitor>(() => MailFolderMonitor.Create(
                 _receiverOptions, _loggerFactory.CreateLogger<MailFolderMonitor>(), _loggerFactory.CreateLogger<ImapReceiver>(), _imapLogger));
             return SetImapClient(null);
         }
@@ -212,21 +212,23 @@ namespace MailKitSimplified.Receiver.Services
             return this;
         }
 
-        public IMailFolderClient GetFolder(string mailFolderName)
+        public IMailFolderClient GetFolder(string mailFolderName) //TODO add IMailFolderClient overload
         {
             _receiverOptions.MailFolderName = mailFolderName;
             return MailFolderClient;
         }
 
-        public IMailFolderReader ReadFrom(string mailFolderName)
+        public IMailFolderReader ReadFrom(string mailFolderName) //TODO add IMailFolderReader overload
         {
             _receiverOptions.MailFolderName = mailFolderName;
             return ReadMail;
         }
 
-        public IMailFolderMonitor Monitor(string mailFolderName)
+        public IMailFolderMonitor Monitor(string mailFolderName, IMailFolderMonitor mailFolderMonitor = null)
         {
             _receiverOptions.MailFolderName = mailFolderName;
+            if (mailFolderMonitor != null)
+                _mailFolderMonitor = new Lazy<IMailFolderMonitor>(() => mailFolderMonitor);
             return MonitorFolder;
         }
 

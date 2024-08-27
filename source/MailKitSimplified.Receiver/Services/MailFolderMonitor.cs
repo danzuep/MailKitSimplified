@@ -221,7 +221,7 @@ namespace MailKitSimplified.Receiver.Services
                             "Flag change queue processing failed."), TaskContinuationOptions.OnlyOnFaulted)
                 } : new Task[] {
                     IdleStartAsync(_cancel.Token),
-                    ProcessDepartureQueueAsync(_messageArrivalMethod, _cancel.Token),
+                    ProcessArrivalQueueAsync(_messageArrivalMethod, _cancel.Token),
                     ProcessDepartureQueueAsync(_messageDepartureMethod, _cancel.Token),
                     ProcessFlagChangeQueueAsync(_messageFlagsChangedMethod, _cancel.Token)
                 };

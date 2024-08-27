@@ -501,7 +501,9 @@ public class Worker : BackgroundService
             .SetIgnoreExistingMailOnConnect()   
             .OnMessageArrival(ProcessMessage)
             .OnMessageDeparture(ProcessMessage)
-            .IdleAsync(cancellationToken);
+            .IdleAsync(cancellationToken)
+            .ContinueWith(t => _logger.LogError(t.Exception?.GetBaseException(),
+                "Arrival queue processing failed."), TaskContinuationOptions.OnlyOnFaulted);
         await sendTask;
     }
 
