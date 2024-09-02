@@ -116,4 +116,4 @@ See the [MailKitSimplified.Receiver wiki](https://github.com/danzuep/MailKitSimp
 
 ## See Also [![License](https://img.shields.io/github/license/danzuep/MailKitSimplified)](https://github.com/danzuep/MailKitSimplified)
 
-Examples of things like dependency injection, a hosted service, or an ASP.NET API can also be found in the [GitHub](https://github.com/danzuep/MailKitSimplified) [samples](https://github.com/danzuep/MailKitSimplified/tree/main/samples).
+Examples of things like dependency injection, a hosted service, or an ASP.NET API can also be found in the [GitHub](https://github.com/danzuep/MailKitSimplified) [samples](./samples).
