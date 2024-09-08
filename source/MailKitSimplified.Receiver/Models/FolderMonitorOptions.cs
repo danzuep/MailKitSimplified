@@ -43,6 +43,11 @@ namespace MailKitSimplified.Receiver.Models
         /// </summary>
         public ushort EmptyQueueMaxDelayMs { get; set; } = 500;
 
+        /// <summary>
+        /// The length of time the receiver will delay for between retry attempts after an exception.
+        /// </summary>
+        public ushort ExceptionRetryDelaySeconds { get; set; } = 2;
+
         public override string ToString() => $"MessageSummaryItems={MessageSummaryItems}, IgnoreExisting={IgnoreExistingMailOnConnect}, IdleMinutes={IdleMinutes}, MaxRetries={MaxRetries}.";
     }
 }
