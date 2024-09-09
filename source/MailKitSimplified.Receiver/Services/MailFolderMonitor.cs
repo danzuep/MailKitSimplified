@@ -18,7 +18,7 @@ using System.Linq;
 
 namespace MailKitSimplified.Receiver.Services
 {
-    public sealed class MailFolderMonitor : IMailFolderMonitor
+    public sealed class MailFolderMonitor : IMailFolderMonitor, IDisposable
     {
         private Func<IMessageSummary, Task> _messageArrivalMethod;
         private Func<IMessageSummary, Task> _messageDepartureMethod;
@@ -26,7 +26,7 @@ namespace MailKitSimplified.Receiver.Services
 
         private static readonly Task _completedTask = Task.CompletedTask;
         private readonly object _cacheLock = new object();
-        private readonly IList<IMessageSummary> _messageCache = new List<IMessageSummary>();
+        private readonly IList<IMessageSummary> _messageCache = new List<IMessageSummary>(); // this could be large
         private readonly ConcurrentQueue<IMessageSummary> _arrivalQueue = new ConcurrentQueue<IMessageSummary>();
         private readonly ConcurrentQueue<IMessageSummary> _departureQueue = new ConcurrentQueue<IMessageSummary>();
         private readonly ConcurrentQueue<IMessageSummary> _flagChangeQueue = new ConcurrentQueue<IMessageSummary>();
@@ -42,6 +42,7 @@ namespace MailKitSimplified.Receiver.Services
         private readonly IImapReceiver _imapReceiver;
         private readonly IImapReceiver _fetchReceiver;
         private readonly FolderMonitorOptions _folderMonitorOptions;
+        private readonly IList<TimeSpan> _retryTimeouts;
 
         public MailFolderMonitor(IImapReceiver imapReceiver, IOptions<FolderMonitorOptions> folderMonitorOptions = null, ILogger<MailFolderMonitor> logger = null)
         {
@@ -49,6 +50,8 @@ namespace MailKitSimplified.Receiver.Services
             _imapReceiver = imapReceiver?.Clone() ?? throw new ArgumentNullException(nameof(imapReceiver));
             _fetchReceiver = imapReceiver.Clone();
             _folderMonitorOptions = folderMonitorOptions?.Value ?? new FolderMonitorOptions();
+            _retryTimeouts = _folderMonitorOptions.ExceptionRetryDelay.ToExponentialBackoff(
+                _folderMonitorOptions.MaxRetries, _folderMonitorOptions.ExceptionRetryFactor, fastFirst: true).ToList();
             _messageArrivalMethod = (m) =>
             {
                 _logger.Log<MailFolderMonitor>($"{_imapReceiver} message #{m.UniqueId} arrival processed.", LogLevel.Debug);
@@ -305,16 +308,13 @@ namespace MailKitSimplified.Receiver.Services
                 _mailFolder.CountChanged -= OnCountChanged;
             }
 
-            _arrival?.Cancel(throwOnFirstException);
             _cancel?.Cancel(throwOnFirstException);
             _messageCache?.Clear();
-#if NET6_0_OR_GREATER
+#if NET5_0_OR_GREATER
             _arrivalQueue?.Clear();
             _departureQueue?.Clear();
             _flagChangeQueue?.Clear();
 #endif
-            //_arrival?.Dispose();
-            //_cancel?.Dispose();
         }
 
         /// <exception cref="AuthenticationException">Failed to authenticate</exception>
@@ -358,8 +358,9 @@ namespace MailKitSimplified.Receiver.Services
 
                 async ValueTask LogDelayAsync(Exception exception, string exceptionType)
                 {
+                    var backoffDelay = attemptCount <= _retryTimeouts.Count ?
+                        _retryTimeouts[attemptCount] : _folderMonitorOptions.ExceptionRetryDelay;
                     bool isBackoff = attemptCount > 0 && attemptCount < _folderMonitorOptions.MaxRetries;
-                    var backoffDelay = _folderMonitorOptions.ExceptionRetryDelaySeconds ^ attemptCount;
                     var backoff = isBackoff ? $", backing off for {backoffDelay} seconds" : string.Empty;
                     var message = $"{_imapReceiver} {exceptionType} during connection attempt #{++attemptCount}{backoff}.";
                     if (attemptCount < _folderMonitorOptions.MaxRetries)
@@ -367,7 +368,7 @@ namespace MailKitSimplified.Receiver.Services
                     else
                         throw exception; // TODO fix this, it changes the stacktrace parameter
                     if (isBackoff)
-                        await Task.Delay(TimeSpan.FromSeconds(backoffDelay), cancellationToken).ConfigureAwait(false);
+                        await Task.Delay(backoffDelay, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -685,5 +686,11 @@ namespace MailKitSimplified.Receiver.Services
         public MailFolderMonitor Copy() => MemberwiseClone() as MailFolderMonitor;
 
         public override string ToString() => _imapReceiver.ToString();
+
+        public void Dispose()
+        {
+            _arrival?.Dispose();
+            _cancel?.Dispose();
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using MailKit;
+﻿using System;
+using MailKit;
 
 namespace MailKitSimplified.Receiver.Models
 {
@@ -44,9 +45,14 @@ namespace MailKitSimplified.Receiver.Models
         public ushort EmptyQueueMaxDelayMs { get; set; } = 500;
 
         /// <summary>
-        /// The length of time the receiver will delay for between retry attempts after an exception.
+        /// The duration to wait for before the first retry after a failure.
         /// </summary>
-        public ushort ExceptionRetryDelaySeconds { get; set; } = 2;
+        public TimeSpan ExceptionRetryDelay { get; set; } = TimeSpan.FromSeconds(2);
+
+        /// <summary>
+        /// The exponent to multiply each subsequent duration by after each failure.
+        /// </summary>
+        public double ExceptionRetryFactor { get; set; } = 2.0d;
 
         public override string ToString() => $"MessageSummaryItems={MessageSummaryItems}, IgnoreExisting={IgnoreExistingMailOnConnect}, IdleMinutes={IdleMinutes}, MaxRetries={MaxRetries}.";
     }
