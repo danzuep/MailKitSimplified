@@ -37,10 +37,11 @@ namespace MailKitSimplified.Receiver.Abstractions
         /// Connect and authenticate the IMAP client.
         /// </summary>
         /// <param name="cancellationToken">Stop connecting the client.</param>
+        /// <param name="force">Option to force reconnection.</param>
         /// <returns>Connected <see cref="IImapClient">IMAP client</see>.</returns>
         /// <exception cref="ImapProtocolException">Connection failed</exception>
         /// <exception cref="AuthenticationException">Failed to authenticate</exception>
-        ValueTask<IImapClient> ConnectAuthenticatedImapClientAsync(CancellationToken cancellationToken = default);
+        ValueTask<IImapClient> ConnectAuthenticatedImapClientAsync(CancellationToken cancellationToken = default, bool force = false);
 
         /// <summary>
         /// Get a list of the names of all the folders connected to this account.

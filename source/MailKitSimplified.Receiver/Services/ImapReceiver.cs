@@ -240,16 +240,16 @@ namespace MailKitSimplified.Receiver.Services
 
         public IImapClient ImapClient => _imapClient;
 
-        public async ValueTask<IImapClient> ConnectAuthenticatedImapClientAsync(CancellationToken cancellationToken = default)
+        public async ValueTask<IImapClient> ConnectAuthenticatedImapClientAsync(CancellationToken cancellationToken = default, bool force = false)
         {
-            await ConnectImapClientAsync(cancellationToken).ConfigureAwait(false);
-            await AuthenticateImapClientAsync(cancellationToken).ConfigureAwait(false);
+            await ConnectImapClientAsync(force: false, cancellationToken).ConfigureAwait(false);
+            await AuthenticateImapClientAsync(force: false, cancellationToken).ConfigureAwait(false);
             return _imapClient;
         }
 
-        internal async ValueTask ConnectImapClientAsync(CancellationToken cancellationToken = default)
+        internal async ValueTask ConnectImapClientAsync(bool force, CancellationToken cancellationToken = default)
         {
-            if (!_imapClient.IsConnected)
+            if (force || !_imapClient.IsConnected)
             {
                 await _imapClient.ConnectAsync(_receiverOptions.ImapHost, _receiverOptions.ImapPort, _receiverOptions.SocketOptions, cancellationToken).ConfigureAwait(false);
                 _logger.LogTrace($"IMAP client connected to {_receiverOptions.ImapHost}.");
@@ -267,9 +267,9 @@ namespace MailKitSimplified.Receiver.Services
         /// <seealso href="https://github.com/jstedfast/MailKit/blob/master/ExchangeOAuth2.md"/>
         /// <seealso href="https://github.com/jstedfast/MailKit/blob/master/GMailOAuth2.md"/>
         /// </summary>
-        internal async ValueTask AuthenticateImapClientAsync(CancellationToken cancellationToken = default)
+        internal async ValueTask AuthenticateImapClientAsync(bool force, CancellationToken cancellationToken = default)
         {
-            if (!_imapClient.IsAuthenticated)
+            if (force || !_imapClient.IsAuthenticated)
             {
                 if (_receiverOptions.CustomAuthenticationMethod != null) // for XOAUTH2 and OAUTHBEARER
                     await _receiverOptions.CustomAuthenticationMethod(_imapClient).ConfigureAwait(false);

@@ -321,22 +321,24 @@ namespace MailKitSimplified.Receiver.Services
         private async ValueTask ReconnectAsync(CancellationToken cancellationToken = default)
         {
             int attemptCount = 0;
+            bool force = false;
             while (!cancellationToken.IsCancellationRequested && attemptCount < _folderMonitorOptions.MaxRetries)
             {
                 try
                 {
-                    _ = await _imapReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
-                    if (!_mailFolder.IsOpen)
+                    _ = await _imapReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken, force).ConfigureAwait(false);
+                    if (force || !_mailFolder.IsOpen)
                     {
                         _ = await _mailFolder.OpenAsync(FolderAccess.ReadOnly, cancellationToken).ConfigureAwait(false);
                         _logger.Log<MailFolderMonitor>($"{_mailFolder.FullName} mail folder re-opened with ReadOnly access.", LogLevel.Trace);
                     }
-                    _ = await _fetchReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken).ConfigureAwait(false);
-                    if (!_fetchFolder.IsOpen)
+                    _ = await _fetchReceiver.ConnectAuthenticatedImapClientAsync(cancellationToken, force).ConfigureAwait(false);
+                    if (force || !_fetchFolder.IsOpen)
                     {
                         _ = await _fetchFolder.OpenAsync(FolderAccess.ReadWrite, cancellationToken).ConfigureAwait(false);
                         _logger.Log<MailFolderMonitor>($"{_fetchFolder.FullName} mail folder re-opened with ReadWrite access.", LogLevel.Trace);
                     }
+                    _logger.Log<MailFolderMonitor>($"{_imapReceiver} ({_mailFolder.Count}) idle monitor reconnected.", LogLevel.Debug);
                     break;
                 }
                 catch (ImapProtocolException ex)
@@ -368,7 +370,10 @@ namespace MailKitSimplified.Receiver.Services
                     else
                         throw exception; // TODO fix this, it changes the stacktrace parameter
                     if (isBackoff)
+                    {
+                        force = true;
                         await Task.Delay(backoffDelay, cancellationToken).ConfigureAwait(false);
+                    }
                 }
             }
         }
