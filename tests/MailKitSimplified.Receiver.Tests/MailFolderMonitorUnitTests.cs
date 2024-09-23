@@ -30,7 +30,7 @@ namespace MailKitSimplified.Receiver.Tests
                 .Returns(_imapReceiverMock.Object).Verifiable();
             _imapReceiverMock.Setup(_ => _.ConnectMailFolderAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(_mailFolderMock.Object).Verifiable();
-            _imapReceiverMock.Setup(_ => _.ConnectAuthenticatedImapClientAsync(It.IsAny<CancellationToken>()))
+            _imapReceiverMock.Setup(_ => _.ConnectAuthenticatedImapClientAsync(It.IsAny<CancellationToken>(), It.IsAny<bool>()))
                 .ReturnsAsync(_imapClientMock.Object).Verifiable();
             _imapReceiverMock.SetupGet(_ => _.MailFolderClient)
                 .Returns(_mailFolderClientMock.Object).Verifiable();

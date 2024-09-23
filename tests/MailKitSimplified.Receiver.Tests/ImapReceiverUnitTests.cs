@@ -115,7 +115,7 @@ namespace MailKitSimplified.Receiver.Tests
         public async Task ConnectImapClientAsync_VerifyType()
         {
             // Act
-            var imapReceiver = await _imapReceiver.ConnectAuthenticatedImapClientAsync(It.IsAny<CancellationToken>());
+            var imapReceiver = await _imapReceiver.ConnectAuthenticatedImapClientAsync(It.IsAny<CancellationToken>(), It.IsAny<bool>());
             // Assert
             Assert.NotNull(imapReceiver);
             Assert.IsAssignableFrom<IImapClient>(imapReceiver);
