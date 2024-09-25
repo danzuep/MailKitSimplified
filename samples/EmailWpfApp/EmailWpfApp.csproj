@@ -12,19 +12,18 @@
     <PackageTags>MailKit email WPF MVVM C# .NET</PackageTags>
     <RepositoryUrl>https://github.com/danzuep/MailKitSimplified</RepositoryUrl>
     <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
-    <UserSecretsId>b96c5ad5-42ab-49d4-84e6-4152fe684ab2</UserSecretsId>
+    <UserSecretsId>MailKitSimplified-2C375F9E-E9D0-49D0-BA29-55489DEF9D5F</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MailKitSimplified.Sender" Version="2.11.9" />
-    <PackageReference Include="MailKitSimplified.Receiver" Version="2.11.9" />
-    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.2.2" />
-    <PackageReference Include="CommunityToolkit.Common" Version="8.2.2" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.6" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="8.0.0" />
+    <PackageReference Include="MailKitSimplified.Sender" Version="2.11.12" />
+    <PackageReference Include="MailKitSimplified.Receiver" Version="2.11.12" />
+    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.3.2" />
+    <PackageReference Include="CommunityToolkit.Common" Version="8.3.2" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
   </ItemGroup>
@@ -36,7 +35,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="../../*" LinkBase="_Repository" />
+    <None Include="../../*" LinkBase="Resources" />
   </ItemGroup>
 
   <ItemGroup>

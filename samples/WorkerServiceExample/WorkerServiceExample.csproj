@@ -5,11 +5,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <WarningsAsErrors>true</WarningsAsErrors>
-    <UserSecretsId>dotnet-WorkerServiceExample-2C375F9E-E9D0-49D0-BA29-55489DEF9D5F</UserSecretsId>
+    <UserSecretsId>MailKitSimplified-2C375F9E-E9D0-49D0-BA29-55489DEF9D5F</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Common" Version="8.2.2" />
+    <PackageReference Include="CommunityToolkit.Common" Version="8.3.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
   </ItemGroup>
 
