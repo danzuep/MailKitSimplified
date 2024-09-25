@@ -1,20 +1,22 @@
-﻿using MailKit;
-using System;
-using System.ComponentModel;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Threading.Channels;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Microsoft.Extensions.Logging;
+using System.ComponentModel;
+using System.Net;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
 using CommunityToolkit.Diagnostics;
-using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
-using MailKitSimplified.Receiver.Abstractions;
-using MailKitSimplified.Receiver.Extensions;
+using CommunityToolkit.Mvvm.Input;
 using EmailWpfApp.Extensions;
 using EmailWpfApp.Models;
+using MailKit;
+using MailKitSimplified.Receiver.Abstractions;
+using MailKitSimplified.Receiver.Extensions;
+using MailKitSimplified.Receiver.Services;
+using Microsoft.Extensions.Logging;
 
 namespace EmailWpfApp.ViewModels
 {
@@ -31,7 +33,13 @@ namespace EmailWpfApp.ViewModels
         private Email selectedEmail = new();
 
         [ObservableProperty]
-        private string imapHost = "localhost";
+        private string imapHost = "localhost:143";
+
+        [ObservableProperty]
+        private string username = string.Empty;
+
+        [ObservableProperty]
+        private string password = string.Empty;
 
         [ObservableProperty]
         private bool isNotReceiving = true;
@@ -52,7 +60,7 @@ namespace EmailWpfApp.ViewModels
         private CancellationTokenSource _cts = new();
         private readonly BackgroundWorker _worker = new();
         //private readonly EmailDbContext? _dbContext;
-        private readonly IImapReceiver _imapReceiver;
+        private IImapReceiver _imapReceiver;
         private readonly ILogger _logger;
 
         public FolderMonitorViewModel() : base()
@@ -124,6 +132,10 @@ namespace EmailWpfApp.ViewModels
             IsInProgress = true;
             try
             {
+#if DEBUG
+                var cred = new NetworkCredential(Username, Password);
+                _imapReceiver = ImapReceiver.Create(ImapHost, cred);
+#endif
                 StatusText = "Getting mail folder names...";
                 await GetMailFolderNamesAsync(_cts.Token).ConfigureAwait(false);
                 StatusText = $"Connected to {ImapHost}.";

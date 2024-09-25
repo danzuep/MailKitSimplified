@@ -1,23 +1,25 @@
-﻿using CommunityToolkit.Diagnostics;
-using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.DependencyInjection;
-using System;
+﻿using System;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Logging;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.DependencyInjection;
+using CommunityToolkit.Mvvm.Input;
 using MailKitSimplified.Receiver.Abstractions;
-using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Receiver.Models;
+using MailKitSimplified.Receiver.Services;
+using MailKitSimplified.Sender.Abstractions;
 using MailKitSimplified.Sender.Models;
+using MailKitSimplified.Sender.Services;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace EmailWpfApp.ViewModels
 {
     public sealed partial class LoginViewModel : BaseViewModel, IDisposable
     {
-        private readonly ISmtpSender _smtpSender;
-        private readonly IImapReceiver _imapReceiver;
+        private ISmtpSender _smtpSender;
+        private IImapReceiver _imapReceiver;
 
         public LoginViewModel() : base()
         {
@@ -62,6 +64,11 @@ namespace EmailWpfApp.ViewModels
             IsInProgress = true;
             try
             {
+#if DEBUG
+                var cred = new NetworkCredential(Username, Password);
+                _smtpSender = SmtpSender.Create(SmtpHost, cred);
+                _imapReceiver = ImapReceiver.Create(ImapHost, cred);
+#endif
                 StatusText = $"Connecting to SMTP {_smtpSender}...";
                 await _smtpSender.ConnectSmtpClientAsync(_cts.Token);
                 StatusText = $"Connected to SMTP {_smtpSender}. Connecting to IMAP {_imapReceiver}...";

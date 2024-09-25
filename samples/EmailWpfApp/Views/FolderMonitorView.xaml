@@ -31,10 +31,6 @@
             Grid.Column="0"
             Grid.ColumnSpan="3">
             <DockPanel>
-                <Label
-                    Content="IMAP _Host: "
-                    Style="{StaticResource LabelStyle}"
-                    Target="{Binding ElementName=View_HostTextBox}" />
                 <ToggleButton x:Name="View_ConnectButton" DockPanel.Dock="Right">
                     <ToggleButton.Style>
                         <Style TargetType="{x:Type ToggleButton}">
@@ -52,11 +48,53 @@
                         </Style>
                     </ToggleButton.Style>
                 </ToggleButton>
-                <TextBox
-                    x:Name="View_HostTextBox"
-                    Style="{StaticResource TextBoxStyle}"
-                    Text="{Binding ImapHost}"
-                    ToolTip="Input the IMAP host name, e.g. localhost." />
+
+                <Grid Grid.Row="1" Margin="0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" SharedSizeGroup="Label" />
+                        <ColumnDefinition Width="300" />
+                    </Grid.ColumnDefinitions>
+
+                    <Label
+                        Grid.Column="0"
+                        Content="IMAP _Host:Port "
+                        Style="{StaticResource LabelStyle}"
+                        Target="{Binding ElementName=View_HostTextBox}" />
+                    <TextBox
+                        x:Name="View_HostTextBox"
+                        Grid.Column="1"
+                        Margin="20,0,0,0"
+                        Style="{StaticResource TextBoxStyle}"
+                        Text="{Binding ImapHost}"
+                        ToolTip="Input the IMAP host name, e.g. localhost." />
+                </Grid>
+
+                <Grid Grid.Row="2" Margin="0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" SharedSizeGroup="Label" />
+                        <ColumnDefinition Width="300" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="Username" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="20,0,0,0"
+                        Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
+
+                <Grid Grid.Row="3" Margin="0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" SharedSizeGroup="Label" />
+                        <ColumnDefinition Width="300" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="Password" />
+                    <uc:BindablePasswordBox
+                        x:Name="View_PasswordBox"
+                        Grid.Column="1"
+                        Margin="20,0,0,0"
+                        Password="{Binding Password}" />
+                </Grid>
             </DockPanel>
             <DockPanel>
                 <Label

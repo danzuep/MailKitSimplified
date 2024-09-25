@@ -22,23 +22,23 @@ namespace EmailWpfApp.Controls
         private void PasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
         {
             _isPasswordChanging = true;
-            Password = passwordBox.Password;
+            Password = View_PasswordBox.Password;
             _isPasswordChanging = false;
         }
 
         private void UpdatePassword()
         {
-            if (!_isPasswordChanging)
+            if (!_isPasswordChanging && View_PasswordBox != null)
             {
-                passwordBox.Password = Password;
+                View_PasswordBox.Password = Password;
             }
         }
 
         private static void PasswordPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is BindablePasswordBox passwordBox)
+            if (d is BindablePasswordBox passwordInput)
             {
-                passwordBox.UpdatePassword();
+                passwordInput.UpdatePassword();
             }
         }
 
