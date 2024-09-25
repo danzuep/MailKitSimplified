@@ -6,7 +6,6 @@ using var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
         services.AddHostedService<Worker>();
-        //services.AddMailKitSimplifiedEmail(context.Configuration);
         services.AddScopedMailKitSimplifiedEmailSender(context.Configuration);
         services.AddScopedMailKitSimplifiedEmailReceiver(context.Configuration);
         var workerSection = context.Configuration.GetRequiredSection(EmailWorkerOptions.SectionName);
