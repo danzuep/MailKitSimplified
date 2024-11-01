@@ -22,8 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="MailKit" Version="4.7.1.1" />
-    <PackageReference Update="MimeKit" Version="4.7.1" />
+    <PackageReference Update="MailKit" Version="4.8.0" />
+    <PackageReference Update="MimeKit" Version="4.8.0" />
     <PackageReference Update="System.IO.Abstractions" Version="21.0.29" />
   </ItemGroup>
 
