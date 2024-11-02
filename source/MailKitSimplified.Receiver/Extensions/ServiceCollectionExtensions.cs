@@ -53,7 +53,9 @@ namespace MailKitSimplified.Receiver
         /// <param name="services">The Microsoft.Extensions.DependencyInjection.IServiceCollection to add the service to.</param>
         /// <param name="serviceLifetime">The lifetime of the service to be added.</param>
         /// <returns>A reference to this instance after the operation has completed.</returns>
-        public static IServiceCollection AddWithLifetime<TService, TImplementation>(this IServiceCollection services, ServiceLifetime serviceLifetime) where TService : class where TImplementation : class, TService
+        public static IServiceCollection AddWithLifetime<TService, TImplementation>(this IServiceCollection services, ServiceLifetime serviceLifetime)
+            where TService : class
+            where TImplementation : class, TService
         {
             var serviceDescriptor = new ServiceDescriptor(typeof(TService), typeof(TImplementation), serviceLifetime);
             services.Add(serviceDescriptor);

@@ -24,7 +24,7 @@ namespace MailKitSimplified.Sender
         public static IServiceCollection AddMailKitSimplifiedEmailSender(this IServiceCollection services, IConfiguration configuration, string smtpSectionName = EmailSenderOptions.SectionName)
         {
             services.AddMailKitSimplifiedEmailSenderOptions(configuration, smtpSectionName);
-            services.AddTransientMailKitSimplifiedEmailSender();
+            services.AddMailKitSimplifiedEmailSender(ServiceLifetime.Transient);
             return services;
         }
 
@@ -40,7 +40,7 @@ namespace MailKitSimplified.Sender
         public static IServiceCollection AddScopedMailKitSimplifiedEmailSender(this IServiceCollection services, IConfiguration configuration, string smtpSectionName = EmailSenderOptions.SectionName)
         {
             services.AddMailKitSimplifiedEmailSenderOptions(configuration, smtpSectionName);
-            services.AddScopedMailKitSimplifiedEmailSender();
+            services.AddMailKitSimplifiedEmailSender(ServiceLifetime.Scoped);
             return services;
         }
 
@@ -64,32 +64,34 @@ namespace MailKitSimplified.Sender
         }
 
         /// <summary>
-        /// Add the MailKitSimplified.SmtpSender services.
-        /// Adds <see cref="IEmailWriter"/>, and <see cref="ISmtpSender"/>.
+        /// Adds a service of the lifetime and type specified in TService and an implementation specified
+        /// in TImplementation to the specified Microsoft.Extensions.DependencyInjection.IServiceCollection.
         /// </summary>
-        /// <param name="services">Collection of service descriptors.</param>
-        /// <returns><see cref="IServiceCollection"/>.</returns>
-        private static IServiceCollection AddScopedMailKitSimplifiedEmailSender(this IServiceCollection services)
+        /// <typeparam name="TService">The type of the service to add.</typeparam>
+        /// <typeparam name="TImplementation">The implementation of the service to add.</typeparam>
+        /// <param name="services">The Microsoft.Extensions.DependencyInjection.IServiceCollection to add the service to.</param>
+        /// <param name="serviceLifetime">The lifetime of the service to be added.</param>
+        /// <returns>A reference to this instance after the operation has completed.</returns>
+        private static IServiceCollection AddWithLifetime<TService, TImplementation>(this IServiceCollection services, ServiceLifetime serviceLifetime)
+            where TService : class
+            where TImplementation : class, TService
         {
-            //services.AddScoped<IProtocolLogger, NullProtocolLogger>();
-            services.AddSingleton<IFileSystem, FileSystem>();
-            services.AddScoped<IEmailWriter, EmailWriter>();
-            services.AddScoped<ISmtpSender, SmtpSender>();
+            var descriptor = new ServiceDescriptor(typeof(TService), typeof(TImplementation), serviceLifetime);
+            services.Add(descriptor);
             return services;
         }
 
         /// <summary>
-        /// Add the MailKitSimplified.SmtpSender services.
-        /// Adds <see cref="IEmailWriter"/>, and <see cref="ISmtpSender"/>.
+        /// Add the MailKitSimplified.SmtpSender services with the specified lifetimes.
+        /// Adds <see cref="IEmailWriter"/> and <see cref="ISmtpSender"/>.
         /// </summary>
-        /// <param name="services">Collection of service descriptors.</param>
-        /// <returns><see cref="IServiceCollection"/>.</returns>
-        private static IServiceCollection AddTransientMailKitSimplifiedEmailSender(this IServiceCollection services)
+        /// <inheritdoc cref="AddWithLifetime"/>
+        private static IServiceCollection AddMailKitSimplifiedEmailSender(this IServiceCollection services, ServiceLifetime serviceLifetime)
         {
-            //services.AddTransient<IProtocolLogger, NullProtocolLogger>();
             services.AddSingleton<IFileSystem, FileSystem>();
-            services.AddTransient<IEmailWriter, EmailWriter>();
-            services.AddTransient<ISmtpSender, SmtpSender>();
+            services.AddWithLifetime<IEmailWriter, EmailWriter>(serviceLifetime);
+            services.AddWithLifetime<ISmtpSender, SmtpSender>(serviceLifetime);
+            //services.Add<IProtocolLogger, NullProtocolLogger>(serviceLifetime);
             return services;
         }
 
