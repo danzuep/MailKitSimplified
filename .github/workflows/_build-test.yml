@@ -121,7 +121,7 @@ jobs:
       # https://github.com/marocchino/sticky-pull-request-comment
       - name: Add Coverage PR Comment
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.merged == true }}
-        uses: marocchino/sticky-pull-request-comment@v2.9.0
+        uses: marocchino/sticky-pull-request-comment@v2.9.1
         with:
           recreate: true
           path: code-coverage-results.md
