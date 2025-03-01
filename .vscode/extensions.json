@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "ms-vscode.powershell",
+    "ms-vscode-remote.remote-containers",
+    "ms-dotnettools.csharp"
+  ]
+}
