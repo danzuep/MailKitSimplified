@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project>
+
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('er'))">
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageIcon>icon.png</PackageIcon>
+  </PropertyGroup>
+
+  <ItemGroup Condition="!$(MSBuildProjectName.EndsWith('.Tests'))">
+    <InternalsVisibleTo Include="$(AssemblyName).Tests" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('er'))">
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+      <Link>Resources\LICENSE</Link>
+    </None>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+      <Link>Resources\README.md</Link>
+    </None>
+    <None Include="..\..\resources\icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+      <Link>Resources\icon.png</Link>
+    </None>
+    <None Include="..\..\.github\**">
+      <LinkBase>Resources/Automation Actions</LinkBase>
+    </None>
+    <None Include="..\..\source\*">
+      <LinkBase>Resources/Solution Items</LinkBase>
+    </None>
+  </ItemGroup>
+
+</Project>
