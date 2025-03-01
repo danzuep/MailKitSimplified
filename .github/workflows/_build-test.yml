@@ -44,7 +44,7 @@ jobs:
         if: ${{ inputs.environment == 'release' }}
         uses: gittools/actions/gitversion/setup@v3.1.11
         with:
-          versionSpec: '5.x'
+          versionSpec: '6.x'
 
       # https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute/usage-examples.md#example-5
       # For a list of all GitVersion Version Variables, see https://gitversion.net/docs/reference/variables

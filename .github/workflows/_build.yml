@@ -15,7 +15,10 @@ on:
 jobs:
   build:
     name: Build
-    runs-on: 'ubuntu-latest'
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
     env:
       SOURCE: "source"
       SENDER: "${{ inputs.project-name }}.Sender"
@@ -33,8 +36,9 @@ jobs:
     - name: Get .NET ${{ env.NET_VERSION }} externals
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: ${{ env.NET_VERSION }}
-        dotnet-quality: 'ga'
+        dotnet-version: |
+          8.0.x
+          9.0.x
 
     - name: Restore project dependencies
       shell: pwsh
