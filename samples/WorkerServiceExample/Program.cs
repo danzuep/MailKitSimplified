@@ -11,6 +11,7 @@ using var host = Host.CreateDefaultBuilder(args)
         var workerSection = context.Configuration.GetRequiredSection(EmailWorkerOptions.SectionName);
         services.Configure<EmailWorkerOptions>(workerSection);
     })
+    .ConfigureLogging(l => l.SetMinimumLevel(LogLevel.Trace))
     .Build();
 
 await host.RunAsync();

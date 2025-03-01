@@ -495,7 +495,7 @@ public class Worker : BackgroundService
         using var smtpSender = _serviceScope.ServiceProvider.GetRequiredService<ISmtpSender>();
         void ProcessMessage(IMessageSummary messageSummary) =>
             _logger.LogInformation($"{_imapReceiver} message #{messageSummary.UniqueId} processed.");
-        var sendTask = DelayedSendAsync(TimeSpan.FromSeconds(3), smtpSender, cancellationToken);
+        var sendTask = DelayedSendAsync(TimeSpan.FromSeconds(5), smtpSender, cancellationToken);
         await _imapReceiver.MonitorFolder
             .SetMessageSummaryItems()
             .SetIgnoreExistingMailOnConnect()   

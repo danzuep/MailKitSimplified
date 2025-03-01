@@ -3,8 +3,9 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <Nullable>enable</Nullable>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
     <Authors>Daniel Collingwood</Authors>
     <PackageId>EmailWpfApp</PackageId>
     <Title>MailKitSimplified Email</Title>
@@ -14,18 +15,19 @@
     <PackageProjectUrl>https://github.com/danzuep/MailKitSimplified</PackageProjectUrl>
     <UserSecretsId>MailKitSimplified-2C375F9E-E9D0-49D0-BA29-55489DEF9D5F</UserSecretsId>
   </PropertyGroup>
-
+<PropertyGroup>
+</PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="MailKitSimplified.Sender" Version="2.11.12" />
-    <PackageReference Include="MailKitSimplified.Receiver" Version="2.11.12" />
-    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.3.2" />
-    <PackageReference Include="CommunityToolkit.Common" Version="8.3.2" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
+    <PackageReference Include="MailKitSimplified.Sender" Version="2.11.14" />
+    <PackageReference Include="MailKitSimplified.Receiver" Version="2.11.14" />
+    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.4.0" />
+    <PackageReference Include="CommunityToolkit.Common" Version="8.4.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.2" />
   </ItemGroup>
 
   <ItemGroup>
