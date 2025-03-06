@@ -17,5 +17,3 @@ foreach ($folder in $folders) {
 }
 
 Set-Location -Path $PSScriptRoot/..
-
-# docker run -d -p 3000:80 -p 25:25 -p 143:143 rnwood/smtp4dev

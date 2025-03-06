@@ -15,11 +15,13 @@ namespace MailKitSimplified.Receiver.Services
     public class MailFolderMonitorFactory : IMailFolderMonitorFactory
     {
         private readonly IOptionsMonitor<MailboxOptions> _mailboxOptions;
+        private readonly IOptionsMonitor<EmailReceiverOptions> _receiverOptions;
         private readonly ILoggerFactory _loggerFactory;
 
-        public MailFolderMonitorFactory(IOptionsMonitor<MailboxOptions> mailboxOptions, ILoggerFactory loggerFactory = null)
+        public MailFolderMonitorFactory(IOptionsMonitor<MailboxOptions> mailboxOptions, IOptionsMonitor<EmailReceiverOptions> receiverOptions = null, ILoggerFactory loggerFactory = null)
         {
             _mailboxOptions = mailboxOptions ?? throw new ArgumentNullException(nameof(mailboxOptions));
+            _receiverOptions = receiverOptions;
             _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
         }
 
@@ -47,8 +49,29 @@ namespace MailKitSimplified.Receiver.Services
             {
                 foreach (var folderMonitor in folderMonitorOptions)
                 {
-                    var mailFolderMonitor = MailFolderMonitor.Create(folderMonitor, _loggerFactory.CreateLogger<MailFolderMonitor>());
-                    mailFolderMonitors.Add(mailFolderMonitor);
+                    if (folderMonitor == null)
+                        continue;
+                    if (string.IsNullOrEmpty(folderMonitor.EmailReceiver?.ImapHost) && _receiverOptions != null)
+                        folderMonitor.EmailReceiver = _receiverOptions.CurrentValue;
+                    if (folderMonitor.EmailReceiver.MailFolderNames.Any())
+                    {
+                        foreach (var mailFolderName in folderMonitor.EmailReceiver.MailFolderNames)
+                        {
+                            var options = folderMonitor.Copy();
+                            if (string.IsNullOrEmpty(options.EmailReceiver.ImapHost) && _receiverOptions != null)
+                                options.EmailReceiver = _receiverOptions.CurrentValue.Copy();
+                            else if (options.EmailReceiver != folderMonitor.EmailReceiver)
+                                options.EmailReceiver = folderMonitor.EmailReceiver.Copy();
+                            options.EmailReceiver.MailFolderName = mailFolderName;
+                            var mailFolderMonitor = MailFolderMonitor.Create(options, _loggerFactory.CreateLogger<MailFolderMonitor>());
+                            mailFolderMonitors.Add(mailFolderMonitor);
+                        }
+                    }
+                    else
+                    {
+                        var mailFolderMonitor = MailFolderMonitor.Create(folderMonitor, _loggerFactory.CreateLogger<MailFolderMonitor>());
+                        mailFolderMonitors.Add(mailFolderMonitor);
+                    }
                 }
             }
             return mailFolderMonitors;
