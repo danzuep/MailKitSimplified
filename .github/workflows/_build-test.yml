@@ -39,14 +39,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      # https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/setup/usage-examples.md#example-1
+      # https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/setup.md#example-1
       - name: Set up GitVersion
         if: ${{ inputs.environment == 'release' }}
         uses: gittools/actions/gitversion/setup@v3.1.11
         with:
-          versionSpec: '6.x'
+          versionSpec: '5.x'
 
-      # https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute/usage-examples.md#example-5
+      # https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute.md#example-1
       # For a list of all GitVersion Version Variables, see https://gitversion.net/docs/reference/variables
       - name: Use GitVersion to determine version
         if: ${{ inputs.environment == 'release' }}
@@ -82,7 +82,7 @@ jobs:
 
       - name: Build all projects in the solution
         run: dotnet build $SOLUTION_FILE --configuration $CONFIGURATION --no-restore
-        
+
       # The xUnit test project template already integrates with coverlet.collector by default
       # Don't use the '--logger trx' option as it causes duplicate folders and xml files to be created
       - name: Test all projects in the solution
@@ -133,12 +133,12 @@ jobs:
           cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
         env:
           title: '${{ inputs.project-name }} Code Coverage Results'
-  
+
       # Use either GeneratePackageOnBuild or dotnet pack, not both. See https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-pack
       - name: Create NuGet package
         if: ${{ inputs.environment == 'release' }}
         run: dotnet pack $SOLUTION_FILE -c $CONFIGURATION -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} --output './artifacts/' --no-build
-        
+
       - name: Markdown workflow job summary
         if: ${{ inputs.environment == 'release' }}
         run: echo '### Packed ${{ env.Package_Names }}' >> $GITHUB_STEP_SUMMARY
