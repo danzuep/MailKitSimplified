@@ -19,8 +19,10 @@ public class Worker : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
         using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        await _imapReceiver.GetMailFolderNamesAsync(cancellationTokenSource.Token);
         //await AddFlagsToNewestMessageSummaryAsync(cancellationToken);
         await ImapReceiverFactoryAsync(cancellationToken);
+        await MailFolderMonitorFactoryAsync(cancellationToken);
     }
 
     private async Task ImapReceiverFactoryAsync(CancellationToken cancellationToken = default)
@@ -34,7 +36,7 @@ public class Worker : BackgroundService
             int count = 0;
             foreach (var messageSummary in messageSummaries)
             {
-                if (++count > 10) break;
+                if (++count > 3) break;
                 _logger.LogInformation($"{receiver} message #{count}: {messageSummary.UniqueId}");
             }
         }

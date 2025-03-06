@@ -54,6 +54,8 @@ namespace MailKitSimplified.Receiver.Models
         /// </summary>
         public double ExceptionRetryFactor { get; set; } = 2.0d;
 
+        public FolderMonitorOptions Copy() => MemberwiseClone() as FolderMonitorOptions;
+
         public override string ToString() => $"MessageSummaryItems={MessageSummaryItems}, IgnoreExisting={IgnoreExistingMailOnConnect}, IdleMinutes={IdleMinutes}, MaxRetries={MaxRetries}.";
     }
 }

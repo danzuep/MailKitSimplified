@@ -13,6 +13,7 @@
       2.0.0 MailFolderMonitor IdleClient
       1.1.0 ImapReceiver and MailReader
     </PackageReleaseNotes>
+    <UserSecretsId>2fbf33fa-1875-47a5-b05d-1a2be6c9ce42</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

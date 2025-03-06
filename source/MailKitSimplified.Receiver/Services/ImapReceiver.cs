@@ -299,8 +299,15 @@ namespace MailKitSimplified.Receiver.Services
                 var namespaceFolder = _imapClient.PersonalNamespaces.FirstOrDefault()
                     ?? _imapClient.SharedNamespaces.FirstOrDefault()
                     ?? _imapClient.OtherNamespaces.FirstOrDefault();
-                mailFolder = !string.IsNullOrWhiteSpace(namespaceFolder?.Path) ? _imapClient.GetFolder(namespaceFolder) : _imapClient.Inbox;
-                _receiverOptions.MailFolderName = mailFolder.FullName;
+                if (string.IsNullOrWhiteSpace(namespaceFolder?.Path))
+                {
+                    mailFolder = _imapClient.Inbox;
+                }
+                else
+                {
+                    mailFolder = _imapClient.GetFolder(namespaceFolder);
+                    _receiverOptions.MailFolderName = mailFolder.FullName;
+                }
             }
             else if (_receiverOptions.MailFolderName.Equals("INBOX", StringComparison.OrdinalIgnoreCase))
                 mailFolder = _imapClient.Inbox;

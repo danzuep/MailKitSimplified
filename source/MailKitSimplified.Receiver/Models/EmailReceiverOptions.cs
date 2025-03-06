@@ -16,13 +16,9 @@ namespace MailKitSimplified.Receiver.Models
         public const string SectionName = "EmailReceiver";
         private static readonly string _inbox = "INBOX";
 
-        public string MailFolderName
-        {
-            get => MailFolderNames.FirstOrDefault() ?? _inbox;
-            set => MailFolderNames = new List<string> { value };
-        }
+        public string MailFolderName { get; set; } = _inbox;
 
-        public IList<string> MailFolderNames { get; set; } = new List<string> { _inbox };
+        public IList<string> MailFolderNames { get; set; } = new List<string>();
 
         public FolderAccess MailFolderAccess { get; set; } = FolderAccess.None;
 
@@ -55,7 +51,7 @@ namespace MailKitSimplified.Receiver.Models
         // Constructor required for Configuration mapping.
         public EmailReceiverOptions() { }
 
-        public EmailReceiverOptions(string imapHost, NetworkCredential imapCredential = null, ushort imapPort = 0, string mailFolderName = null, string protocolLog = null, bool protocolLogFileAppend = false)
+        public EmailReceiverOptions(string imapHost, NetworkCredential imapCredential = null, ushort imapPort = 0, string mailFolderName = null, string protocolLog = null, bool protocolLogFileAppend = false) : this()
         {
             if (string.IsNullOrWhiteSpace(imapHost))
                 throw new ArgumentNullException(nameof(imapHost));
