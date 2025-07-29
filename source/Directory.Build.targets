@@ -11,25 +11,25 @@
   </ItemGroup>
 
   <ItemGroup Condition="$(MSBuildProjectName.EndsWith('er'))">
-    <None Include="..\..\LICENSE">
+    <None Include="../../LICENSE">
       <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-      <Link>Resources\LICENSE</Link>
+      <PackagePath>/</PackagePath>
+      <Link>Resources/LICENSE</Link>
     </None>
-    <None Include="..\..\README.md">
+    <None Include="../../README.md">
       <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-      <Link>Resources\README.md</Link>
+      <PackagePath>/</PackagePath>
+      <Link>Resources/README.md</Link>
     </None>
-    <None Include="..\..\resources\icon.png">
+    <None Include="../../resources/icon.png">
       <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-      <Link>Resources\icon.png</Link>
+      <PackagePath>/</PackagePath>
+      <Link>Resources/icon.png</Link>
     </None>
-    <None Include="..\..\.github\**">
+    <None Include="../../.github/**">
       <LinkBase>Resources/Automation Actions</LinkBase>
     </None>
-    <None Include="..\..\source\*">
+    <None Include="../../source/*">
       <LinkBase>Resources/Solution Items</LinkBase>
     </None>
   </ItemGroup>

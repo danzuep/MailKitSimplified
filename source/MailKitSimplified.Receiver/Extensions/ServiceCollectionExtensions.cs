@@ -108,12 +108,9 @@ namespace MailKitSimplified.Receiver
                 throw new ArgumentNullException(nameof(configuration));
             var imapSection = configuration.GetRequiredSection(sectionNameImap);
             services.Configure<EmailReceiverOptions>(imapSection);
-            var monitorSection = configuration.GetSection(sectionNameMonitor);
-            services.Configure<FolderMonitorOptions>(monitorSection);
-            var mailboxSection = configuration.GetSection(sectionNameMailbox);
-            services.Configure<MailboxOptions>(mailboxSection);
-            var folderSection = configuration.GetRequiredSection(sectionNameFolder);
-            services.Configure<FolderClientOptions>(folderSection);
+            services.AddOptions<FolderMonitorOptions>(configuration, sectionNameMonitor);
+            services.AddOptions<MailboxOptions>(configuration, sectionNameMailbox);
+            services.AddOptions<FolderClientOptions>(configuration, sectionNameFolder);
             var protocolLoggerSection = imapSection.GetSection(ProtocolLoggerOptions.SectionName);
             services.Configure<ProtocolLoggerOptions>(protocolLoggerSection);
             var fileWriteSection = protocolLoggerSection.GetSection(FileWriterOptions.SectionName);
@@ -150,6 +147,30 @@ namespace MailKitSimplified.Receiver
                 throw new ArgumentNullException(nameof(folderMonitorOptions));
             services.Configure(folderMonitorOptions);
             return services;
+        }
+
+        internal static IServiceCollection AddOptions<T>(this IServiceCollection services, IConfiguration configuration, string sectionName = null, string suffix = "Options") where T : class
+        {
+            var section = configuration.GetOptionsSection<T>(sectionName, suffix);
+            return services.Configure<T>(section);
+        }
+
+        internal static T GetOptions<T>(this IConfiguration configuration, string sectionName = null, string suffix = "Options") where T : class
+        {
+            var section = configuration.GetOptionsSection<T>(sectionName, suffix);
+            return section.Get<T>();
+        }
+
+        private static IConfigurationSection GetOptionsSection<T>(this IConfiguration configuration, string sectionName = null, string suffix = "Options") where T : class
+        {
+            var className = typeof(T).Name;
+            if (sectionName == null)
+            {
+                sectionName = className.EndsWith(suffix) ?
+                    className.Remove(className.LastIndexOf(suffix, StringComparison.OrdinalIgnoreCase)) :
+                    className;
+            }
+            return configuration.GetSection(sectionName);
         }
 
         [Obsolete("This is for development testing only.")]
