@@ -30,7 +30,7 @@ jobs:
       SOLUTION_FILE: 'source/${{ inputs.project-name }}.sln'
 
     outputs:
-      version: ${{ steps.gitversion.outputs.nuGetVersion }}
+      version: ${{ steps.gitversion.outputs.semVer }}
 
     steps:
       # https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
@@ -42,16 +42,16 @@ jobs:
       # https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/setup.md#example-1
       - name: Set up GitVersion
         if: ${{ inputs.environment == 'release' }}
-        uses: gittools/actions/gitversion/setup@v3.2.1
+        uses: gittools/actions/gitversion/setup@v4
         with:
-          versionSpec: '5.x'
+          versionSpec: '6.3.x'
 
       # https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute.md#example-1
       # For a list of all GitVersion Version Variables, see https://gitversion.net/docs/reference/variables
       - name: Use GitVersion to determine version
         if: ${{ inputs.environment == 'release' }}
         id: gitversion # step id used as reference for output values
-        uses: gittools/actions/gitversion/execute@v3.2.1
+        uses: gittools/actions/gitversion/execute@v4
 
       # pwsh> dotnet-gitversion | ConvertFrom-Json
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary
@@ -137,13 +137,13 @@ jobs:
       # Use either GeneratePackageOnBuild or dotnet pack, not both. See https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-pack
       - name: Create NuGet package
         if: ${{ inputs.environment == 'release' }}
-        run: dotnet pack $SOLUTION_FILE -c $CONFIGURATION -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} --output './artifacts/' --no-build
+        run: dotnet pack $SOLUTION_FILE -c $CONFIGURATION -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} --output './artifacts/' --no-build
 
       - name: Markdown workflow job summary
         if: ${{ inputs.environment == 'release' }}
         run: echo '### Packed ${{ env.Package_Names }}' >> $GITHUB_STEP_SUMMARY
         env:
-          Package_Names: '${{ inputs.project-name }}.*.${{ steps.gitversion.outputs.nuGetVersion }}.nupkg'
+          Package_Names: '${{ inputs.project-name }}.*.${{ steps.gitversion.outputs.semVer }}.nupkg'
 
       # https://github.com/actions/upload-artifact
       - name: Upload artifacts for deployment job
