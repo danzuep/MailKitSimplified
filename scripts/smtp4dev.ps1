@@ -8,13 +8,13 @@ if (-not $container) {
     Start-Sleep -Seconds 30
 }
 
-$smtpServer = "localhost"
-$smtpPort = 25
-$from = "sender@example.com"
-$to = "recipient@example.com"
-$subject = "Test Email"
-$body = "This is a test email sent from PowerShell."
+# $smtpServer = "localhost"
+# $smtpPort = 25
+# $from = "sender@example.com"
+# $to = "recipient@example.com"
+# $subject = "Test Email"
+# $body = "This is a test email sent from PowerShell."
 
-Send-MailMessage -From $from -To $to -Subject $subject -Body $body -SmtpServer $smtpServer -Port $smtpPort
+# Send-MailMessage -From $from -To $to -Subject $subject -Body $body -SmtpServer $smtpServer -Port $smtpPort
 
-Write-Host "Email sent successfully."
+# Write-Host "Email sent successfully."

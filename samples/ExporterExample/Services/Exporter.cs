@@ -67,7 +67,7 @@ namespace ExporterExample.Services
         /// <param name="jsonFolderSuffix">JSON folder suffix, null to disable</param>
         public async Task ExportToFileAsync(string mailFolderName, string folderPathExport, string csvFolderSuffix = "-csv", string jsonFolderSuffix = "-json")
         {
-            IEnumerable<IMessageSummary> mimeMessageSummary = await _mailReader.GetMessageSummariesAsync(MessageSummaryItems.Envelope);
+            var mimeMessageSummary = await _mailReader.Items(MessageSummaryItems.Envelope).GetMessageSummariesAsync();
             var emailDtos = mimeMessageSummary.Select(m => m.ToDto());
             ExportFile(emailDtos, mailFolderName, folderPathExport, csvFolderSuffix, jsonFolderSuffix);
         }
