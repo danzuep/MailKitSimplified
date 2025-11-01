@@ -1,5 +1,5 @@
 # syntax = docker/dockerfile:1.2
-ARG NET_IMAGE=6.0-bullseye-slim
+ARG NET_IMAGE=10.0
 
 # Copy everything not in .dockerignore and restore
 FROM mcr.microsoft.com/dotnet/sdk:${NET_IMAGE} AS source

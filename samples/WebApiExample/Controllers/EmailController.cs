@@ -1,8 +1,8 @@
+using Asp.Versioning;
 using MailKit;
-using MimeKit;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using MailKitSimplified.Receiver.Abstractions;
+using Microsoft.AspNetCore.Mvc;
+using MimeKit;
 
 namespace WebApiExample.Controllers
 {
@@ -37,7 +37,8 @@ namespace WebApiExample.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<MimeMessage>> GetMimeMessageAsync([FromRoute] MailKit.UniqueId uniqueId, CancellationToken cancellationToken = default)
         {
-            var ids = await _mailReader.GetMessageSummariesAsync(MessageSummaryItems.UniqueId).ConfigureAwait(false);
+            var ids = await _mailReader.Items(MessageSummaryItems.UniqueId)
+                .GetMessageSummariesAsync().ConfigureAwait(false);
             var matches = ids.Where(m => m.UniqueId == uniqueId);
             var skip = matches.Min(m => m.Index);
             var take = matches.Max(m => m.Index);
