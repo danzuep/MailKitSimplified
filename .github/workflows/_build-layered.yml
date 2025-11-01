@@ -1,0 +1,84 @@
+name: "Build"
+
+on:
+  workflow_call:
+    inputs:
+      projectName:
+        description: 'The name of the project'
+        required: true
+        type: string
+      sourceFolder:
+        description: 'The name of the source directory'
+        default: source
+        type: string
+      environment:
+        description: 'The build environment'
+        default: development
+        type: string
+      configuration:
+        description: 'The build configuration'
+        default: Release
+        type: string
+    outputs:
+      artifact:
+        description: 'Artifact name'
+        value: ${{ jobs.build.outputs.artifact }}
+
+jobs:
+  build:
+    name: Build
+    runs-on: 'alpine-latest'
+    permissions:
+      contents: read
+    env:
+      configuration: ${{ inputs.configuration }}
+      projectFile: '${{ inputs.sourceFolder }}/${{ inputs.projectName }}/${{ inputs.projectName }}.csproj'
+      artifactName: "${{ inputs.sourceFolder }}-build"
+
+    outputs:
+      artifactName: ${{ env.artifactName }}
+      projectFile: ${{ env.projectFile }}
+
+    steps:
+    - name: Download source repository artifact from the previous job
+      id: artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: ${{ inputs.sourceFolder }}
+        path: .
+
+    # https://github.com/actions/setup-dotnet
+    - name: Get .NET externals
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+        dotnet-quality: 'ga'
+  
+    # https://github.com/actions/cache/blob/main/examples.md#c---nuget
+    - name: Get any cached NuGet packages from the last run
+      uses: actions/cache@v3
+      with:
+        path: '~/.nuget/packages'
+        key: nugetpackages-${{ runner.os }}-${{ hashFiles('source/**/*.csproj') }}
+        restore-keys: nugetpackages-${{ runner.os }}
+
+    - name: Restore all project dependencies
+      shell: pwsh
+      run: |
+        Get-ChildItem -Path "./${{ inputs.sourceFolder }}" -Filter "*.csproj" -File -Recurse |
+        Select-Object -ExpandProperty BaseName | ForEach-Object {
+          Write-Output "Restoring ${{ inputs.sourceFolder }}/$_/$_.csproj"
+          dotnet restore "./${{ inputs.sourceFolder }}/$_/$_.csproj"
+        }
+
+    - name: Build main project
+      run: dotnet build $projectFile --configuration $configuration --no-restore
+      
+    # https://github.com/actions/upload-artifact
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.artifactName }}
+        path: .
+        retention-days: 1
+        if-no-files-found: error # or 'ignore', defaults to `warn`

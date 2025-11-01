@@ -1,0 +1,40 @@
+name: 🧬 Version
+run-name: Get version with GitVersion
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - devops
+
+# Cancel any other running workflows with the same ID
+concurrency:
+  group: cd-devops-${{ github.ref }}
+  cancel-in-progress: true
+
+# https://docs.github.com/en/actions/using-workflows/reusing-workflows
+jobs:
+  # version:
+  #   uses: ./.github/workflows/_version.yml
+
+  build:
+    uses: ./.github/workflows/_build-test.yml
+    with:
+      environment: release
+      configuration: Release
+      project-name: MailKitSimplified
+    permissions:
+      contents: read
+    secrets: inherit
+
+  deploy:
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    needs: [ build ]
+    uses: ./.github/workflows/_deploy-nuget.yml
+    with:
+      project-name: MailKitSimplified
+      version: ${{ needs.build.outputs.version }}
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit

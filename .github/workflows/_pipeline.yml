@@ -20,6 +20,8 @@ jobs:
       environment: ${{ inputs.environment }}
       project-name: ${{ inputs.project-name }}
       configuration: Release
+    permissions:
+      contents: read
     secrets: inherit
 
   deploy:
@@ -30,4 +32,7 @@ jobs:
       environment: ${{ inputs.environment }}
       project-name: ${{ inputs.project-name }}
       version: ${{ needs.build.outputs.version }}
+    permissions:
+      contents: read
+      packages: write
     secrets: inherit

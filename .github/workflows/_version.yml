@@ -1,0 +1,51 @@
+on:
+  workflow_call:
+    outputs:
+      semVer:
+        description: 'GitVersion semantic version'
+        value: ${{ jobs.version.outputs.semVer }}
+
+jobs:
+  version:
+    name: GitVersion
+    runs-on: ubuntu-latest
+
+    outputs:
+      semVer: ${{ steps.gitversion.outputs.SemVer }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup GitVersion
+        uses: gittools/actions/gitversion/setup@v4
+        with:
+          versionSpec: '6.3.x'
+
+      - name: Run GitVersion
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v4
+
+      - name: Markdown workflow job summary and write version artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '### ${{ env.workflowVersion }} build summary' >> $GITHUB_STEP_SUMMARY
+          echo "Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "Branch: ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
+          echo 'Commit Date: ${{ steps.gitversion.outputs.commitDate }}' >> $GITHUB_STEP_SUMMARY
+          echo 'Full Semantic Version: ${{ steps.gitversion.outputs.fullSemVer }}' >> $GITHUB_STEP_SUMMARY
+          cat > version.txt <<'JSON'
+          ${{ toJson(steps.gitversion.outputs) }}
+          JSON
+        env:
+          workflowVersion: '${{ github.repository }} version ${{ steps.gitversion.outputs.semVer }}'
+
+      - name: Upload version artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: version
+          path: version.txt
+          retention-days: 1
