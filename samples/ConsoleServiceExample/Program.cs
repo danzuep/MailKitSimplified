@@ -6,8 +6,9 @@ using MailKitSimplified.Sender.Services;
 using MailKitSimplified.Receiver.Models;
 using MailKitSimplified.Receiver.Services;
 using MailKitSimplified.Receiver.Extensions;
+using ConsoleServiceExample;
 
-using var loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Trace).AddDebug().AddConsole()); //.AddSimpleConsole(o => { o.IncludeScopes = true; o.TimestampFormat = "HH:mm:ss.f "; })
+using var loggerFactory = DefaultLogger.Factory;
 var logger = loggerFactory.CreateLogger<Program>();
 
 var cts = new CancellationTokenSource();

@@ -18,8 +18,8 @@
 <PropertyGroup>
 </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="MailKitSimplified.Sender" Version="2.11.16" />
-    <PackageReference Include="MailKitSimplified.Receiver" Version="2.11.16" />
+    <PackageReference Include="MailKitSimplified.Sender" Version="2.12.0" />
+    <PackageReference Include="MailKitSimplified.Receiver" Version="2.12.0" />
     <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.4.0" />
     <PackageReference Include="CommunityToolkit.Common" Version="8.4.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
