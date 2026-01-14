@@ -43,7 +43,7 @@ namespace ExporterExample.Services
             if (useDebugLogger)
             {
                 var loggerFactory = LoggerFactory.Create(_ => _.SetMinimumLevel(LogLevel.Debug).AddDebug().AddConsole());
-                using var imapReceiver = ImapReceiver.Create("imap.example.com", 0, "U5ern@me", "P@55w0rd", null, "INBOX");
+                using var imapReceiver = ImapReceiver.Create("imap.example.com", 0, "U5ern@me", "P@55w0rd", mailFolderName: "INBOX");
                 //var mailFolderClient = new MailFolderClient(imapReceiver, loggerFactory.CreateLogger<MailFolderClient>());
                 var mailReader = new MailFolderReader(imapReceiver, loggerFactory.CreateLogger<MailFolderReader>());
                 var exporter = new Exporter(mailReader, loggerFactory.CreateLogger<Exporter>());
@@ -60,7 +60,6 @@ namespace ExporterExample.Services
         /// <summary>
         /// Export emails to CSV or JSON.
         /// </summary>
-        /// <param name="mimeMessageSummary">Email to export</param>
         /// <param name="mailFolderName">Export file path</param>
         /// <param name="folderPathExport">Export file path</param>
         /// <param name="csvFolderSuffix">CSV folder suffix, null to disable</param>
