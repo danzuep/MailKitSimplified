@@ -35,7 +35,7 @@ jobs:
     steps:
       # https://github.com/actions/download-artifact/blob/main/docs/MIGRATION.md
       - name: Download artifact from build job
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: ${{ inputs.project-name }}
           path: .
