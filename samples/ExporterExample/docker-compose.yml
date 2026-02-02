@@ -1,0 +1,38 @@
+# https://github.com/elastic/elasticsearch/blob/main/docs/reference/setup/install/docker/docker-compose.yml
+version: "3.9"
+
+services:
+  elasticsearch:
+    # image: docker.elastic.co/elasticsearch/elasticsearch
+    image: elastic/elasticsearch:9.2.4
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=changeme
+      - ES_LOGS_CLUSTER_NAME=my-dev-cluster
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+  otel-collector:
+    # image: docker.elastic.co/opentelemetry/otel-collector
+    image: elastic/elastic-agent:9.2.4
+    container_name: otel-collector
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTIC_OTLP_ENDPOINT=${ELASTIC_OTLP_ENDPOINT}
+      - ELASTIC_API_KEY=${ELASTIC_API_KEY}
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - ./collector-config.yml:/etc/otel-collector-config/collector-config.yml:ro
+    command:
+      - "--config=/etc/otel-collector-config/collector-config.yml"
+
+volumes:
+  esdata:
+    driver: local

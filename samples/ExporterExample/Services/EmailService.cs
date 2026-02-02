@@ -1,10 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using MailKitSimplified.Receiver.Abstractions;
 using MailKitSimplified.Sender.Abstractions;
+using ExporterExample.Abstractions;
 
 namespace ExampleNamespace;
 
-public class EmailService
+public class EmailService : IEmailService
 {
     private readonly ILogger<EmailService> _logger;
     private readonly ISmtpSender _smtpSender;
