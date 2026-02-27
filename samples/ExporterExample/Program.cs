@@ -1,94 +1,31 @@
 ﻿using ExampleNamespace;
 using ExporterExample.Abstractions;
+using ExporterExample.Extensions;
 using MailKitSimplified.Receiver;
 using MailKitSimplified.Sender;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Serilog;
-using Serilog.Sinks.OpenTelemetry;
 
 namespace ExporterExample
 {
-    public class Program
+    public static class Program
     {
-        static async Task Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            var configuration = GetConfiguration(args);
-
-            Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(configuration)
-                .CreateLogger();
-            Log.Information("Starting host...");
-
-            try
-            {
-                using var host = BuildHost(args, configuration);
-                await host.RunAsync();
-                //var config = configuration.Get<ConsoleOptions>();
-                //if (!string.IsNullOrEmpty(config?.MailFolderName) && !string.IsNullOrEmpty(config.ExportFolderPath))
-                //{
-                //    await Exporter.Create(useDebugLogger: true).ExportToFileAsync(config.MailFolderName, config.ExportFolderPath);
-                //}
-                Log.Information("Stopping host...");
-            }
-            catch (Exception ex)
-            {
-                Log.Fatal(ex, "Host unexpectedly terminated.");
-                throw;
-            }
-            finally
-            {
-                await Log.CloseAndFlushAsync();
-            }
+            var loggerConfiguration = new ConfigurationBuilder()
+                .GetLoggerConfiguration();
+            await Host.CreateDefaultBuilder(args)
+                .BuildAndRunHostAsync(loggerConfiguration, builder =>
+                    builder.ConfigureHost(loggerConfiguration));
         }
 
-        private static IHost BuildHost(string[] args, IConfigurationRoot configurationRoot)
+        private static IConfigurationRoot GetLoggerConfiguration(this IConfigurationBuilder builder, string fileName = "appsettings.serilog.json")
         {
-            return Host.CreateDefaultBuilder(args)
-                .ConfigureAppConfiguration((context, configuration) =>
-                {
-                    configuration.AddEnvironmentVariables(prefix: "OTEL_");
-                    configuration.AddConfiguration(configurationRoot);
-                })
-                .ConfigureServices((context, services) =>
-                {
-                    services.AddTransient<IEmailService, EmailService>();
-                    services.AddHostedService<EmailBackgroundService>();
-                    services.AddMailKitSimplifiedEmailSender(context.Configuration);
-                    services.AddMailKitSimplifiedEmailReceiver(context.Configuration);
-                    services.ConfigureOpenTelemetry(context.Configuration, context.HostingEnvironment);
-                })
-                .UseSerilog((context, configuration) =>
-                {
-                    var serviceName = context.Configuration.GetValue(
-                        OpenTelemetryExtensions.OtelServiceNameKey,
-                        context.HostingEnvironment.ApplicationName);
-                    configuration.ReadFrom.Configuration(configurationRoot)
-                        .Enrich.WithProperty("Application", serviceName)
-                        .WriteTo.OpenTelemetry(options =>
-                        {
-                            var otlpEndpoint = context.Configuration.GetValue<string>(
-                                OpenTelemetryExtensions.OtelEndpointKey);
-                            if (!string.IsNullOrEmpty(otlpEndpoint))
-                            {
-                                options.Endpoint = otlpEndpoint;
-                                options.Protocol = OtlpProtocol.Grpc;
-                                options.ResourceAttributes = new Dictionary<string, object>
-                                {
-                                    ["deployment.environment"] = context.HostingEnvironment.EnvironmentName,
-                                    ["service.name"] = context.HostingEnvironment.ApplicationName,
-                                    ["service.namespace"] = nameof(ExporterExample),
-                                    ["service.instance.id"] = Environment.MachineName
-                                };
-                            }
-                        });
-                })
-                .Build();
+            return builder.GetConfiguration(builder => builder.AddJsonFile(fileName));
         }
 
-        private static IConfigurationRoot GetConfiguration(string[] args)
+        private static IHostBuilder ConfigureHost(this IHostBuilder builder, IConfiguration configurationRoot)
         {
             var switchMappings = new Dictionary<string, string>()
             {
@@ -97,10 +34,30 @@ namespace ExporterExample
                 { "--ExportFolderPath", "ExportFolderPath" },
                 { "-e", "ExportFolderPath" },
             };
-            var builder = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.serilog.json")
-                .AddCommandLine(args, switchMappings);
-            return builder.Build();
+            builder.InvokeConfiguration(configurationRoot, builder =>
+                    builder.AddCommandLine(cli => cli.SwitchMappings = switchMappings))
+                .ConfigureSerilog(configurationRoot)
+                .ConfigureServices(Invoke);
+            return builder;
+        }
+
+        private static void Invoke(HostBuilderContext context, IServiceCollection services)
+        {
+            services.AddTransient<IEmailService, EmailService>();
+            services.AddHostedService<EmailBackgroundService>();
+            services.AddMailKitSimplifiedEmailSender(context.Configuration);
+            services.AddMailKitSimplifiedEmailReceiver(context.Configuration);
+            services.ConfigureOpenTelemetry(context.Configuration, context.HostingEnvironment);
+        }
+
+        private static IHostBuilder InvokeConfiguration(this IHostBuilder builder, IConfiguration configurationRoot, Action<IConfigurationBuilder>? configure = null)
+        {
+            return builder.ConfigureAppConfiguration((context, configuration) =>
+            {
+                configuration.AddEnvironmentVariables(prefix: "OTEL_");
+                configuration.AddConfiguration(configurationRoot);
+                configure?.Invoke(configuration);
+            });
         }
     }
 }
