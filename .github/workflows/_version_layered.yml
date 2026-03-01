@@ -55,14 +55,14 @@ jobs:
 
     # https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/setup/usage-examples.md#example-1
     - name: Set up GitVersion
-      uses: gittools/actions/gitversion/setup@v0
+      uses: gittools/actions/gitversion/setup@v4
       with:
         versionSpec: '5.x'
 
     # https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute/usage-examples.md#example-5
     - name: Use GitVersion to determine version
       id: gitversion # e.g. steps.gitversion.outputs.<outputName>
-      uses: gittools/actions/gitversion/execute@v0
+      uses: gittools/actions/gitversion/execute@v4
 
     # For a list of all GitVersion Version Variables, see https://gitversion.net/docs/reference/variables
     - run: |
