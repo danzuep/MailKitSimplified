@@ -6,8 +6,7 @@
     <Description>Easy, fluent way to send emails with MailKit.</Description>
     <PackageTags>SMTP; MailKit; email; sender; send; simply; easily; simple; easy; fluent; C#; .NET</PackageTags>
     <PackageReleaseNotes>
-      2.9.0 .NET 8.0 Target Framework added
-      2.5.0 Reuse existing ISmtpClient
+      2.13.0 Bump MimeKit minimum version to 4.15.1
       2.3.0 Forwarding and replies
       0.1.3 First version of SmtpSender
     </PackageReleaseNotes>

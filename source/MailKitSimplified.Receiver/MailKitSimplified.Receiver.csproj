@@ -6,10 +6,8 @@
     <Description>Easy, fluent way to receive, forward, and reply to emails with MailKit.</Description>
     <PackageTags>IMAP; MailKit; email; receiver; receive; forward; reply; simply; easily; simple; easy; fluent; C#; .NET</PackageTags>
     <PackageReleaseNotes>
-      2.9.0 .NET 8.0 Target Framework added
+      2.13.0 Bump MimeKit minimum version to 4.15.1
       2.7.0 Non-fluent usages marked obsolete
-      2.5.0 Reuse existing IImapClient
-      2.4.0 MailReader Query
       2.0.0 MailFolderMonitor IdleClient
       1.1.0 ImapReceiver and MailReader
     </PackageReleaseNotes>

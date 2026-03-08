@@ -32,7 +32,7 @@ namespace EmailWpfApp.ViewModels
 #if DEBUG
             FromTextBox = "from@localhost";
             ToTextBox = "to@localhost";
-            MessageTextBox = "<p>Hi.<p>";
+            MessageTextBox = "<p>Hi.</p>";
             SubjectTextBox = "1";
 #endif
         }
