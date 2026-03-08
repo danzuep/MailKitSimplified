@@ -110,7 +110,8 @@ namespace MailKitSimplified.Sender.Tests
         [Fact(Skip = "MailKit doesn't allow us to use System.IO.Abstractions.")]
         public async Task SaveTemplateAsync_VerifySavedAsync()
         {
-            await _testEmail.SaveTemplateAsync(_templateEmailPath);
+            var ct = TestContext.Current.CancellationToken;
+            await _testEmail.SaveTemplateAsync(_templateEmailPath, ct);
             using var stream = File.OpenRead(_templateEmailPath);
             Assert.NotNull(stream);
             Assert.True(stream.Length > _basicEmail.Length);
