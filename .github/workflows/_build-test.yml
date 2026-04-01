@@ -67,7 +67,7 @@ jobs:
 
       # https://github.com/actions/setup-dotnet
       - name: Get .NET externals
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
 
       # https://github.com/actions/cache/blob/main/examples.md#c---nuget
       - name: Get any cached NuGet packages from the last run
