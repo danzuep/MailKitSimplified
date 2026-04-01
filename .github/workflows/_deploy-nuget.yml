@@ -42,7 +42,7 @@ jobs:
           merge-multiple: true
 
       - name: Get .NET externals
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
 
       - name: List files in the folder
         run: find . -name "*.nupkg" -type f -exec echo {} \;
