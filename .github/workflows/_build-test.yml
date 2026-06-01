@@ -98,7 +98,7 @@ jobs:
 
       # https://github.com/actions/upload-artifact
       - name: Upload code coverage summary report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: code-coverage-report
           path: '.coverage/report/summary.html'
@@ -148,7 +148,7 @@ jobs:
       # https://github.com/actions/upload-artifact
       - name: Upload artifacts for deployment job
         if: ${{ inputs.environment == 'release' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.project-name }}
           path: './artifacts/*.nupkg'
