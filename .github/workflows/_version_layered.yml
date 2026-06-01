@@ -81,7 +81,7 @@ jobs:
 
     # https://github.com/actions/upload-artifact
     - name: Upload version artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.sourceFolder }}
         path: |
