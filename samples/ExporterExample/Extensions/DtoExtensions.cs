@@ -8,7 +8,10 @@ namespace ExporterExample.Extensions
     {
         public static IEmailDto ToDto(this IMessageSummary messageSummary)
         {
-            var envelope = messageSummary.Envelope;
+            if (messageSummary.Envelope is not Envelope envelope)
+            {
+                return new EmailDto();
+            }
             var emailDto = new EmailDto
             {
                 Date = envelope.Date,
@@ -16,8 +19,8 @@ namespace ExporterExample.Extensions
                 To = envelope.To.Mailboxes.Select(m => m.ToString()),
                 Cc = envelope.Cc.Mailboxes.Select(m => m.ToString()),
                 Bcc = envelope.Bcc.Mailboxes.Select(m => m.ToString()),
-                MessageId = envelope.MessageId,
-                Subject = envelope.Subject
+                MessageId = envelope.MessageId ?? string.Empty,
+                Subject = envelope.Subject ?? string.Empty
             };
             return emailDto;
         }

@@ -1,15 +1,15 @@
 ﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.Input;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
-using MailKitSimplified.Receiver.Abstractions;
+using CommunityToolkit.Mvvm.Input;
 using EmailWpfApp.Extensions;
 using EmailWpfApp.Models;
-using EmailWpfApp.Data;
+using MailKitSimplified.Receiver.Abstractions;
 
 namespace EmailWpfApp.ViewModels
 {
@@ -30,13 +30,11 @@ namespace EmailWpfApp.ViewModels
         private int _count = 0;
         private static readonly string _inbox = "INBOX";
         private readonly IMailFolderReader _mailFolderReader;
-        //private readonly EmailDbContext _dbContext;
 
         public ReceiverViewModel() : base()
         {
             _mailFolderReader = Ioc.Default.GetRequiredService<IMailFolderReader>();
             GetFoldersTask = new Lazy<Task>(GetFoldersAsync);
-            //_dbContext = Ioc.Default.GetRequiredService<EmailDbContext>();
             StatusText = string.Empty;
         }
 
@@ -51,25 +49,28 @@ namespace EmailWpfApp.ViewModels
                     ViewModelItems = new ObservableCollection<string>(mailFolderNames);
                 UpdateStatusText(string.Empty);
             }
-            //else if (_dbContext != null)
-            //{
-            //    var emails = _dbContext.Emails.AsEnumerable();
-            //    var collection = new ObservableCollection<Email>(emails);
-            //    ViewModelDataGrid = collection;
-            //}
             IsInProgress = false;
         }
 
         private void StoreEmails(IEnumerable<Email> emails)
         {
-            //try
-            //{
-            //    _dbContext?.Emails.UpdateRange(emails);
-            //}
-            //catch (Exception ex)
-            //{
-            //    ShowAndLogWarning(ex);
-            //}
+            // TODO
+        }
+
+        private readonly SemaphoreSlim _imapSemaphore = new SemaphoreSlim(1, 1);
+
+        private async Task<T> WithImapAsync<T>(Func<Task<T>> action)
+        {
+            await _imapSemaphore.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                await GetFoldersTask.Value.ConfigureAwait(false);
+                return await action().ConfigureAwait(false);
+            }
+            finally
+            {
+                _imapSemaphore.Release();
+            }
         }
 
         [RelayCommand]
@@ -79,9 +80,8 @@ namespace EmailWpfApp.ViewModels
             {
                 StatusText = "Getting email...";
                 IsInProgress = true;
-                var getFoldersTask = GetFoldersTask.Value;
-                var mimeMessages = await _mailFolderReader
-                    .Take(1, continuous: true).GetMimeMessagesAsync();
+                var mimeMessages = await WithImapAsync(() =>
+                    _mailFolderReader.Take(1, continuous: true).GetMimeMessagesAsync());
                 var emails = mimeMessages.Convert();
                 var count = 0;
                 foreach (var email in emails)
@@ -95,7 +95,6 @@ namespace EmailWpfApp.ViewModels
                     StoreEmails(ViewModelDataGrid.AsEnumerable());
                 else
                     StatusText = "No more emails in this folder.";
-                await getFoldersTask.ConfigureAwait(false);
             }
             catch (Exception ex)
             {

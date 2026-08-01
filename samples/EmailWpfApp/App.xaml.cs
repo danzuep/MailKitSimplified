@@ -1,9 +1,7 @@
 ﻿using System.Windows;
 using CommunityToolkit.Mvvm.DependencyInjection;
-using EmailWpfApp.Data;
 using EmailWpfApp.Extensions;
 using EmailWpfApp.ViewModels;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -27,8 +25,8 @@ public partial class App : Application
                     .AddSingleton<ReceiverViewModel>()
                     .AddSingleton<FolderMonitorViewModel>()
                     .ConfigureServices(context.Configuration);
-                services.AddDbContext<EmailDbContext>(options =>
-                    options.UseSqlite("Data Source=Email.db"));
+                //services.AddDbContext<EmailDbContext>(options =>
+                //    options.UseSqlite("Data Source=Email.db"));
             })
             .Build();
         Ioc.Default.ConfigureServices(_host.Services);

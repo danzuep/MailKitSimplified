@@ -62,7 +62,7 @@ namespace ExporterExample.Extensions
             });
         }
 
-        public static IConfigurationRoot GetConfiguration(this IConfigurationBuilder builder, Action<IConfigurationBuilder> configure = null)
+        public static IConfigurationRoot GetConfiguration(this IConfigurationBuilder builder, Action<IConfigurationBuilder>? configure = null)
         {
             configure?.Invoke(builder);
             return builder.Build();
