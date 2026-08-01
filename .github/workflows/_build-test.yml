@@ -35,7 +35,7 @@ jobs:
     steps:
       # https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
       - name: Fetch all tags and branches for GitVersion
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -67,7 +67,7 @@ jobs:
 
       # https://github.com/actions/setup-dotnet
       - name: Get .NET externals
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
 
       # https://github.com/actions/cache/blob/main/examples.md#c---nuget
       - name: Get any cached NuGet packages from the last run
