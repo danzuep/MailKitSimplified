@@ -8,11 +8,11 @@
     <Project Path="samples/WorkerServiceExample/WorkerServiceExample.csproj" />
   </Folder>
   <Folder Name="/source/">
-    <Project Path="../../MailKitSimplified.Receiver/MailKitSimplified.Receiver.csproj" />
-    <Project Path="../../MailKitSimplified.Sender/MailKitSimplified.Sender.csproj" />
+    <Project Path="source/MailKitSimplified.Sender/MailKitSimplified.Sender.csproj" />
+    <Project Path="source/MailKitSimplified.Receiver/MailKitSimplified.Receiver.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="../../../tests/MailKitSimplified.Receiver.Tests/MailKitSimplified.Receiver.Tests.csproj" />
-    <Project Path="../../../tests/MailKitSimplified.Sender.Tests/MailKitSimplified.Sender.Tests.csproj" />
+    <Project Path="tests/MailKitSimplified.Receiver.Tests/MailKitSimplified.Receiver.Tests.csproj" />
+    <Project Path="tests/MailKitSimplified.Sender.Tests/MailKitSimplified.Sender.Tests.csproj" />
   </Folder>
 </Solution>

@@ -5,7 +5,7 @@ using Asp.Versioning.ApiExplorer;
 using MailKitSimplified.Receiver;
 using MailKitSimplified.Sender;
 using Microsoft.AspNetCore.HttpLogging;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using WebApiExample.Helpers;
 
 namespace WebApiExample
@@ -55,12 +55,12 @@ namespace WebApiExample
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen(options =>
             {
-                //options.SwaggerDoc(apiVersion, new OpenApiInfo
-                //{
-                //    Title = apiTitle,
-                //    Description = apiDescription,
-                //    Version = apiVersion
-                //});
+                options.SwaggerDoc(apiVersion, new OpenApiInfo
+                {
+                    Title = apiTitle,
+                    Description = apiDescription,
+                    Version = apiVersion
+                });
                 // Common OpenAPI metadata (if you want to add more per-version info, see below)
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
