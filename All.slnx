@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/ConsoleServiceExample/ConsoleServiceExample.csproj" />
+    <Project Path="samples/EmailWpfApp/EmailWpfApp.csproj" />
+    <Project Path="samples/ExporterExample/ExporterExample.csproj" />
+    <Project Path="samples/MonitorMultipleMailFolders/MonitorMultipleMailFolders.csproj" />
+    <Project Path="samples/WebApiExample/WebApiExample.csproj" />
+    <Project Path="samples/WorkerServiceExample/WorkerServiceExample.csproj" />
+  </Folder>
+  <Folder Name="/source/">
+    <Project Path="../../MailKitSimplified.Receiver/MailKitSimplified.Receiver.csproj" />
+    <Project Path="../../MailKitSimplified.Sender/MailKitSimplified.Sender.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="../../../tests/MailKitSimplified.Receiver.Tests/MailKitSimplified.Receiver.Tests.csproj" />
+    <Project Path="../../../tests/MailKitSimplified.Sender.Tests/MailKitSimplified.Sender.Tests.csproj" />
+  </Folder>
+</Solution>
