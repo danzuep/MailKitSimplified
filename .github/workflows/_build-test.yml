@@ -86,7 +86,7 @@ jobs:
       # The xUnit test project template already integrates with coverlet.collector by default
       # Don't use the '--logger trx' option as it causes duplicate folders and xml files to be created
       - name: Test all projects in the solution
-        run: dotnet test $SOLUTION_FILE -c $CONFIGURATION --verbosity minimal --collect:'XPlat Code Coverage' --results-directory './.coverage' --no-build
+        run: dotnet test $SOLUTION_FILE -c $CONFIGURATION --verbosity minimal --coverage --coverage-output './coverage.cobertura.xml' --coverage-output-format cobertura --no-build
         
       # https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-tool-install#description
       - name: Install Report Generator global tool
@@ -94,7 +94,7 @@ jobs:
 
       # https://github.com/danielpalme/ReportGenerator
       - name: Merge all test project Code Coverage results into one report
-        run: reportgenerator -reports:'.coverage/**/coverage.cobertura.xml' -targetdir:'.coverage/report' -reporttypes:'Cobertura;HtmlSummary' # SonarQube
+        run: reportgenerator -reports:'TestResults/coverage.cobertura.xml' -targetdir:'.coverage/report' -reporttypes:'Cobertura;HtmlSummary' # SonarQube
 
       # https://github.com/actions/upload-artifact
       - name: Upload code coverage summary report artifact
