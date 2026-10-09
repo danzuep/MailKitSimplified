@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using MailKitSimplified.Generic.Abstractions;
 
 namespace MailKitSimplified.Generic.Models
@@ -20,8 +19,7 @@ namespace MailKitSimplified.Generic.Models
         public IList<IGenericEmailContact> Cc { get; set; } = new List<IGenericEmailContact>();
 
         public IList<IGenericEmailContact> Bcc { get; set; } = new List<IGenericEmailContact>();
-        
-        [NotMapped]
+
         public IDictionary<string, object> Attachments { get; set; } = new Dictionary<string, object>();
 
         public IEnumerable<string> AttachmentFilePaths => Attachments.Where(a => a.Value == null).Select(a => a.Key);

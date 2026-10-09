@@ -10,16 +10,16 @@ namespace MailKitSimplified.Generic.Models
 {
     public class GenericEmailContact : IGenericEmailContact
     {
-        public string Name { get; set; }
+        public string Name { get; init; }
 
         [Required(ErrorMessage = "Email address is required")]
         [DataType(DataType.EmailAddress)]
-        public string EmailAddress { get; set; }
+        public string EmailAddress { get; init; }
 
         private static readonly char[] _emailReplace = new char[] { '_', '.', '-' };
         private static readonly char[] _emailSeparator = new char[] { ';', ',', ' ', '&', '|' };
 
-        private GenericEmailContact(string emailAddress, string name = null)
+        public GenericEmailContact(string emailAddress, string name = null)
         {
             EmailAddress = emailAddress ?? throw new ArgumentNullException(nameof(emailAddress));
             bool hasNoName = string.IsNullOrWhiteSpace(name) ||

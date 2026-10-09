@@ -117,7 +117,6 @@ namespace MailKitSimplified.Generic.Services
         private static IGenericEmailContact CopyContact(IGenericEmailContact contact)
         {
             var copy = GenericEmailContact.Create(contact.EmailAddress, contact.Name);
-            copy.Name = contact.Name;
             return copy;
         }
     }
