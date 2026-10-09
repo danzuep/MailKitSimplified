@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MailKitSimplified.Generic.Abstractions;
 using MailKitSimplified.Generic.Services;
 using MailKitSimplified.Generic.Models;
+using MailKitSimplified.Email.Extensions;
 
 namespace MailKitSimplified.Email.Services
 {
@@ -120,8 +121,8 @@ namespace MailKitSimplified.Email.Services
 
         public async Task SendAsync(IGenericEmail email, CancellationToken cancellationToken = default)
         {
-            var mimeMessage = ConvertToMimeMessage(email);
-            await _smtpClient.SendAsync(mimeMessage, cancellationToken).ConfigureAwait(false);
+            using (var mimeMessage = await email.ToMimeMessageAsync(cancellationToken).ConfigureAwait(false))
+                await _smtpClient.SendAsync(mimeMessage, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<bool> TrySendAsync(IGenericEmail email, CancellationToken cancellationToken = default)
