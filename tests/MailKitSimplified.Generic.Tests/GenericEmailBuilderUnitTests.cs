@@ -9,6 +9,18 @@ namespace MailKitSimplified.Generic.Tests
     public class GenericEmailBuilderUnitTests
     {
         [Fact]
+        public void Builder_UsesCanonicalModelForAllResults()
+        {
+            var builder = new GenericEmailBuilder().Body("Hello");
+
+            Assert.IsType<GenericEmail>(builder.AsEmail);
+            Assert.IsType<GenericEmail>(builder.Build());
+            Assert.IsType<GenericEmail>(builder.Copy().AsEmail);
+            Assert.Equal(typeof(GenericEmail), typeof(GenericEmailBuilder).GetMethod(nameof(GenericEmailBuilder.Build))!.ReturnType);
+            Assert.Null(typeof(GenericEmail).Assembly.GetType("MailKitSimplified.Generic.Services.GenericEmail"));
+        }
+
+        [Fact]
         public void Copy_Changes_DoNotMutateOriginal()
         {
             var original = new GenericEmailBuilder()
@@ -122,7 +134,7 @@ namespace MailKitSimplified.Generic.Tests
         }
 
         [Fact]
-        public void ModelFacade_AttachmentsShareCanonicalStorage()
+        public void Model_AttachmentsShareInterfaceStorage()
         {
             var model = new Models.GenericEmail();
             GenericEmail canonical = model;
