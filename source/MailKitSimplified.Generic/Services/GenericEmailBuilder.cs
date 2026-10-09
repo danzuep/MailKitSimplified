@@ -1,4 +1,6 @@
-﻿using MailKitSimplified.Generic.Abstractions;
+﻿using System.Collections.Generic;
+using System.Linq;
+using MailKitSimplified.Generic.Abstractions;
 using MailKitSimplified.Generic.Models;
 
 namespace MailKitSimplified.Generic.Services
@@ -78,6 +80,45 @@ namespace MailKitSimplified.Generic.Services
             return this;
         }
 
-        public GenericEmailBuilder Copy() => MemberwiseClone() as GenericEmailBuilder;
+        /// <summary>
+        /// Builds a detached snapshot without performing I/O.
+        /// </summary>
+        /// <remarks>
+        /// Contacts, collections, and byte arrays are copied. Other attachment
+        /// values, including streams, remain caller-owned references.
+        /// </remarks>
+        /// <returns>A mutable email independent of subsequent builder changes.</returns>
+        public GenericEmail Build() => new GenericEmail
+        {
+            Headers = new Dictionary<string, string>(_email.Headers),
+            From = _email.From.Select(CopyContact).ToList(),
+            ReplyTo = _email.ReplyTo.Select(CopyContact).ToList(),
+            To = _email.To.Select(CopyContact).ToList(),
+            Cc = _email.Cc.Select(CopyContact).ToList(),
+            Bcc = _email.Bcc.Select(CopyContact).ToList(),
+            Attachments = _email.Attachments.ToDictionary(
+                attachment => attachment.Key,
+                attachment => attachment.Value is byte[] bytes ? bytes.Clone() : attachment.Value),
+            Subject = _email.Subject,
+            BodyText = _email.BodyText,
+            BodyHtml = _email.BodyHtml
+        };
+
+        /// <summary>
+        /// Copies the builder using the same attachment ownership rules as <see cref="Build"/>.
+        /// </summary>
+        /// <returns>A builder with independent email state.</returns>
+        public GenericEmailBuilder Copy() => new GenericEmailBuilder
+        {
+            _email = Build(),
+            _defaultFrom = _defaultFrom == null ? null : CopyContact(_defaultFrom)
+        };
+
+        private static IGenericEmailContact CopyContact(IGenericEmailContact contact)
+        {
+            var copy = GenericEmailContact.Create(contact.EmailAddress, contact.Name);
+            copy.Name = contact.Name;
+            return copy;
+        }
     }
 }

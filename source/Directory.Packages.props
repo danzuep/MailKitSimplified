@@ -4,6 +4,12 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="CommunityToolkit.Common" Version="8.4.2" />
+    <PackageVersion Include="CommunityToolkit.Diagnostics" Version="8.4.2" />
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageVersion Include="MailKitSimplified.Generic" Version="2.0.0" />
+    <PackageVersion Include="MailKitSimplified.Sender" Version="2.14.3" />
+    <PackageVersion Include="MailKitSimplified.Receiver" Version="2.14.3" />
     <PackageVersion Include="MailKit" Version="4.18.1" />
     <PackageVersion Include="MimeKit" Version="4.18.1" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.12" />
@@ -12,6 +18,8 @@
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.12" />
     <PackageVersion Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageVersion Include="System.IO.Abstractions" Version="22.3.0" />
