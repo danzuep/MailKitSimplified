@@ -138,6 +138,71 @@ namespace MailKitSimplified.Generic.Tests
             Assert.Single(model.AttachmentFileNames);
         }
 
+        [Fact]
+        public void Compose_ReusableDefaultsAndPerMessageFields_BuildIndependentEmails()
+        {
+            Action<GenericEmailBuilder> defaults = email => email
+                .From("sender@example.com")
+                .Header("X-Campaign", "welcome")
+                .Body("Welcome", "<p>Welcome</p>");
+
+            var template = new GenericEmailBuilder().Compose(defaults);
+            var first = template.Copy().To("first@example.com").Subject("First").Build();
+            var second = template.Copy().To("second@example.com").Subject("Second").Build();
+
+            Assert.Equal("first@example.com", Assert.Single(first.To).EmailAddress);
+            Assert.Equal("second@example.com", Assert.Single(second.To).EmailAddress);
+            Assert.Empty(template.AsEmail.To);
+            Assert.Equal("welcome", first.Headers["X-Campaign"]);
+            Assert.Equal("Welcome", first.BodyText);
+            Assert.Equal("<p>Welcome</p>", first.BodyHtml);
+            Assert.IsType<MultipartContainerNode>(first.Body);
+        }
+
+        [Fact]
+        public void Body_ComposedPartsAndTypedAttachments_ArePreservedWithoutIO()
+        {
+            var calls = 0;
+            var attachment = new EmailAttachment("note.txt", cancellationToken =>
+            {
+                calls++;
+                return Task.FromResult<Stream>(new MemoryStream());
+            }, "text/plain");
+            var body = new MultipartContainerNode(MultipartKind.Alternative, new BodyNode[]
+            {
+                new TextBodyNode("Original"), new HtmlBodyNode("<p>Original</p>")
+            });
+            var builder = new GenericEmailBuilder().Body(body).Attach(attachment);
+
+            var snapshot = builder.Build();
+            builder.BodyText("Changed");
+
+            Assert.Same(body, snapshot.Body);
+            Assert.Equal("Original", snapshot.BodyText);
+            Assert.Equal("Changed", builder.AsEmail.BodyText);
+            Assert.Equal("<p>Original</p>", builder.AsEmail.BodyHtml);
+            Assert.Same(attachment, snapshot.Attachments["note.txt"]);
+            Assert.Equal(0, calls);
+        }
+
+        [Fact]
+        public void BodyLegacySetters_PreserveAlternativesAndInlineResources()
+        {
+            var image = new AttachmentNode(EmailAttachment.FromBytes("image.png", new byte[] { 1 }, "image/png", "image-id", true));
+            var related = new MultipartContainerNode(MultipartKind.Related, new BodyNode[]
+            {
+                new HtmlBodyNode("<img src='cid:image-id'>"), image
+            });
+            var email = new GenericEmailBuilder().Body(related).BodyText("Plain").BodyHtml("<p>Updated</p>").Build();
+
+            var alternative = Assert.IsType<MultipartContainerNode>(email.Body);
+            var updatedRelated = Assert.IsType<MultipartContainerNode>(alternative.Children[1]);
+            Assert.Equal(MultipartKind.Alternative, alternative.Kind);
+            Assert.Equal("Plain", email.BodyText);
+            Assert.Equal("<p>Updated</p>", email.BodyHtml);
+            Assert.Same(image, updatedRelated.Children[1]);
+        }
+
         private static IList<IGenericEmailContact> GetRecipients(GenericEmail email, string collectionName) =>
             collectionName switch
             {

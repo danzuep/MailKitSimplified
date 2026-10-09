@@ -1,5 +1,9 @@
 # Fluent Mail Architecture and Implementation Plan
 
+## Current Focus
+
+Prioritize usable fluent, composable email. Do not expand this phase into immutable envelope redesign, ordered header nodes, HTML sanitization, or general rewriting. AST code is not part of the fluent/send path; further work on it is deferred to phase 7.
+
 ## Executive Architectural Blueprint
 
 Make `MailKitSimplified.Generic` the dependency-free domain layer and `MailKitSimplified.Email` the composition and provider-integration layer. Represent content with one authoritative Email AST, keeping delivery-envelope recipients separate from rendered headers. Typed nodes support `IEmailVisitor` double-dispatch; C# pattern matching supports structural validation and immutable transformations. An email AST models message structure, not HTML syntax: HTML sanitization requires a dedicated parser outside the domain.
@@ -31,18 +35,20 @@ Status recorded on 2026-10-09. Checked boxes mean implemented and verified, not 
 
 ### Phase 2: Generic Domain, Options and Email AST
 
-- [ ] Define immutable BCL-only `GenericEmail`, `EmailAddress`, and typed `EmailAttachment` contracts; preserve envelope recipients separately from ordered headers.
+- [x] Consolidate the generic email implementation, preserve dictionary headers and existing contacts, and add typed `EmailAttachment` contracts for core composition.
 - [x] Add `IEmailAstNode`, `HeaderNode`, abstract `BodyNode`, `TextBodyNode`, `HtmlBodyNode`, `AttachmentNode`, and `MultipartContainerNode` with explicit mixed/alternative/related semantics.
 - [x] Implement typed `IEmailVisitor` double-dispatch through `Accept()` and deterministic traversal; use C# switch expressions and positional/property patterns for inspection.
-- [ ] Add immutable transformation visitors, link rewrite/security policies, and layout checks; reject header injection and bound depth/size. Delegate HTML parsing/sanitization to infrastructure.
+- [x] Add bounded structural validation for composed multipart bodies. General transformations, HTML policies, and richer inspections are deferred to phase 7.
 - [ ] Introduce a binding-friendly `GenericSmtpOptions` record with neutral TLS/authentication settings; use infrastructure `IValidateOptions<T>`, redact secrets, and accommodate `IsExternalInit` on `netstandard2.0`.
 
 ### Phase 3: Fluent Builder and Provider Mapping
 
-- [ ] Add validated `Build()`, AST-aware `Body()`, and typed `Attach()` while retaining compatibility adapters for existing methods and `AsEmail`.
+- [x] Add `Compose()`, `Body(text, html)`, `Body(BodyNode)`, and typed `Attach()`; preserve independent `Build()` snapshots and existing `AsEmail`/body methods.
+- [ ] Complete core input validation for envelope/header fields without replacing dictionary headers or mutable snapshots.
 - [x] Replace shallow `MemberwiseClone()` with independent builder state; test contacts, every recipient collection, headers, and byte-array attachments.
-- [ ] Extract `MimeKitAstVisitor` and `ToMimeMessage()` from the sender; map nested multipart content, encoding, content IDs, ordered headers, and envelope recipients without serializing Bcc.
-- [x] Define replayable attachment factories and stream ownership; defer file access to cancellable asynchronous materialization rather than `Build()` (descriptor API complete; builder/provider integration remains).
+- [x] Add `ToMimeMessageAsync()` for composed bodies, dictionary headers, typed/legacy attachments, encoding, content IDs, cancellation, and message ownership; use it from the sender.
+- [ ] Verify Bcc envelope/wire behavior and migrate remaining synchronous legacy conversion callers before retiring the old converter.
+- [x] Define replayable attachment factories and stream ownership; defer file access to cancellable MIME materialization rather than `Build()`.
 - [ ] Add a concrete cloud adapter with capability checks; expose host-style provider configuration and explicit terminal `SendAsync()`/`EnqueueAsync()` execution.
 
 ### Phase 4: High-Performance Connection Pooling
@@ -71,6 +77,7 @@ Status recorded on 2026-10-09. Checked boxes mean implemented and verified, not 
 
 ### Phase 7: DI, Tests and Documentation
 
+- [ ] Revisit `EmailAstRewriter`, link rewriting, HTML sanitization, richer inspections, and optional immutable address/envelope/header contracts after the core sending workflow is complete.
 - [ ] Add host/service registration for providers, configuration binding, `ValidateOnStart()`, pools/queues, decorators, and hosted workers.
 - [ ] Add xUnit tests for AST traversal/pattern matching, MIME/cloud mapping, snapshot isolation, replay/disposal, TLS options, and domain dependency boundaries.
 - [ ] Add deterministic race tests for `Interlocked.Exchange`, exclusive leasing, limits, cancellation, retries, shutdown, and Channel draining/backpressure.
@@ -80,11 +87,11 @@ Status recorded on 2026-10-09. Checked boxes mean implemented and verified, not 
 ## Ordered Route to the End of Phase 3
 
 1. Establish builder isolation first. Add `Build()` and independent `Copy()` without changing `AsEmail` or performing I/O. Test mutable contacts and byte arrays; explicitly retain borrowed stream semantics until typed attachments replace them.
-2. Resolve the dual `GenericEmail` types through a compatibility facade rather than removing a public class. Introduce immutable addresses, ordered headers, typed attachment descriptors, and one authoritative content tree. Keep old setters as adapters, not a second content store.
+2. Resolve the dual `GenericEmail` types through a compatibility facade rather than removing a public class. Keep existing contacts and dictionary headers; use one composed body tree with legacy text/HTML setters as adapters.
 3. Define replayable attachment sources (bytes and fresh-stream factories), ownership, file-path behavior, MIME metadata, and cancellation. Reject unsupported arbitrary objects in the new typed API while isolating legacy handling.
-4. Implement AST nodes and visitors. Add mixed/alternative/related composition, structural validation, immutable rewrites, and depth/size limits. Test traversal and structure before provider integration.
+4. Implement mixed/alternative/related body composition and basic structural validation. Defer general immutable rewrites and content policies; keep the current phase focused on fluent construction and sending.
 5. Remove domain infrastructure dependencies and migrate SMTP options to a binding-friendly record. Keep IConfiguration binding, validation, logging, filesystem access, and provider types in integration assemblies. Build both domain TFMs.
-6. Teach the builder to construct the canonical AST using `Body()` and typed `Attach()`. Make the new build path validated and immutable; test independence, compatibility, deferred file access, and malformed inputs.
+6. Teach the builder fluent reusable composition using `Compose()`, `Body()`, and typed `Attach()`. Preserve mutable snapshots while sharing immutable body nodes; test independence, compatibility, and deferred file access.
 7. Extract MIME conversion into an adapter/visitor. Use project references to the local Generic/Sender/Receiver implementations rather than published packages when validating local changes. Preserve sender connection/authentication behavior while replacing only mapping.
 8. Test MIME structure, attachment ownership, header injection, Bcc envelope behavior, repeated sends, and cancellation. Handle separate SMTP envelope arguments when Bcc is absent from serialized headers.
 9. Implement one cloud mapping adapter with explicit unsupported-feature checks and contract tests. Choose the cloud provider before adding its SDK/package or transport implementation.
@@ -93,7 +100,7 @@ Status recorded on 2026-10-09. Checked boxes mean implemented and verified, not 
 ### Acceptance Gates
 
 - [ ] Generic has no external package dependencies; its public model/AST does not reference MimeKit or MailKit.
-- [ ] AST is the authoritative content representation; build snapshots are independent, validated, and immutable on the new API.
+- [x] A single body tree backs text/HTML accessors; build snapshots remain independent and mutable, sharing immutable body nodes.
 - [ ] Typed attachment materialization is replayable, cancellation-aware, ownership-safe, and deferred until execution.
 - [ ] MIME and one cloud adapter preserve supported semantics and reject unsupported features explicitly.
 - [ ] Existing fluent APIs retain documented compatibility; focused tests and both core framework builds pass.
@@ -102,12 +109,12 @@ Status recorded on 2026-10-09. Checked boxes mean implemented and verified, not 
 
 - [x] Initial increment: detached `Build()` and independent `Copy()`, tested through the Generic xUnit project.
 - [x] Repair Generic's central package management mismatch and inherit `netstandard2.0;net10.0` from source build props; retain existing package versions.
-- [x] Consolidate duplicate mutable email implementations: `Models.GenericEmail` is a compatibility facade over `Services.GenericEmail`, with shared attachment storage and its existing persistence annotation.
+- [x] Consolidate duplicate mutable email implementations: `Models.GenericEmail` owns state; `Services.GenericEmail` is a compatibility wrapper.
 - [x] Add immutable `EmailAttachment` metadata with copied bytes, deferred file access, fresh-stream factories, cancellation, and explicit consumer ownership.
 - [x] Add immutable AST nodes, typed visitor dispatch, ordered `EmailAstWalker`, and bounded `EmailAstValidator`.
-- [x] Add `EmailAstRewriter` using C# pattern matching, preserving unchanged nodes and validating transformed trees without opening attachments.
-- [ ] Follow-up: canonical domain model and typed attachment ownership.
-- [ ] Follow-up: AST/visitor implementation and validated immutable builder.
+- [x] Add `EmailAstRewriter` using C# pattern matching (historical increment; further work deferred to phase 7 and not used by the fluent/send path).
+- [x] Add fluent reusable composition and connect composed bodies/typed attachments to asynchronous MIME materialization and sender execution.
+- [ ] Follow-up: core envelope/header validation and end-to-end send tests, without redesigning headers or making emails immutable.
 - [ ] Follow-up: MIME/cloud adapters, host-style integration, and phase 3 acceptance gates.
 
 ### Decisions
@@ -115,7 +122,8 @@ Status recorded on 2026-10-09. Checked boxes mean implemented and verified, not 
 - Preserve existing public APIs by adding new contracts and compatibility adapters rather than an immediate breaking replacement.
 - Keep legacy stream/arbitrary-object attachment references borrowed in initial snapshots; do not promise replayability or transfer ownership implicitly.
 - Cloud-provider selection is pending; no cloud SDK is introduced in the first increment.
-- `Services.GenericEmail` now owns the legacy mutable implementation; `Models.GenericEmail` forwards to it. Neither public name is removed. Immutable address/envelope contracts and authoritative AST integration remain outstanding.
+- `Models.GenericEmail` owns the mutable implementation; `Services.GenericEmail` forwards to it. Neither public name is removed. `BodyText`/`BodyHtml` read the first matching body representation and replace matching representations when set, preserving surrounding multipart structure.
+- Headers remain `IDictionary<string, string>`. Immutable envelope/address redesign and ordered headers are not prerequisites for this phase.
 - Typed attachment factories must return a fresh readable stream on every call and transfer ownership to the consumer. The descriptor disposes returned streams if validation/cancellation fails before ownership transfer.
 - Byte attachments snapshot content immediately. File attachments pin an absolute path without opening it; the file must remain available and unchanged for stable replay. Arbitrary stream factories are replayable by contract, not guaranteed by the library.
 
@@ -135,6 +143,32 @@ Status recorded on 2026-10-09. Checked boxes mean implemented and verified, not 
 - `EmailAstValidator` checks text character counts, not encoded MIME byte size or attachment size. HTML sanitization/link policies and provider payload limits remain integration work.
 - The AST and typed attachments are standalone domain contracts at this stage. Do not pass `EmailAttachment` through the legacy `Attach(string, object)` overload: the existing MIME mapper does not understand it yet.
 - Next implementation slice: immutable address/envelope contracts and an authoritative AST build path, followed by a MIME adapter with attachment ownership/cancellation tests. Existing `Build()`/`AsEmail` remain legacy mutable APIs.
+
+### Verified Fluent and MIME Increment
+
+- Generic tests: 43 passed. Email MIME integration tests: 6 passed.
+- Generic and Email build successfully for both `netstandard2.0` and `net10.0`.
+- `Compose(Action<GenericEmailBuilder>)` supports reusable fluent configuration. `Body(text, html)` creates alternatives; `Body(BodyNode)` accepts explicit multipart content. `Attach(EmailAttachment)` remains deferred until MIME conversion.
+- `Build()` copies mutable email state and shares immutable body nodes/descriptors. Legacy text/HTML setters update the body tree while preserving inline resources.
+- `ToMimeMessageAsync()` maps specialized MimeKit alternative/related containers, typed and legacy attachments, and content IDs. Callers dispose returned messages; owned attachment streams are released with the message or on conversion failure. Legacy streams remain caller-owned.
+- The sender now uses async conversion with cancellation and disposes the resulting payload after sending. Email references the local Generic project so the fluent additions are available.
+- Dictionary headers are unchanged. Advanced rewriting and immutable envelope redesign are deferred, not expanded in this increment. The earlier standalone-AST warning is superseded: typed attachments now work in the async fluent/send path.
+
+```csharp
+Action<GenericEmailBuilder> defaults = email => email
+	.From("sender@example.com")
+	.Header("X-Campaign", "welcome")
+	.Body("Welcome", "<p>Welcome</p>");
+
+var email = new GenericEmailBuilder()
+	.Compose(defaults)
+	.To("recipient@example.com")
+	.Subject("Hello")
+	.Attach(EmailAttachment.FromBytes("note.txt", new byte[] { 72, 105 }, "text/plain"))
+	.Build();
+
+using var message = await email.ToMimeMessageAsync(cancellationToken);
+```
 
 #### Domain Construction Example
 

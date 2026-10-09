@@ -16,6 +16,7 @@
   <Folder Name="/tests/">
     <File Path="tests/e2e-tests.cs" />
     <File Path="tests/README.md" />
+    <Project Path="tests/MailKitSimplified.Email.Tests/MailKitSimplified.Email.Tests.csproj" />
     <Project Path="tests/MailKitSimplified.Generic.Tests/MailKitSimplified.Generic.Tests.csproj" />
     <Project Path="tests/MailKitSimplified.Receiver.Tests/MailKitSimplified.Receiver.Tests.csproj" />
     <Project Path="tests/MailKitSimplified.Sender.Tests/MailKitSimplified.Sender.Tests.csproj" />

@@ -38,9 +38,12 @@
     <PackageReference Include="CommunityToolkit.Common" />
     <PackageReference Include="CommunityToolkit.Diagnostics" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
-    <PackageReference Include="MailKitSimplified.Generic" />
     <PackageReference Include="MailKitSimplified.Sender" />
     <PackageReference Include="MailKitSimplified.Receiver" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../MailKitSimplified.Generic/MailKitSimplified.Generic.csproj" />
   </ItemGroup>
 
 </Project>

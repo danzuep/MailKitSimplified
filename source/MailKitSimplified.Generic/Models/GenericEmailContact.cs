@@ -1,25 +1,23 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Logging;
+using System.Linq;
 using MailKitSimplified.Generic.Abstractions;
 
 namespace MailKitSimplified.Generic.Models
 {
     public class GenericEmailContact : IGenericEmailContact
     {
-        public string Name { get; init; }
+        public string Name { get; set; }
 
         [Required(ErrorMessage = "Email address is required")]
         [DataType(DataType.EmailAddress)]
-        public string EmailAddress { get; init; }
+        public string EmailAddress { get; set; }
 
         private static readonly char[] _emailReplace = new char[] { '_', '.', '-' };
         private static readonly char[] _emailSeparator = new char[] { ';', ',', ' ', '&', '|' };
 
-        public GenericEmailContact(string emailAddress, string name = null)
+        private GenericEmailContact(string emailAddress, string name = null)
         {
             EmailAddress = emailAddress ?? throw new ArgumentNullException(nameof(emailAddress));
             bool hasNoName = string.IsNullOrWhiteSpace(name) ||
