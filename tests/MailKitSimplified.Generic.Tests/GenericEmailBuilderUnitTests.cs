@@ -2,7 +2,7 @@ using MailKitSimplified.Generic.Abstractions;
 using MailKitSimplified.Generic.Models;
 using MailKitSimplified.Generic.Services;
 using Xunit;
-using GenericEmail = MailKitSimplified.Generic.Services.GenericEmail;
+using GenericEmail = MailKitSimplified.Generic.Models.GenericEmail;
 
 namespace MailKitSimplified.Generic.Tests
 {
@@ -119,6 +119,23 @@ namespace MailKitSimplified.Generic.Tests
             Assert.Equal("Sender", original.AsEmail.From[0].Name);
             Assert.Equal("recipient@example.com", original.AsEmail.To[0].EmailAddress);
             Assert.Equal(new byte[] { 1 }, Assert.IsType<byte[]>(original.AsEmail.Attachments["bytes.bin"]));
+        }
+
+        [Fact]
+        public void ModelFacade_AttachmentsShareCanonicalStorage()
+        {
+            var model = new Models.GenericEmail();
+            GenericEmail canonical = model;
+            IGenericEmail contract = model;
+            var attachments = new Dictionary<string, object> { { "first.txt", new byte[] { 1 } } };
+
+            model.Attachments = attachments;
+            Assert.Same(attachments, canonical.Attachments);
+            Assert.Same(attachments, contract.Attachments);
+            canonical.Attachments = new Dictionary<string, object> { { "second.txt", null! } };
+
+            Assert.Same(canonical.Attachments, model.Attachments);
+            Assert.Single(model.AttachmentFileNames);
         }
 
         private static IList<IGenericEmailContact> GetRecipients(GenericEmail email, string collectionName) =>

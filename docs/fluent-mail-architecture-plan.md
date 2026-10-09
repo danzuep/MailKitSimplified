@@ -32,8 +32,8 @@ Status recorded on 2026-10-09. Checked boxes mean implemented and verified, not 
 ### Phase 2: Generic Domain, Options and Email AST
 
 - [ ] Define immutable BCL-only `GenericEmail`, `EmailAddress`, and typed `EmailAttachment` contracts; preserve envelope recipients separately from ordered headers.
-- [ ] Add `IEmailAstNode`, `HeaderNode`, abstract `BodyNode`, `TextBodyNode`, `HtmlBodyNode`, `AttachmentNode`, and `MultipartContainerNode` with explicit mixed/alternative/related semantics.
-- [ ] Implement typed `IEmailVisitor` double-dispatch through `Accept()` and deterministic traversal; use C# switch expressions and positional/property patterns for inspection.
+- [x] Add `IEmailAstNode`, `HeaderNode`, abstract `BodyNode`, `TextBodyNode`, `HtmlBodyNode`, `AttachmentNode`, and `MultipartContainerNode` with explicit mixed/alternative/related semantics.
+- [x] Implement typed `IEmailVisitor` double-dispatch through `Accept()` and deterministic traversal; use C# switch expressions and positional/property patterns for inspection.
 - [ ] Add immutable transformation visitors, link rewrite/security policies, and layout checks; reject header injection and bound depth/size. Delegate HTML parsing/sanitization to infrastructure.
 - [ ] Introduce a binding-friendly `GenericSmtpOptions` record with neutral TLS/authentication settings; use infrastructure `IValidateOptions<T>`, redact secrets, and accommodate `IsExternalInit` on `netstandard2.0`.
 
@@ -42,7 +42,7 @@ Status recorded on 2026-10-09. Checked boxes mean implemented and verified, not 
 - [ ] Add validated `Build()`, AST-aware `Body()`, and typed `Attach()` while retaining compatibility adapters for existing methods and `AsEmail`.
 - [x] Replace shallow `MemberwiseClone()` with independent builder state; test contacts, every recipient collection, headers, and byte-array attachments.
 - [ ] Extract `MimeKitAstVisitor` and `ToMimeMessage()` from the sender; map nested multipart content, encoding, content IDs, ordered headers, and envelope recipients without serializing Bcc.
-- [ ] Define replayable attachment factories and stream ownership; defer file access to cancellable asynchronous materialization rather than `Build()`.
+- [x] Define replayable attachment factories and stream ownership; defer file access to cancellable asynchronous materialization rather than `Build()` (descriptor API complete; builder/provider integration remains).
 - [ ] Add a concrete cloud adapter with capability checks; expose host-style provider configuration and explicit terminal `SendAsync()`/`EnqueueAsync()` execution.
 
 ### Phase 4: High-Performance Connection Pooling
@@ -102,6 +102,10 @@ Status recorded on 2026-10-09. Checked boxes mean implemented and verified, not 
 
 - [x] Initial increment: detached `Build()` and independent `Copy()`, tested through the Generic xUnit project.
 - [x] Repair Generic's central package management mismatch and inherit `netstandard2.0;net10.0` from source build props; retain existing package versions.
+- [x] Consolidate duplicate mutable email implementations: `Models.GenericEmail` is a compatibility facade over `Services.GenericEmail`, with shared attachment storage and its existing persistence annotation.
+- [x] Add immutable `EmailAttachment` metadata with copied bytes, deferred file access, fresh-stream factories, cancellation, and explicit consumer ownership.
+- [x] Add immutable AST nodes, typed visitor dispatch, ordered `EmailAstWalker`, and bounded `EmailAstValidator`.
+- [x] Add `EmailAstRewriter` using C# pattern matching, preserving unchanged nodes and validating transformed trees without opening attachments.
 - [ ] Follow-up: canonical domain model and typed attachment ownership.
 - [ ] Follow-up: AST/visitor implementation and validated immutable builder.
 - [ ] Follow-up: MIME/cloud adapters, host-style integration, and phase 3 acceptance gates.
@@ -111,6 +115,9 @@ Status recorded on 2026-10-09. Checked boxes mean implemented and verified, not 
 - Preserve existing public APIs by adding new contracts and compatibility adapters rather than an immediate breaking replacement.
 - Keep legacy stream/arbitrary-object attachment references borrowed in initial snapshots; do not promise replayability or transfer ownership implicitly.
 - Cloud-provider selection is pending; no cloud SDK is introduced in the first increment.
+- `Services.GenericEmail` now owns the legacy mutable implementation; `Models.GenericEmail` forwards to it. Neither public name is removed. Immutable address/envelope contracts and authoritative AST integration remain outstanding.
+- Typed attachment factories must return a fresh readable stream on every call and transfer ownership to the consumer. The descriptor disposes returned streams if validation/cancellation fails before ownership transfer.
+- Byte attachments snapshot content immediately. File attachments pin an absolute path without opening it; the file must remain available and unchanged for stable replay. Arbitrary stream factories are replayable by contract, not guaranteed by the library.
 
 ### Verified Initial Increment
 
@@ -119,3 +126,30 @@ Status recorded on 2026-10-09. Checked boxes mean implemented and verified, not 
 - The main solution already includes the Generic test project. Existing Sender/Receiver test projects were not changed or rerun.
 - `Build()` copies legacy state without validation or I/O; mutable results and borrowed stream/object attachments are transitional behavior, not completion of phase 2 or phase 3.
 - Phase 1 was not reimplemented wholesale. Email's framework/package declarations, SDK pinning, and legacy test adapters remain follow-ups from the starting baseline.
+
+### Verified Attachment and AST Increment
+
+- `dotnet test --project tests/MailKitSimplified.Generic.Tests/MailKitSimplified.Generic.Tests.csproj`: 40 passed, 0 failed, 0 skipped on `net10.0`.
+- `dotnet build source/MailKitSimplified.Generic/MailKitSimplified.Generic.csproj --no-restore -p:GeneratePackageOnBuild=false`: passed for `netstandard2.0` and `net10.0`.
+- Tests cover legacy facade storage, attachment snapshot isolation, deferred opening, factory cancellation/cleanup, header injection rejection, immutable multipart children, visitor order, positional patterns, depth/node/text limits, multipart rules, and immutable rewrites.
+- `EmailAstValidator` checks text character counts, not encoded MIME byte size or attachment size. HTML sanitization/link policies and provider payload limits remain integration work.
+- The AST and typed attachments are standalone domain contracts at this stage. Do not pass `EmailAttachment` through the legacy `Attach(string, object)` overload: the existing MIME mapper does not understand it yet.
+- Next implementation slice: immutable address/envelope contracts and an authoritative AST build path, followed by a MIME adapter with attachment ownership/cancellation tests. Existing `Build()`/`AsEmail` remain legacy mutable APIs.
+
+#### Domain Construction Example
+
+```csharp
+var content = new MultipartContainerNode(MultipartKind.Mixed, new BodyNode[]
+{
+	new MultipartContainerNode(MultipartKind.Alternative, new BodyNode[]
+	{
+		new TextBodyNode("Hello"),
+		new HtmlBodyNode("<p>Hello</p>")
+	}),
+	new AttachmentNode(EmailAttachment.FromBytes("note.txt", new byte[] { 72, 105 }, "text/plain"))
+});
+
+EmailAstValidator.Validate(content);
+// Visit with an EmailAstWalker subclass or transform with an EmailAstRewriter subclass.
+// This constructs domain content only; it does not send or enqueue email.
+```
