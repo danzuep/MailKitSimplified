@@ -1,0 +1,98 @@
+## Installation [![NuGet](https://img.shields.io/nuget/v/MailKitSimplified.Sender.svg)](https://nuget.org/packages/MailKitSimplified.Sender) [![Downloads](https://img.shields.io/nuget/dt/MailKitSimplified.Sender.svg?style=flat-square)](https://www.nuget.org/packages/MailKitSimplified.Sender)
+
+Package Manager Console: > `Install-Package MailKitSimplified.Sender # -Version x.x.x`
+
+.NET CLI Console: > `dotnet add package MailKitSimplified.Sender # --version x.x.x`
+
+## Setup
+
+Sending emails can be as simple as one line of code if you specify SMTP options in `appsettings.json`, read how to do that in the [dependency injection wiki](https://github.com/danzuep/MailKitSimplified/wiki/Dependency-Injection#sender).
+
+```csharp
+await _writeEmail.To("test@localhost").SendAsync();
+```
+
+If you're not familiar with dependency injection then you can specify how to connect to the SMTP host like this:
+
+```csharp
+using var smtpSender = SmtpSender.Create("smtp.example.com:587")
+    .SetCredential("U5ern@m3", "P455w0rd");
+```
+
+An email sender must have a SMTP host address, leaving out the port number will normally choose the right port automatically (e.g. 25 or 587). If you're sending email from inside a company network then you shouldn't need to specify a credential. Use SetProtocolLog("console") if you want to see all the client and server messages on the terminal, or SetProtocolLog("Logs/SmtpClient.txt") if you want them saved.
+
+## Sending Mail
+
+```csharp
+await smtpSender.WriteEmail
+    .From("my.name@example.com")
+    .To("YourName@example.com")
+    .Subject("Hello World")
+    .Attach("appsettings.json")
+    .SendAsync();
+```
+
+Using the method above will pass exceptions up to the next layer, but if you just want to log exceptions then continue with a "false" output that can also be done using the "try" prefix:
+
+```csharp
+bool isSent = await smtpSender.WriteEmail
+    .From("me@example.com", "My Name")
+    .To("you@example.com", "Your Name")
+    .Cc("friend@example.com")
+    .Bcc("admin@localhost")
+    .Subject($"Hello at {DateTime.Now}!")
+    .BodyText("Optional text/plain content.")
+    .BodyHtml("Optional text/html content.<br/>")
+    .TryAttach("C:/Temp/attachment1.txt", @"C:\Temp\attachment2.pdf")
+    .TrySendAsync();
+
+_logger.LogInformation("Email {result}.", isSent ? "sent" : "failed to send");
+```
+
+Further examples (how to set up MailKit SMTP server logs etc.) can be found in the [samples](https://github.com/danzuep/MailKitSimplified/tree/main/samples) and [tests](https://github.com/danzuep/MailKitSimplified/tree/main/tests/MailKitSimplified.Sender.Tests) folders on [GitHub](https://github.com/danzuep/MailKitSimplified).
+
+## Templates
+
+You can load any MimeMessage email and use it as a template.
+
+Here's two different ways of sending the same email template to three different people:
+
+```cs
+var template = smtpSender.WriteEmail
+    .From("from@example.com")
+    .Subject("Hello World")
+    .SaveTemplate();
+await template.To("person1@example.com").SendAsync();
+await template.To("person2@example.com").SendAsync();
+//await template.SaveTemplateAsync(emlFilePath);
+```
+
+If you have an existing email you want to download and use you can do this:
+
+```cs
+var writer = await smtpSender.WithTemplateAsync(emlFilePath);
+await writer.To("person3@example.com").SendAsync();
+```
+
+The way to download a template can be found in the [receiver section](https://github.com/danzuep/MailKitSimplified/wiki/Receiver#download-mimemessage).
+
+## Custom Authentication
+
+You can use [OAuth2.0](http://www.mimekit.net/docs/html/T_MailKit_Security_SaslMechanismOAuth2.htm) or other Simple Authentication and Security Layer (SASL) mechanisms for [Exchange](https://github.com/jstedfast/MailKit/blob/master/ExchangeOAuth2.md) and [Gmail](https://github.com/jstedfast/MailKit/blob/master/GMailOAuth2.md) etc.
+
+```cs
+using var smtpSender = SmtpSender.Create("smtp.example.com:587")
+    .SetCustomAuthentication(async (client) => await client.AuthenticateAsync(oauth2));
+```
+
+Sometimes it's easier just to disable OAuth2.0 for testing.
+
+```cs
+using var smtpSender = SmtpSender.Create("localhost:25")
+    .RemoveAuthenticationMechanism("XOAUTH2");
+```
+
+## See Also
+ * [MailKitSimplified wiki homepage](https://github.com/danzuep/MailKitSimplified/wiki/Home)
+ * [MailKitSimplified.Receiver wiki](https://github.com/danzuep/MailKitSimplified/wiki/Receiver)
+ * [SMTP test environment](https://github.com/rnwood/smtp4dev)

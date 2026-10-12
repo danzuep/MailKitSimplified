@@ -1,0 +1,192 @@
+## Installation [![NuGet](https://img.shields.io/nuget/v/MailKitSimplified.Receiver.svg)](https://nuget.org/packages/MailKitSimplified.Receiver) [![Downloads](https://img.shields.io/nuget/dt/MailKitSimplified.Receiver.svg?style=flat-square)](https://www.nuget.org/packages/MailKitSimplified.Receiver)
+
+Package Manager Console: > `Install-Package MailKitSimplified.Receiver # -Version x.x.x`
+
+.NET CLI Console: > `dotnet add package MailKitSimplified.Receiver # --version x.x.x`
+
+Example:
+```ps
+cd ./MailKitSimplified/samples/ConsoleServiceExample
+dotnet add package MailKitSimplified.Receiver --version 2.7.0
+../MailKitSimplified.ConsoleServiceExample.sln
+```
+
+## Setup
+
+Receiving emails can be as simple as one line of code if you specify IMAP options in `appsettings.json`, read how to do that in the [dependency injection wiki](https://github.com/danzuep/MailKitSimplified/wiki/Dependency-Injection#receiver).
+
+```csharp
+var mimeMessages = await _readMail.GetMimeMessagesAsync();
+```
+
+If you're not familiar with dependency injection then you can specify how to connect to the IMAP host like this:
+
+```csharp
+using var imapReceiver = ImapReceiver.Create("imap.example.com:993")
+    .SetCredential("user@example.com", "App1icati0nP455w0rd")
+    .SetProtocolLog("Logs/ImapClient.txt")
+    .SetFolder("INBOX/My Subfolder", FolderAccess.ReadOnly);
+```
+
+An email receiver must have a IMAP host address and a network credential, leaving out the port number will normally choose the right port automatically (e.g. 143 or 993). Use SetProtocolLog("console") to quickly debug with detailed logging to the console.
+
+## Receiving Mail
+
+To download full emails with attachments and everything: 
+
+```csharp
+var mimeMessages = await imapReceiver.ReadMail
+    .Skip(0).Take(250, continuous: true)
+    .GetMimeMessagesAsync();
+```
+
+The Skip() and Take() methods are optional, but they allow you to specify a range of messages instead of potentially downloading thousands of emails, something that could take a very long time. You should always use a CancellationToken, especially if you don't set Take to a small number.
+
+To query the SMTP server and get the top 250 emails:
+
+```csharp
+var mimeMessages = await imapReceiver.ReadMail
+    .Query(SearchQuery.All)
+    .GetMimeMessagesAsync();
+```
+
+To just download the email parts you want to use for all results:
+
+```csharp
+var messageSummaries = await imapReceiver.ReadFrom("INBOX")
+    .ItemsForMimeMessages()
+    .GetMessageSummariesAsync();
+```
+
+UniqueId is always included in the summary. Other useful [MessageSummaryItems](http://www.mimekit.net/docs/html/T_MailKit_MessageSummaryItems.htm) to know about are Size, InternalDate, Envelope, and BodyStructure.
+
+If you want a specific email ID or a range of IDs you can use the Range method (batch example shown below):
+```csharp
+var reader = imapReceiver.ReadMail.Range(UniqueId.MinValue, batchSize);
+IList<IMessageSummary> messageSummaries;
+do
+{
+    messageSummaries = await reader.Items(filter)
+        .GetMessageSummariesAsync(cancellationToken);
+    foreach (var messageSummary in messageSummaries)
+    {
+        await ProcessMessage(messageSummary, cancellationToken);
+    }
+}
+while (messageSummaries.Count > 0);
+```
+
+Further examples (how to set up MailKit IMAP server logs etc.) can be found in the [samples](https://github.com/danzuep/MailKitSimplified/tree/main/samples) and [tests](https://github.com/danzuep/MailKitSimplified/tree/main/tests/MailKitSimplified.Receiver.Tests) folders on [GitHub](https://github.com/danzuep/MailKitSimplified).
+
+## Mail Folder Idle Monitor
+
+To asynchronously monitor the mail folder for incoming messages:
+
+```csharp
+await new MailFolderMonitor(imapReceiver).SetMessageSummaryItems(MessageSummaryItems.Envelope)
+    .SetIgnoreExistingMailOnConnect(true).SetIdleMinutes(29).SetMaxRetries(1)
+    .OnMessageArrival(OnArrivalAsync)
+    .OnMessageDeparture(OnDepartureAsync)
+    .OnMessageFlagsChanged(OnFlagsChangedAsync)
+    .IdleAsync();
+```
+
+The values shown above are the default method override values, the de-facto FolderMonitorOptions are UniqueId, false, 9, and 3 respectively. If you're happy with the latter then using MailFolderMonitor is even easier:
+
+```csharp
+await imapReceiver.MonitorFolder.OnMessageArrival(ForwardMessageAsync).IdleAsync();
+```
+
+One line of code instead of [251](https://github.com/jstedfast/MailKit/blob/master/Documentation/Examples/ImapIdleExample.cs)! It never used to be that easy.
+
+## Message Flags
+
+[Here's how to mark all incoming messages as Seen](https://github.com/jstedfast/MailKit#setting-message-flags-in-imap):
+```csharp
+await imapReceiver.MonitorFolder
+	.OnMessageArrival((messageSummary) => messageSummary.AddFlagsAsync(MessageFlags.Seen))
+	.IdleAsync(); //cancellationToken
+```
+Adding flags to a message summary now also checks to make sure the folder is open and writeable.
+
+[Here's how to delete the first 250 Seen messages in the Inbox](https://github.com/jstedfast/MailKit#deleting-messages-in-imap):
+```csharp
+var messageSummaries = await imapReceiver.ReadMail.Query(SearchQuery.Seen).GetMessageSummariesAsync();
+await imapReceiver.MailFolderClient.DeleteMessagesAsync(messageSummaries); //cancellationToken
+```
+If there's a delete flag then it calls the Expunge method internally.
+
+## Forwarding Emails
+
+Here's how to forward an email and add it to the Sent Mail folder:
+
+```csharp
+async Task ForwardMessageAsync(IMessageSummary messageSummary)
+{
+    var mimeForward = await messageSummary.GetForwardMessageAsync(
+        "<p>FYI.</p>", includeMessageId: true);
+    mimeForward.From.Add("from@example.com");
+    mimeForward.To.Add("to@example.com");
+    _logger.LogInformation($"Reply: \r\n{mimeForward.HtmlBody}");
+    await _smtpSender.SendAsync(mimeForward); //cancellationToken
+    await _imapReceiver.MailFolderClient.SentFolder.AppendAsync(mimeForward);
+}
+```
+
+## Replying To Emails
+
+Here's how to download only the newest email and reply to it:
+
+```csharp
+var mimeMessages = await _imapReceiver.ReadMail.Top(1).GetMimeMessagesAsync();
+var mimeReply = mimeMessages.Single()
+    .GetReplyMessage("<p>Reply here.</p>", addRecipients: true)
+    .From("noreply@example.com");
+```
+
+To only download the email parts you want to use:
+
+```csharp
+var messageSummaries = await imapReceiver.ReadMail.Top(1)
+    .Items(MessageSummaryItems.All)
+    .GetMessageSummariesAsync();
+var mimeReply = await messageSummaries.Single()
+    .GetReplyMessageAsync("<p>Reply here.</p>");
+mimeReply.From.Add(new MailboxAddress("", "from@localhost"));
+mimeReply.To.Add(new MailboxAddress("", "to@localhost"));
+```
+
+One line of code instead of [238](https://github.com/jstedfast/MimeKit/blob/master/FAQ.md#q-how-do-i-reply-to-a-message)! It never used to be that easy.
+
+## Download MimeMessage
+
+You can easily save any email and use it again later as a template.
+
+```cs
+var mimeMessage = await messageSummary.GetMimeMessageAsync(cancellationToken);
+string downloadFilePath = Path.GetFullPath(filePath);
+await MimeMessageReader.Create(mimeMessage).SetLogger(_loggerFactory)
+    .SaveAsync(downloadFilePath, false, cancellationToken);
+```
+
+## Custom Authentication
+
+You can use [OAuth2.0](http://www.mimekit.net/docs/html/T_MailKit_Security_SaslMechanismOAuth2.htm) or other Simple Authentication and Security Layer (SASL) mechanisms for [Exchange](https://github.com/jstedfast/MailKit/blob/master/ExchangeOAuth2.md) and [Gmail](https://github.com/jstedfast/MailKit/blob/master/GMailOAuth2.md) etc.
+
+```cs
+using var imapReceiver = ImapReceiver.Create("outlook.office365.com")
+    .SetPort(993, SecureSocketOptions.SslOnConnect).SetLogger()
+    .SetCustomAuthentication(async (client) => await client.AuthenticateAsync(oauth2));
+```
+
+Sometimes it's easier just to disable OAuth2.0 for testing.
+
+```cs
+using var imapReceiver = ImapReceiver.Create("localhost:143")
+    .RemoveAuthenticationMechanism("XOAUTH2");
+```
+
+## See Also
+ * [MailKitSimplified wiki homepage](https://github.com/danzuep/MailKitSimplified/wiki/Home)
+ * [MailKitSimplified.Sender wiki](https://github.com/danzuep/MailKitSimplified/wiki/Sender)
+ * [IMAP test environment](https://github.com/rnwood/smtp4dev)

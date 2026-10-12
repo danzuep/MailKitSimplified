@@ -1,0 +1,48 @@
+## Getting a MailFolder
+
+Here are a few different ways:
+
+1. (version 2.11.9 and beyond)
+```cs
+var mailFolder = await _imapReceiver.MailFolderClient.GetFolderAsync(mailFolderName, createIfNotFound: true, cancellationToken);
+```
+
+2. (version 2.10.0 and beyond)
+```cs
+var mailFolder = await _imapReceiver.MailFolderClient.GetFolderAsync([mailFolderName], cancellationToken);
+```
+
+3. (version 2.10.0 and 2.11.9 only)
+```cs
+var mailFolder = await mailFolder.GetOrCreateSubfolderAsync(mailFolderName, cancellationToken);
+```
+
+## Adding Mail To A Folder
+
+```cs
+await _imapReceiver.MailFolderClient.DraftsFolder.AppendAsync(mimeMessage, cancellationToken: cancellationToken);
+```
+
+```cs
+await _imapReceiver.MailFolderClient.AppendSentMessageAsync(mimeMessage, MessageFlags.Seen, cancellationToken);
+```
+
+## Moving Mail Between Folders
+
+Here are a few different ways:
+
+1. (version 2.11.9 and beyond)
+```cs
+var destinationFolder = await mailFolderClient.GetFolderAsync(mailFolderFullName, createIfNotFound: true, cancellationToken);
+var uniqueId = await mailFolderClient.MoveToAsync(messageSummary, destinationFolder, cancellationToken);
+```
+
+2. (version 2.10.0 and beyond)
+```cs
+var uniqueId = await mailFolderClient.MoveToAsync(messageSummary.UniqueId, destinationFolderFullName, cancellationToken);
+```
+
+3. (version 2.10.0 and beyond)
+```cs
+await _imapReceiver.MailFolderClient.MoveToAsync(messageSummary, SpecialFolder.Sent, cancellationToken);
+```
