@@ -53,7 +53,7 @@ jobs:
         id: login
         uses: NuGet/login@v1
         with:
-          user: ${{ secrets.NUGET_USER }}
+          user: ${{ inputs.owner }}
 
       - name: Publish to NuGet
         run: |
