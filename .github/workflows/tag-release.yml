@@ -1,0 +1,69 @@
+name: Tag Release
+run-name: Tag next ${{ inputs.bump }} version${{ inputs.staging && ' (staging)' || '' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version part to increment'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+      staging:
+        description: 'Make it a staging (pre-release) version'
+        type: boolean
+        default: false
+
+jobs:
+  tag:
+    name: 🏷 Tag and release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Checkout with tags
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Calculate next version tag
+        id: next
+        env:
+          BUMP: ${{ inputs.bump }}
+          STAGING: ${{ inputs.staging }}
+        run: |
+          # Latest stable tag (pre-release tags such as v1.2.3-staging.1 are ignored)
+          latest=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
+          latest=${latest:-v0.0.0}
+          IFS=. read -r major minor patch <<< "${latest#v}"
+          case "$BUMP" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+          esac
+          tag="v$major.$minor.$patch"
+          if [ "$STAGING" = "true" ]; then
+            n=$(git tag --list "$tag-staging.*" | wc -l)
+            tag="$tag-staging.$((n + 1))"
+          fi
+          if git rev-parse -q --verify "refs/tags/$tag" > /dev/null; then
+            echo "Tag $tag already exists" >&2
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "### Tagging $tag (previous stable: $latest)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Push tag
+        run: |
+          git tag "${{ steps.next.outputs.tag }}"
+          git push origin "${{ steps.next.outputs.tag }}"
+
+      # Tags pushed with GITHUB_TOKEN don't trigger other workflows, so start the release explicitly
+      - name: Run release workflow for the tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run release.yml --ref "${{ steps.next.outputs.tag }}"
