@@ -15,10 +15,49 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pipeline:
-    name: 🧱 CI/CD
-    uses: ./.github/workflows/_pipeline.yml
+  build:
+    name: 🧱 CI
+    uses: ./.github/workflows/_build-test.yml
     with:
       environment: release
       project-name: MailKitSimplified
+      configuration: Release
+    permissions:
+      contents: read
     secrets: inherit
+
+  # Publishing is inline (not via _deploy-nuget.yml) because the NuGet Trusted Publishing
+  # policy is bound to this workflow file (release.yml)
+  deploy:
+    name: 🚀 Deploy
+    if: ${{ github.event_name != 'pull_request' }}
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    environment: release
+    env:
+      PROJECT_NAME: MailKitSimplified
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.PROJECT_NAME }}
+          path: .
+          merge-multiple: true
+
+      - name: Get .NET externals
+        uses: actions/setup-dotnet@v6
+
+      - name: NuGet login (OIDC trusted publishing)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: danzuep
+
+      - name: Publish to NuGet
+        run: dotnet nuget push "$PROJECT_NAME.*.nupkg" --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Markdown workflow job summary
+        run: echo "### $PROJECT_NAME ${{ needs.build.outputs.version }} packages published" >> $GITHUB_STEP_SUMMARY
