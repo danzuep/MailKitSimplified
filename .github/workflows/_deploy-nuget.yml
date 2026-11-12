@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
+      id-token: write
     environment: ${{ inputs.environment }}
     env:
       PACKAGE_NAMES: '${{ inputs.project-name }}.*.nupkg'
@@ -48,11 +48,16 @@ jobs:
         run: find . -name "*.nupkg" -type f -exec echo {} \;
       # run: Get-ChildItem -Path "./.nupkg" | Where-Object {$_.PSIsContainer -eq $false} | SELECT Name
   
-      # https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-nuget-registry#authenticating-with-github_token-in-github-actions
-      # https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions#publishing-a-package-using-an-action
+      # https://learn.microsoft.com/nuget/nuget-org/trusted-publishing
+      - name: NuGet login (OIDC trusted publishing)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Publish to NuGet
         run: |
-          dotnet nuget push $PACKAGE_NAMES --api-key ${{ secrets.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+          dotnet nuget push $PACKAGE_NAMES --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
 
       - name: Markdown workflow job summary
         run: echo "### ${{ inputs.project-name }}.*.${{ inputs.version }}.nupkg packages published" >> $GITHUB_STEP_SUMMARY
