@@ -34,5 +34,5 @@ jobs:
       version: ${{ needs.build.outputs.version }}
     permissions:
       contents: read
-      packages: write
+      id-token: write
     secrets: inherit
