@@ -56,6 +56,7 @@ namespace MailKitSimplified.Receiver.Services
         {
             foreach (char c in toRemove)
             {
+                if (sb.Length == 0) break;
                 var lastCharacter = sb[sb.Length - 1];
                 var endsWithNewLine = lastCharacter == c;
                 if (endsWithNewLine) sb.Length--;
