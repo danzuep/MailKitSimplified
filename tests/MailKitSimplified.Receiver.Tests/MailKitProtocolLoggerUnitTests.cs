@@ -75,5 +75,17 @@ namespace MailKitSimplified.Receiver.Tests
             mailKitProtocolLogger.LogClient(_testBytes, TestReplyMid, TestReplyEnd);
             //_logFileWriterMock.Verify(_ => _.WriteLine(It.IsAny<string>()), Times.Exactly(3));
         }
+
+        [Theory]
+        [InlineData("", "")]
+        [InlineData("\n", "")]
+        [InlineData("\r\n", "")]
+        [InlineData("message\r\n", "message")]
+        [InlineData("message", "message")]
+        public void RemoveLastCharacter_HandlesEmptyAndTrailingLineEndings(string input, string expected)
+        {
+            var result = LogFileWriterQueue.RemoveLastCharacter(new StringBuilder(input), '\n', '\r');
+            Assert.Equal(expected, result);
+        }
     }
 }
