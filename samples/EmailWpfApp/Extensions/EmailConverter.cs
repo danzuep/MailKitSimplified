@@ -6,6 +6,7 @@ using CommunityToolkit.Common;
 using CommunityToolkit.Diagnostics;
 using MailKitSimplified.Receiver.Extensions;
 using EmailWpfApp.Models;
+using MimeKit.Utils;
 
 namespace EmailWpfApp.Extensions
 {
@@ -15,7 +16,7 @@ namespace EmailWpfApp.Extensions
         {
             Guard.IsNotNull(mimeMessage, nameof(mimeMessage));
             var email = new Email();
-            email.MessageId = mimeMessage.MessageId;
+            email.MessageId = mimeMessage.MessageId ?? MimeUtils.GenerateMessageId();
             email.Date = mimeMessage.Date.ToString();
             email.From = mimeMessage.From.ToString();
             email.To = mimeMessage.To.ToString();

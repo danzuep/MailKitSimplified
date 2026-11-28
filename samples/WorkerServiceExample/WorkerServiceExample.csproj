@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Common" Version="8.4.2" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="11.0.0" />
   </ItemGroup>
 
   <ItemGroup>
