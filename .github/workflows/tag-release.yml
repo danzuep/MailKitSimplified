@@ -24,6 +24,7 @@ jobs:
     permissions:
       contents: write
       actions: write
+      checks: read
     steps:
       - name: Checkout with tags
         uses: actions/checkout@v7
@@ -66,4 +67,26 @@ jobs:
       - name: Run release workflow for the tag
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run release.yml --ref "${{ steps.next.outputs.tag }}"
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.next.outputs.tag }}
+        run: |
+          run_id=$(gh api "repos/$GH_REPO/actions/workflows/release.yml/dispatches" \
+            -H "X-GitHub-Api-Version: 2026-03-10" -f ref="$TAG" --jq '.workflow_run_id')
+          if [[ ! "$run_id" =~ ^[0-9]+$ ]]; then
+            echo "Release workflow dispatch did not return a run ID" >&2
+            exit 1
+          fi
+          gh run watch "$run_id" --exit-status --compact --interval 15
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.next.outputs.tag }}
+        run: |
+          args=(--verify-tag --generate-notes --title "$TAG")
+          version="${TAG%%+*}"
+          if [[ "$version" == *-* ]]; then
+            args+=(--prerelease)
+          fi
+          gh release create "$TAG" "${args[@]}"
